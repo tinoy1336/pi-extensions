@@ -27,7 +27,7 @@
  */
 
 import { execFile, spawn } from "node:child_process";
-import { appendFileSync, mkdirSync, readFileSync, unlinkSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, unlinkSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { AgentToolUpdateCallback, ExtensionAPI } from "@earendil-works/pi-coding-agent";
@@ -79,11 +79,35 @@ function audit(entry: Record<string, unknown>): void {
 	}
 }
 
-/** The shared request router — routes "promptd …" to the live instance
- *  (shell first, dev island fallback) and cold-starts when neither is up.
- *  SUDO_APPROVE_ROUTE overrides the router path (tests only). */
-const AGS_ROUTE =
-	process.env.SUDO_APPROVE_ROUTE ?? join(homedir(), ".config/ags/common/shell/ags-route.sh");
+/** The checkout root — the same rule the tree's own common/path/tree-root.ts uses:
+ *  TINSHELL_HOME when a launcher exports it, else the dev checkout. */
+function checkoutRoot(): string {
+	return process.env.TINSHELL_HOME || join(homedir(), "dev", "tinshell");
+}
+
+/** The request router's location — RESOLVED, never hard-coded. It routes
+ *  "promptd …" to the live instance (shell first, dev island fallback) and
+ *  cold-starts when neither is up. SUDO_APPROVE_ROUTE wins (tests, a
+ *  non-standard install); otherwise it is derived from the checkout root,
+ *  because a literal path is a promise about where the tree sits. */
+function resolveRouterPath(): string {
+	return process.env.SUDO_APPROVE_ROUTE || join(checkoutRoot(), "common/shell/tinshell-route.sh");
+}
+
+const AGS_ROUTE = resolveRouterPath();
+
+/** A missing router is an ENVIRONMENT fault, not an approval decision. Name the
+ *  path and the variables that fix it, and never let the call site fall through
+ *  to the confirm dialog: a UI-less session answers that with an empty reason,
+ *  which reads to the model (and to the operator) as a human denial. */
+function routerMissingRefusal(): string | null {
+	if (existsSync(AGS_ROUTE)) return null;
+	return (
+		`error: router-missing: ${AGS_ROUTE} does not exist, so the approval window is unreachable. ` +
+		"Set SUDO_APPROVE_ROUTE to the router path, or TINSHELL_HOME to the checkout root. " +
+		"No approval was requested and none was denied."
+	);
+}
 
 /** Instances that may host promptd, route-map.conf order (production first).
  *  SUDO_APPROVE_INSTANCES overrides (tests only — never probe real shells). */
@@ -92,7 +116,7 @@ function promptdInstances(): string[] {
 		return process.env.SUDO_APPROVE_INSTANCES.split(",").filter(Boolean);
 	}
 	try {
-		const map = readFileSync(join(homedir(), ".config/ags/common/shell/route-map.conf"), "utf8");
+		const map = readFileSync(join(checkoutRoot(), "common/shell/route-map.conf"), "utf8");
 		for (const line of map.split("\n")) {
 			const m = /^promptd=([\w,-]+)\s*$/.exec(line);
 			if (m) return m[1].split(",").filter(Boolean);
@@ -187,6 +211,16 @@ const MAX_FAILED_ROUNDS = 3;
  *  reply is "error: aborted". */
 export function promptdRequest(cmd: string, signal: AbortSignal | undefined): Promise<string> {
 	return new Promise((resolve) => {
+		const missing = routerMissingRefusal();
+		if (missing) {
+			audit({
+				decision: "router-missing",
+				path: AGS_ROUTE,
+				hint: "SUDO_APPROVE_ROUTE|TINSHELL_HOME",
+			});
+			resolve(missing);
+			return;
+		}
 		const instances = promptdInstances();
 		let settled = false;
 		let poll: ReturnType<typeof setInterval> | null = null;
@@ -526,6 +560,14 @@ export default function (pi: ExtensionAPI): void {
 						},
 					],
 					details: { decision: "deny", channel: "promptd" },
+				};
+			}
+			if (reply.startsWith("error: router-missing")) {
+				// Environment fault, not an approval decision: hard reject and NAME it.
+				audit({ decision: "router-missing", reply, channel: "promptd", commands });
+				return {
+					content: [{ type: "text", text: reply }],
+					details: { decision: "router-missing", channel: "promptd" },
 				};
 			}
 			if (reply === "error: channel-dead") {
