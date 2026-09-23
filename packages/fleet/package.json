@@ -58,5 +58,10 @@
 	"dependencies": {
 		"@tinoy/pi-ext-lib": "^0.1.0",
 		"@tinoy/pi-tariff": "^0.1.0"
+	},
+	"peerDependenciesMeta": {
+		"@juicesharp/rpiv-todo": {
+			"optional": true
+		}
 	}
 }

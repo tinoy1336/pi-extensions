@@ -5,150 +5,239 @@
 		{
 			"id": "A1-read-staleness",
 			"group": "A1",
-			"packages": ["@tinoy/pi-read-staleness"],
+			"packages": [
+				"@tinoy/pi-read-staleness"
+			],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-read-staleness": [] },
+			"expectTools": {
+				"@tinoy/pi-read-staleness": []
+			},
 			"expectLog": [],
 			"notes": "tool_result hook only"
 		},
 		{
 			"id": "A1-orphan-repair",
 			"group": "A1",
-			"packages": ["@tinoy/pi-orphan-repair"],
+			"packages": [
+				"@tinoy/pi-orphan-repair"
+			],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-orphan-repair": [] },
+			"expectTools": {
+				"@tinoy/pi-orphan-repair": []
+			},
 			"expectLog": [],
 			"notes": "before_provider_request hook only"
 		},
 		{
 			"id": "A1-cache-prefix-log",
 			"group": "A1",
-			"packages": ["@tinoy/pi-cache-prefix-log"],
+			"packages": [
+				"@tinoy/pi-cache-prefix-log"
+			],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-cache-prefix-log": [] },
+			"expectTools": {
+				"@tinoy/pi-cache-prefix-log": []
+			},
 			"expectLog": [],
 			"notes": "canon:sections listener is a silent enrichment, so no absence line"
 		},
 		{
 			"id": "A1-child-request-dump",
 			"group": "A1",
-			"packages": ["@tinoy/pi-child-request-dump"],
+			"packages": [
+				"@tinoy/pi-child-request-dump"
+			],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-child-request-dump": [] },
+			"expectTools": {
+				"@tinoy/pi-child-request-dump": []
+			},
 			"expectLog": [],
 			"notes": "child-marker gated; inert in a parent session by design"
 		},
 		{
 			"id": "A1-desktop-notify",
 			"group": "A1",
-			"packages": ["@tinoy/pi-desktop-notify"],
-			"absent": ["@tinoy/pi-focus-state"],
+			"packages": [
+				"@tinoy/pi-desktop-notify"
+			],
+			"absent": [
+				"@tinoy/pi-focus-state"
+			],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-desktop-notify": ["desktop_notify"] },
+			"expectTools": {
+				"@tinoy/pi-desktop-notify": [
+					"desktop_notify"
+				]
+			},
 			"expectLog": [],
 			"notes": "focus state is a hard import, not a neighbour: installing it alone means installing the library with it, so the case names the library as a dependency rather than an absence"
 		},
 		{
 			"id": "A1-probe",
 			"group": "A1",
-			"packages": ["@tinoy/pi-probe"],
+			"packages": [
+				"@tinoy/pi-probe"
+			],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-probe": ["probe"] },
+			"expectTools": {
+				"@tinoy/pi-probe": [
+					"probe"
+				]
+			},
 			"expectLog": [],
 			"notes": "systemd/pgrep at call time; hyprctl optional"
 		},
 		{
 			"id": "A1-intercom-broadcast",
 			"group": "A1",
-			"packages": ["@tinoy/pi-intercom-broadcast"],
-			"absent": ["pi-intercom"],
+			"packages": [
+				"@tinoy/pi-intercom-broadcast"
+			],
+			"absent": [
+				"pi-intercom"
+			],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-intercom-broadcast": ["broadcast"] },
+			"expectTools": {
+				"@tinoy/pi-intercom-broadcast": [
+					"broadcast"
+				]
+			},
 			"expectLog": [],
 			"notes": "the refusal is answered at call time, so no absence line at load"
 		},
 		{
 			"id": "A1-no-subagent-fork",
 			"group": "A1",
-			"packages": ["@tinoy/pi-no-subagent-fork"],
-			"absent": ["pi-subagents"],
+			"packages": [
+				"@tinoy/pi-no-subagent-fork"
+			],
+			"absent": [
+				"pi-subagents"
+			],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-no-subagent-fork": [] },
+			"expectTools": {
+				"@tinoy/pi-no-subagent-fork": []
+			},
 			"expectLog": [],
 			"notes": "no such tool without pi-subagents, so the handler never runs"
 		},
 		{
 			"id": "A1-image-read",
 			"group": "A1",
-			"packages": ["@tinoy/pi-image-read"],
+			"packages": [
+				"@tinoy/pi-image-read"
+			],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-image-read": ["image_read"] },
+			"expectTools": {
+				"@tinoy/pi-image-read": [
+					"image_read"
+				]
+			},
 			"expectLog": [],
 			"notes": "tool set may be narrowed at session start on a non-vision model; this case asserts registration only"
 		},
 		{
 			"id": "A1-command-guard",
 			"group": "A1",
-			"packages": ["@tinoy/pi-command-guard"],
+			"packages": [
+				"@tinoy/pi-command-guard"
+			],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-command-guard": [] },
+			"expectTools": {
+				"@tinoy/pi-command-guard": []
+			},
 			"expectLog": [],
 			"notes": "tool_call hook only"
 		},
 		{
 			"id": "A1-status-metrics",
 			"group": "A1",
-			"packages": ["@tinoy/pi-status-metrics"],
-			"absent": ["@tinoy/pi-command-guard", "@tinoy/pi-focus-gate", "@tinoy/pi-drift-anchor"],
+			"packages": [
+				"@tinoy/pi-status-metrics"
+			],
+			"absent": [
+				"@tinoy/pi-command-guard",
+				"@tinoy/pi-focus-gate",
+				"@tinoy/pi-drift-anchor"
+			],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-status-metrics": [] },
+			"expectTools": {
+				"@tinoy/pi-status-metrics": []
+			},
 			"expectLog": [],
 			"notes": "counters read the hook log by source; absent sources are zero, not an absence line"
 		},
 		{
 			"id": "A1-nf",
 			"group": "A1",
-			"packages": ["@tinoy/pi-nf"],
+			"packages": [
+				"@tinoy/pi-nf"
+			],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-nf": ["nf"] },
+			"expectTools": {
+				"@tinoy/pi-nf": [
+					"nf"
+				]
+			},
 			"expectLog": [],
 			"notes": "dataset must ship in the package; a missing dataset is a call-time refusal"
 		},
 		{
 			"id": "A1-build",
 			"group": "A1",
-			"packages": ["@tinoy/pi-build"],
-			"absent": ["@tinoy/pi-fleet"],
+			"packages": [
+				"@tinoy/pi-build"
+			],
+			"absent": [
+				"@tinoy/pi-fleet"
+			],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-build": ["build"] },
+			"expectTools": {
+				"@tinoy/pi-build": [
+					"build"
+				]
+			},
 			"expectLog": [],
 			"notes": "the crew import must be optional: no absence line while the build root is unset"
 		},
 		{
 			"id": "A1-child-prompt-freeze",
 			"group": "A1",
-			"packages": ["@tinoy/pi-child-prompt-freeze"],
-			"absent": ["pi-subagents"],
+			"packages": [
+				"@tinoy/pi-child-prompt-freeze"
+			],
+			"absent": [
+				"pi-subagents"
+			],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-child-prompt-freeze": [] },
+			"expectTools": {
+				"@tinoy/pi-child-prompt-freeze": []
+			},
 			"expectLog": [],
 			"notes": "child-marker gated"
 		},
 		{
 			"id": "A1-todo-parent",
 			"group": "A1",
-			"packages": ["@tinoy/pi-todo-parent"],
-			"absent": ["@juicesharp/rpiv-todo", "pi-subagents"],
+			"packages": [
+				"@tinoy/pi-todo-parent"
+			],
+			"absent": [
+				"@juicesharp/rpiv-todo",
+				"pi-subagents"
+			],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-todo-parent": [] },
+			"expectTools": {
+				"@tinoy/pi-todo-parent": []
+			},
 			"expectLog": [
 				{
 					"source": "todo-parent",
@@ -156,81 +245,132 @@
 					"neighbour": "@juicesharp/rpiv-todo"
 				}
 			],
-			"env": { "PI_SUBAGENT_CHILD": "" },
-			"notes": "load-fatal today; the case is the acceptance spec for the optional import. MEASURED: the tool is registered in a CHILD session (PI_SUBAGENT_CHILD=1) and the spawning session registers none — it runs the watcher — so the case pins the parent shape with an empty marker and expects no tool; the rpiv-todo absence line is emitted in both shapes, because the neighbour is resolved once at load."
+			"env": {
+				"PI_SUBAGENT_CHILD": ""
+			},
+			"notes": "load-fatal today; the case is the acceptance spec for the optional import. MEASURED: the tool is registered in a CHILD session (PI_SUBAGENT_CHILD=1) and the spawning session registers none \u2014 it runs the watcher \u2014 so the case pins the parent shape with an empty marker and expects no tool; the rpiv-todo absence line is emitted in both shapes, because the neighbour is resolved once at load."
 		},
 		{
 			"id": "A1-focus-gate",
 			"group": "A1",
-			"packages": ["@tinoy/pi-focus-gate"],
+			"packages": [
+				"@tinoy/pi-focus-gate"
+			],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-focus-gate": [] },
+			"expectTools": {
+				"@tinoy/pi-focus-gate": []
+			},
 			"expectLog": [],
 			"notes": "registers hooks and the /focus command; no tool"
 		},
 		{
 			"id": "A1-drift-anchor",
 			"group": "A1",
-			"packages": ["@tinoy/pi-drift-anchor"],
+			"packages": [
+				"@tinoy/pi-drift-anchor"
+			],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-drift-anchor": ["set_anchor"] },
+			"expectTools": {
+				"@tinoy/pi-drift-anchor": [
+					"set_anchor"
+				]
+			},
 			"expectLog": [],
 			"notes": "canon cadence is text only, so no absence line"
 		},
 		{
 			"id": "A1-deepseek-cost",
 			"group": "A1",
-			"packages": ["@tinoy/pi-deepseek-cost"],
-			"absent": ["@tinoy/pi-tariff"],
+			"packages": [
+				"@tinoy/pi-deepseek-cost"
+			],
+			"absent": [
+				"@tinoy/pi-tariff"
+			],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-deepseek-cost": [] },
+			"expectTools": {
+				"@tinoy/pi-deepseek-cost": []
+			},
 			"expectLog": [],
 			"notes": "tariff is a hard dependency; the table itself is operator data, so its absence is the tariff package's own refusal line"
 		},
 		{
 			"id": "A1-cli-keys",
 			"group": "A1",
-			"packages": ["@tinoy/pi-cli-keys"],
+			"packages": [
+				"@tinoy/pi-cli-keys"
+			],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-cli-keys": [] },
+			"expectTools": {
+				"@tinoy/pi-cli-keys": []
+			},
 			"expectLog": [],
 			"notes": "registers no tool; a missing vault client is logged as a skip, not an absence"
 		},
 		{
 			"id": "A1-sudo-approve",
 			"group": "A1",
-			"packages": ["@tinoy/pi-sudo-approve"],
+			"packages": [
+				"@tinoy/pi-sudo-approve"
+			],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-sudo-approve": ["sudo_approve"] },
+			"expectTools": {
+				"@tinoy/pi-sudo-approve": [
+					"sudo_approve"
+				]
+			},
 			"expectLog": [],
 			"notes": "AGS absent means the fallback path at call time, never a load failure"
 		},
 		{
 			"id": "A1-fleet",
 			"group": "A1",
-			"packages": ["@tinoy/pi-fleet"],
-			"absent": ["@juicesharp/rpiv-todo", "pi-subagents"],
+			"packages": [
+				"@tinoy/pi-fleet"
+			],
+			"absent": [
+				"@juicesharp/rpiv-todo",
+				"pi-subagents"
+			],
 			"expectLoaded": 2,
 			"expectTools": {
-				"@tinoy/pi-fleet[fleet]": ["fleet"],
-				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+				"@tinoy/pi-fleet[fleet]": [
+					"fleet"
+				],
+				"@tinoy/pi-fleet[io-guard]": [
+					"io_status"
+				]
 			},
 			"expectLog": [],
-			"notes": "one package, two entries; canon's section handoff must report canon absent only when a section is actually offered"
+			"notes": "one package, two entries; canon's section handoff must report canon absent only when a section is actually offered",
+			"env": {
+				"PI_SUBAGENT_CHILD": "",
+				"PI_SUBAGENT": ""
+			}
 		},
 		{
 			"id": "A1-io-guard",
 			"group": "A1",
-			"packages": ["@tinoy/pi-fleet"],
+			"packages": [
+				"@tinoy/pi-fleet"
+			],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-fleet[io-guard]": ["io_status"] },
+			"expectTools": {
+				"@tinoy/pi-fleet[io-guard]": [
+					"io_status"
+				]
+			},
 			"expectLog": [],
-			"notes": "the io-guard entry alone, loaded out of the fleet package"
+			"notes": "the io-guard entry alone, loaded out of the fleet package",
+			"env": {
+				"PI_SUBAGENT_CHILD": "",
+				"PI_SUBAGENT": ""
+			}
 		},
 		{
 			"id": "A2",
@@ -280,15 +420,22 @@
 			"absent": [],
 			"expectLoaded": 1,
 			"expectTools": {
-				"@tinoy/pi-canon": ["canon_add", "canon_category", "canon_edit", "canon_remove"]
+				"@tinoy/pi-canon": [
+					"canon_add",
+					"canon_category",
+					"canon_edit",
+					"canon_remove"
+				]
 			},
 			"expectLog": [],
-			"notes": "the present subset of A2: the three libraries declare no entries and load nothing, so the loaded count is 1 — canon alone, with its four tools"
+			"notes": "the present subset of A2: the three libraries declare no entries and load nothing, so the loaded count is 1 \u2014 canon alone, with its four tools"
 		},
 		{
 			"id": "A3-ext-lib",
 			"group": "A3",
-			"packages": ["@tinoy/pi-ext-lib"],
+			"packages": [
+				"@tinoy/pi-ext-lib"
+			],
 			"absent": [],
 			"expectLoaded": 0,
 			"expectTools": {},
@@ -298,7 +445,9 @@
 		{
 			"id": "A3-focus-state",
 			"group": "A3",
-			"packages": ["@tinoy/pi-focus-state"],
+			"packages": [
+				"@tinoy/pi-focus-state"
+			],
 			"absent": [],
 			"expectLoaded": 0,
 			"expectTools": {},
@@ -308,7 +457,9 @@
 		{
 			"id": "A3-tariff",
 			"group": "A3",
-			"packages": ["@tinoy/pi-tariff"],
+			"packages": [
+				"@tinoy/pi-tariff"
+			],
 			"absent": [],
 			"expectLoaded": 0,
 			"expectTools": {},
@@ -318,11 +469,18 @@
 		{
 			"id": "A3-canon",
 			"group": "A3",
-			"packages": ["@tinoy/pi-canon"],
+			"packages": [
+				"@tinoy/pi-canon"
+			],
 			"absent": [],
 			"expectLoaded": 1,
 			"expectTools": {
-				"@tinoy/pi-canon": ["canon_add", "canon_category", "canon_edit", "canon_remove"]
+				"@tinoy/pi-canon": [
+					"canon_add",
+					"canon_category",
+					"canon_edit",
+					"canon_remove"
+				]
 			},
 			"expectLog": [],
 			"notes": "the extension that is present today, alone"
@@ -340,16 +498,25 @@
 				"@tinoy/pi-intercom-broadcast",
 				"@tinoy/pi-no-subagent-fork"
 			],
-			"absent": ["pi-intercom", "pi-subagents"],
+			"absent": [
+				"pi-intercom",
+				"pi-subagents"
+			],
 			"expectLoaded": 8,
 			"expectTools": {
 				"@tinoy/pi-read-staleness": [],
 				"@tinoy/pi-orphan-repair": [],
 				"@tinoy/pi-cache-prefix-log": [],
 				"@tinoy/pi-child-request-dump": [],
-				"@tinoy/pi-desktop-notify": ["desktop_notify"],
-				"@tinoy/pi-probe": ["probe"],
-				"@tinoy/pi-intercom-broadcast": ["broadcast"],
+				"@tinoy/pi-desktop-notify": [
+					"desktop_notify"
+				],
+				"@tinoy/pi-probe": [
+					"probe"
+				],
+				"@tinoy/pi-intercom-broadcast": [
+					"broadcast"
+				],
 				"@tinoy/pi-no-subagent-fork": []
 			},
 			"expectLog": [],
@@ -375,7 +542,9 @@
 		{
 			"id": "A6-fleet-without-rpiv",
 			"group": "A6",
-			"packages": ["@tinoy/pi-fleet"],
+			"packages": [
+				"@tinoy/pi-fleet"
+			],
 			"absent": [
 				"@juicesharp/rpiv-todo",
 				"@tinoy/pi-canon",
@@ -384,46 +553,84 @@
 			],
 			"expectLoaded": 2,
 			"expectTools": {
-				"@tinoy/pi-fleet[fleet]": ["fleet"],
-				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+				"@tinoy/pi-fleet[fleet]": [
+					"fleet"
+				],
+				"@tinoy/pi-fleet[io-guard]": [
+					"io_status"
+				]
 			},
 			"expectLog": [],
-			"notes": "the case that fails today: the crew package must load with rpiv-todo absent"
+			"notes": "the case that fails today: the crew package must load with rpiv-todo absent",
+			"env": {
+				"PI_SUBAGENT_CHILD": "",
+				"PI_SUBAGENT": ""
+			}
 		},
 		{
 			"id": "A7-todo-parent-with-rpiv",
 			"group": "A7",
-			"packages": ["@tinoy/pi-todo-parent"],
-			"requiresInstall": ["@juicesharp/rpiv-todo"],
+			"packages": [
+				"@tinoy/pi-todo-parent"
+			],
+			"requiresInstall": [
+				"@juicesharp/rpiv-todo"
+			],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-todo-parent": ["todo_parent"] },
+			"expectTools": {
+				"@tinoy/pi-todo-parent": [
+					"todo_parent"
+				]
+			},
 			"expectLog": [],
 			"notes": "the with-neighbour variant: no absence line and the tool works. UNRUNNABLE until the harness can install a registry neighbour alongside the tarballs; the without-neighbour half is A1-todo-parent."
 		},
 		{
 			"id": "A8-intercom-broadcast-with-intercom",
 			"group": "A8",
-			"packages": ["@tinoy/pi-intercom-broadcast"],
-			"requiresInstall": ["pi-intercom"],
+			"packages": [
+				"@tinoy/pi-intercom-broadcast"
+			],
+			"requiresInstall": [
+				"pi-intercom"
+			],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-intercom-broadcast": ["broadcast"] },
+			"expectTools": {
+				"@tinoy/pi-intercom-broadcast": [
+					"broadcast"
+				]
+			},
 			"expectLog": [],
 			"notes": "the with-neighbour variant: no absence line and the tool answers. UNRUNNABLE until the harness can install a registry neighbour alongside the tarballs; the without-neighbour half is A1-intercom-broadcast."
 		},
 		{
 			"id": "M9-foreman-tool-set",
 			"group": "M9",
-			"packages": ["@tinoy/pi-fleet"],
-			"absent": ["@tinoy/pi-canon", "@tinoy/pi-drift-anchor", "@tinoy/pi-todo-parent"],
+			"packages": [
+				"@tinoy/pi-fleet"
+			],
+			"absent": [
+				"@tinoy/pi-canon",
+				"@tinoy/pi-drift-anchor",
+				"@tinoy/pi-todo-parent"
+			],
 			"expectLoaded": 2,
 			"expectTools": {
-				"@tinoy/pi-fleet[fleet]": ["fleet"],
-				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+				"@tinoy/pi-fleet[fleet]": [
+					"fleet"
+				],
+				"@tinoy/pi-fleet[io-guard]": [
+					"io_status"
+				]
 			},
 			"expectLog": [],
-			"env": { "PI_FOREMAN": "1" },
+			"env": {
+				"PI_FOREMAN": "1",
+				"PI_SUBAGENT_CHILD": "",
+				"PI_SUBAGENT": ""
+			},
 			"notes": "UNRUNNABLE until pi-fleet exists. The question: the foreman tool-set application names tools owned by packages that are absent (canon_add, set_anchor, todo_parent). Does it throw, or silently narrow the session's tool set? The acceptable outcomes are (a) no throw with every dropped name reported once, or (b) a typed refusal at activation. A silent narrowing with no line is a failure."
 		},
 		{
@@ -432,7 +639,11 @@
 			"packages": [],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "m10-fixture": ["m10_fixture"] },
+			"expectTools": {
+				"m10-fixture": [
+					"m10_fixture"
+				]
+			},
 			"expectLog": [],
 			"fixtures": [
 				{
@@ -442,8 +653,15 @@
 						"version": "0.0.0",
 						"type": "module",
 						"pi": {
-							"extensions": ["./index.ts"],
-							"caveats": [{ "neighbour": "pi-canon", "gains": "nothing" }]
+							"extensions": [
+								"./index.ts"
+							],
+							"caveats": [
+								{
+									"neighbour": "pi-canon",
+									"gains": "nothing"
+								}
+							]
 						}
 					},
 					"files": {
@@ -451,7 +669,7 @@
 					}
 				}
 			],
-			"notes": "MEASURED: an unknown key inside the pi manifest is IGNORED — the fixture declares pi.caveats alongside pi.extensions and loads with 0 errors, so the machine-readable caveat mirror is unblocked."
+			"notes": "MEASURED: an unknown key inside the pi manifest is IGNORED \u2014 the fixture declares pi.caveats alongside pi.extensions and loads with 0 errors, so the machine-readable caveat mirror is unblocked."
 		},
 		{
 			"id": "M11-duplicate-tool-name",
@@ -459,9 +677,18 @@
 			"packages": [],
 			"absent": [],
 			"expectLoaded": 2,
-			"expectTools": { "m11-first": ["dup_tool"], "m11-second": ["dup_tool"] },
+			"expectTools": {
+				"m11-first": [
+					"dup_tool"
+				],
+				"m11-second": [
+					"dup_tool"
+				]
+			},
 			"expectLog": [],
-			"expectErrors": ["conflicts with"],
+			"expectErrors": [
+				"conflicts with"
+			],
 			"fixtures": [
 				{
 					"name": "m11-first",
@@ -469,7 +696,11 @@
 						"name": "m11-first",
 						"version": "0.0.0",
 						"type": "module",
-						"pi": { "extensions": ["./index.ts"] }
+						"pi": {
+							"extensions": [
+								"./index.ts"
+							]
+						}
 					},
 					"files": {
 						"index.ts": "export default function (pi: any): void {\n\tpi.registerTool({\n\t\tname: \"dup_tool\",\n\t\tlabel: \"a\",\n\t\tdescription: \"a\",\n\t\tparameters: { type: \"object\", properties: {} },\n\t\texecute: async () => ({ content: [{ type: \"text\", text: \"a\" }] }),\n\t});\n}\n"
@@ -481,20 +712,30 @@
 						"name": "m11-second",
 						"version": "0.0.0",
 						"type": "module",
-						"pi": { "extensions": ["./index.ts"] }
+						"pi": {
+							"extensions": [
+								"./index.ts"
+							]
+						}
 					},
 					"files": {
 						"index.ts": "export default function (pi: any): void {\n\tpi.registerTool({\n\t\tname: \"dup_tool\",\n\t\tlabel: \"b\",\n\t\tdescription: \"b\",\n\t\tparameters: { type: \"object\", properties: {} },\n\t\texecute: async () => ({ content: [{ type: \"text\", text: \"b\" }] }),\n\t});\n}\n"
 					}
 				}
 			],
-			"notes": "A known-bad combination, recorded rather than avoided. MEASURED: both extensions load and one error row names the conflict against the LATER registrant (the first owner keeps the tool definition), and the loser's own tool map still lists the name — so the expectation is 2 loaded with both maps naming dup_tool, not one survivor."
+			"notes": "A known-bad combination, recorded rather than avoided. MEASURED: both extensions load and one error row names the conflict against the LATER registrant (the first owner keeps the tool definition), and the loser's own tool map still lists the name \u2014 so the expectation is 2 loaded with both maps naming dup_tool, not one survivor."
 		},
 		{
 			"id": "P1-no-subagent-fork-plus-fleet",
 			"group": "P1",
-			"packages": ["@tinoy/pi-no-subagent-fork", "@tinoy/pi-fleet"],
-			"absent": ["@juicesharp/rpiv-todo", "pi-subagents"],
+			"packages": [
+				"@tinoy/pi-no-subagent-fork",
+				"@tinoy/pi-fleet"
+			],
+			"absent": [
+				"@juicesharp/rpiv-todo",
+				"pi-subagents"
+			],
 			"expectLoaded": null,
 			"expectTools": {},
 			"expectLog": [],
@@ -503,7 +744,10 @@
 		{
 			"id": "P1-image-read-plus-fleet",
 			"group": "P1",
-			"packages": ["@tinoy/pi-image-read", "@tinoy/pi-fleet"],
+			"packages": [
+				"@tinoy/pi-image-read",
+				"@tinoy/pi-fleet"
+			],
 			"absent": [],
 			"expectLoaded": null,
 			"expectTools": {},
@@ -513,11 +757,17 @@
 		{
 			"id": "P1-focus-trio",
 			"group": "P1",
-			"packages": ["@tinoy/pi-focus-gate", "@tinoy/pi-desktop-notify", "@tinoy/pi-status-metrics"],
+			"packages": [
+				"@tinoy/pi-focus-gate",
+				"@tinoy/pi-desktop-notify",
+				"@tinoy/pi-status-metrics"
+			],
 			"absent": [],
 			"expectLoaded": 3,
 			"expectTools": {
-				"@tinoy/pi-desktop-notify": ["desktop_notify"]
+				"@tinoy/pi-desktop-notify": [
+					"desktop_notify"
+				]
 			},
 			"expectLog": [],
 			"notes": "one shared focus-state library, three readers"
@@ -525,8 +775,13 @@
 		{
 			"id": "P1-deepseek-cost-plus-fleet",
 			"group": "P1",
-			"packages": ["@tinoy/pi-deepseek-cost", "@tinoy/pi-fleet"],
-			"absent": ["@juicesharp/rpiv-todo"],
+			"packages": [
+				"@tinoy/pi-deepseek-cost",
+				"@tinoy/pi-fleet"
+			],
+			"absent": [
+				"@juicesharp/rpiv-todo"
+			],
 			"expectLoaded": null,
 			"expectTools": {},
 			"expectLog": [],
@@ -538,7 +793,11 @@
 			"packages": [],
 			"absent": [],
 			"expectLoaded": 1,
-			"expectTools": { "c1-fixture": ["control_typo"] },
+			"expectTools": {
+				"c1-fixture": [
+					"control_typo"
+				]
+			},
 			"expectLog": [],
 			"expectFailClause": 3,
 			"fixtures": [
@@ -548,7 +807,11 @@
 						"name": "c1-fixture",
 						"version": "0.0.0",
 						"type": "module",
-						"pi": { "extensions": ["./index.ts"] }
+						"pi": {
+							"extensions": [
+								"./index.ts"
+							]
+						}
 					},
 					"files": {
 						"index.ts": "export default function (pi: any): void {\n\tpi.registerTool({\n\t\tname: \"control_tool\",\n\t\tlabel: \"c1\",\n\t\tdescription: \"c1\",\n\t\tparameters: { type: \"object\", properties: {} },\n\t\texecute: async () => ({ content: [{ type: \"text\", text: \"c1\" }] }),\n\t});\n}\n"

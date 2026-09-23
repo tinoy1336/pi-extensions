@@ -29,9 +29,60 @@
  * `openRowsFor` and `closeRetiredWorkerRows` touch the session manager.
  */
 
-import { replayFromBranch } from "@juicesharp/rpiv-todo/state/replay.ts";
-import { applyTaskMutation } from "@juicesharp/rpiv-todo/state/state-reducer.ts";
+import { optionalNeighbour } from "@tinoy/pi-ext-lib";
 import { globOverlap } from "./predicates.ts";
+
+/** The board's optional neighbour: its PURE reducer and its branch replay. */
+const RPIV = "@juicesharp/rpiv-todo";
+type RpivReplay = (input: { sessionManager: unknown }) => { tasks?: unknown };
+type RpivApply = (
+	state: unknown,
+	op: string,
+	patch: Record<string, unknown>,
+) => { op: { kind: string; message?: string }; state: unknown };
+interface RpivBoard {
+	replayFromBranch: RpivReplay;
+	applyTaskMutation: RpivApply;
+}
+let board: RpivBoard | null = null;
+let warming: Promise<boolean> | null = null;
+
+/**
+ * Resolve the board's neighbour once, at CALL time. A static import would stop pi-fleet
+ * loading at all on a machine without @juicesharp/rpiv-todo, and resolving at module scope
+ * would put the work in the load path (R1). Both modules come from ONE guarded resolution,
+ * so an absent package produces exactly one report rather than one per module.
+ */
+export function warmBoard(): Promise<boolean> {
+	warming ??= (async () => {
+		const rpiv = await optionalNeighbour(
+			RPIV,
+			async () => {
+				const [replay, reducer] = await Promise.all([
+					import("@juicesharp/rpiv-todo/state/replay.js"),
+					import("@juicesharp/rpiv-todo/state/state-reducer.js"),
+				]);
+				return {
+					replayFromBranch: replay.replayFromBranch,
+					applyTaskMutation: reducer.applyTaskMutation,
+				};
+			},
+			{
+				source: "fleet",
+				effect: "the board cannot be read or written, so the crew's row closures stay unapplied",
+				hint: "pi install npm:@juicesharp/rpiv-todo",
+			},
+		);
+		if (rpiv) {
+			board = {
+				replayFromBranch: rpiv.replayFromBranch as RpivReplay,
+				applyTaskMutation: rpiv.applyTaskMutation as RpivApply,
+			};
+		}
+		return board !== null;
+	})();
+	return warming;
+}
 
 /** A board row as the branch holds it — the package's own task shape, read back
  *  through `replayFromBranch`. */
@@ -115,7 +166,14 @@ export function openRowsOf(rows: BoardRow[], worker: string): OpenRow[] {
  * board nor anywhere else, so a refusal leaves the session exactly as it found it.
  */
 export function openRowsFor(session: BoardSession, worker: string): OpenRow[] {
-	const state = replayFromBranch({ sessionManager: session });
+	const api = board;
+	if (!api) {
+		// The neighbour is resolved on first use: this call reports it (once, by name) and the
+		// next one has it. An unreadable board means no rows are visible, never a throw.
+		void warmBoard();
+		return [];
+	}
+	const state = api.replayFromBranch({ sessionManager: session });
 	return openRowsOf((state.tasks ?? []) as BoardRow[], worker);
 }
 
@@ -326,7 +384,20 @@ export interface BoardReport {
  * leaves the report saying the rows are still open.
  */
 export function closeRetiredWorkerRows(retiring: CrewPeer, ctx: BoardCtx): BoardReport {
-	const state = replayFromBranch({ sessionManager: ctx.session });
+	const api = board;
+	if (!api) {
+		void warmBoard();
+		return {
+			closed: [],
+			untouched: [],
+			refused: [
+				`the board needs ${RPIV}, which is not installed: ${retiring.name}'s rows stay open`,
+			],
+			appended: false,
+			refreshed: false,
+		};
+	}
+	const state = api.replayFromBranch({ sessionManager: ctx.session });
 	const rows = (state.tasks ?? []) as BoardRow[];
 	const plan = planClosures(rows, retiring, ctx.crew);
 	const report: BoardReport = {
@@ -342,12 +413,12 @@ export function closeRetiredWorkerRows(retiring: CrewPeer, ctx: BoardCtx): Board
 	for (const item of plan.close) {
 		const row = rows.find((r) => r.id === item.id);
 		if (row === undefined) continue;
-		const result = applyTaskMutation(next, "update", {
+		const result = api.applyTaskMutation(next, "update", {
 			id: item.id,
 			status: "completed",
 			subject: closedSubject(row, item, retiring),
 			description: closedDescription(row, item, retiring),
-		} as unknown as Parameters<typeof applyTaskMutation>[2]);
+		});
 		if (result.op.kind === "error") {
 			report.refused.push(`#${item.id} left open: ${result.op.message}`);
 			continue;

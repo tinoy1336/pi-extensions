@@ -14,7 +14,7 @@ pi install npm:@tinoy/pi-fleet
 ## What it needs at call time
 
 A roster and claim store under `~/.local/pi/foreman/`; pi-subagents for the transports; and
-`@juicesharp/rpiv-todo` for the board, whose reducer it applies rather than reimplementing.
+`@juicesharp/rpiv-todo` for the board, whose reducer it applies rather than reimplementing; it is an OPTIONAL peer, reached through a guarded dynamic import, so the package loads without it and says so by name.
 
 ## Registers
 
@@ -29,7 +29,7 @@ A roster and claim store under `~/.local/pi/foreman/`; pi-subagents for the tran
 ## Dependencies
 
 pi-supplied imports (`@earendil-works/pi-coding-agent`, `typebox`) are peers with a `*`
-range. `@juicesharp/rpiv-todo` is a peer too. Plain dependencies: `@tinoy/pi-ext-lib`,
+range. `@juicesharp/rpiv-todo` is an optional peer. Plain dependencies: `@tinoy/pi-ext-lib`,
 `@tinoy/pi-tariff`.
 
 ## Licence

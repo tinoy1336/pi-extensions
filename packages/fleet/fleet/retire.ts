@@ -27,7 +27,7 @@
  */
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { HOUSE_TARIFF_MODELS, ratios, TARIFF } from "../lib/tariff.ts";
+import { HOUSE_TARIFF_MODELS, ratios, TARIFF } from "@tinoy/pi-tariff";
 import { AGENT_DIR, FLEET_DIR, human } from "./status.ts";
 
 /** The price table: one owner for every rate this model uses, read from the agent
