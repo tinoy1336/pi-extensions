@@ -29,6 +29,7 @@
 		"check:caveats": "node scripts/check-caveats.mjs",
 		"smoke": "bash scripts/smoke.sh",
 		"smoke:local": "bash scripts/smoke.sh --local",
+		"smoke:matrix": "bash scripts/smoke-matrix.sh",
 		"release:dry": "bash scripts/release-dry-run.sh",
 		"prepare": "git config core.hooksPath .githooks || true"
 	},
