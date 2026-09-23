@@ -30,7 +30,7 @@ import { execFile, spawn } from "node:child_process";
 import { appendFileSync, mkdirSync, readFileSync, unlinkSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import type { AgentToolUpdateCallback, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { argText, clip, type HeaderPart, safeToolHeader } from "@tinoy/pi-ext-lib";
 import { type Static, Type } from "typebox";
 
@@ -303,7 +303,9 @@ function spawnSudo(
 		};
 		child.stdout.on("data", onData);
 		child.stderr.on("data", onData);
-		const onAbort = (): void => child.kill("SIGTERM");
+		const onAbort = (): void => {
+			child.kill("SIGTERM");
+		};
 		signal?.addEventListener("abort", onAbort, { once: true });
 		child.on("error", (err) => {
 			signal?.removeEventListener("abort", onAbort);
@@ -350,7 +352,7 @@ async function runBatch(
 	askpass: string | null,
 	passwordFile: string | null,
 	signal: AbortSignal | undefined,
-	onUpdate: ((update: { content: { type: "text"; text: string }[] }) => void) | undefined,
+	onUpdate: AgentToolUpdateCallback<unknown> | undefined,
 ): Promise<{ text: string; results: unknown[] }> {
 	const results: Array<{
 		command: string;
@@ -370,6 +372,7 @@ async function runBatch(
 					text: `Running ${i + 1}/${commands.length}: ${command}`,
 				},
 			],
+			details: undefined,
 		});
 		let { code, output } = await runSudo(command, askpass, passwordFile, signal);
 		// CACHE-MODE FALLBACK (2026-08): sudo timestamps are PER-TTY. promptd's
@@ -387,6 +390,7 @@ async function runBatch(
 						text: "Cache miss (per-tty sudo timestamp) — requesting password",
 					},
 				],
+				details: undefined,
 			});
 			audit({ decision: "cache-miss-retry", command });
 			const r = await runSudo(command, ASKPASS_BRIDGE, null, signal);

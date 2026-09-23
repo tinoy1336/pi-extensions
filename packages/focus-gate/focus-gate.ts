@@ -602,7 +602,7 @@ export default function (pi: ExtensionAPI): void {
 			// the per-turn tail would cost context in every child of every lane for a
 			// rule the gate already carries.
 			if (isChildProcess()) return;
-			const messages = event.messages as unknown[];
+			const messages = event.messages;
 			if (!Array.isArray(messages) || messages.length === 0) return;
 			// Mode-aware guard: only a statement of the CURRENT mode suppresses the
 			// notice. A bare "[focus]" test let a stale OFF statement (an earlier
@@ -616,6 +616,7 @@ export default function (pi: ExtensionAPI): void {
 			messages.push({
 				role: "user",
 				content: [{ type: "text", text: `[focus] ${injectionText(state)}` }],
+				timestamp: Date.now(),
 			});
 			return { messages };
 		} catch {

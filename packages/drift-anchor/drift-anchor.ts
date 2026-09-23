@@ -98,7 +98,7 @@
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { argText, clip, hookLog, safeToolHeader } from "@tinoy/pi-ext-lib";
 import { Type } from "typebox";
 
@@ -483,7 +483,11 @@ function pushHookLine(
 	position: "tail" | "second-to-last",
 	label: string,
 ): void {
-	const entry = { role: "user", content: [{ type: "text", text: `[nudge] ${line}` }] };
+	const entry = {
+		role: "user",
+		content: [{ type: "text", text: `[nudge] ${line}` }],
+		timestamp: Date.now(),
+	};
 	// R6 holds only while the array TAIL is the real user turn: second-to-last
 	// then means "immediately before the request", which is the whole point of
 	// the position. The rule the splice must never break is "never insert inside a
@@ -660,7 +664,7 @@ export default function (pi: ExtensionAPI): void {
 		try {
 			const cfg = readConfig();
 			if (!cfg.enabled) return;
-			const messages = event.messages as unknown[];
+			const messages = event.messages;
 			if (!Array.isArray(messages) || messages.length === 0 || state.turn === 0) return;
 
 			const hooks = sessionAnchor?.hooks;
@@ -726,7 +730,11 @@ export default function (pi: ExtensionAPI): void {
 				consider(0, () => {
 					const line = markerMissImmediate ? REANCHOR_IMMEDIATE_LINE : pickRotation();
 					// Tail injection ([anchor], R5): positionally fresh, cache-safe.
-					messages.push({ role: "user", content: [{ type: "text", text: `[anchor] ${line}` }] });
+					messages.push({
+						role: "user",
+						content: [{ type: "text", text: `[anchor] ${line}` }],
+						timestamp: Date.now(),
+					});
 					logInjection("anchor", markerMissImmediate ? "drift-immediate" : "drift-rotation");
 					state.lastInjectTurn = state.turn;
 					state.lastDriftInjectTurn = state.turn;
@@ -748,7 +756,11 @@ export default function (pi: ExtensionAPI): void {
 			if (periodicDue) {
 				consider(0, () => {
 					const line = pickRotation();
-					messages.push({ role: "user", content: [{ type: "text", text: `[anchor] ${line}` }] });
+					messages.push({
+						role: "user",
+						content: [{ type: "text", text: `[anchor] ${line}` }],
+						timestamp: Date.now(),
+					});
 					logInjection("anchor", "periodic");
 					periodicAnchorTurn = state.turn;
 					periodicJitterTurns = nextPeriodicInterval();
@@ -790,15 +802,9 @@ export default function (pi: ExtensionAPI): void {
 				state.turn - state.lastInjectTurn >= cfg.minTurnsSinceInject // MAJOR-2: global one-injection gap (same as canon/blocked)
 			) {
 				try {
-					const usage = (
-						ctx as ExtensionContext & {
-							getContextUsage?: () => { tokens?: number; window?: number } | undefined;
-						}
-					).getContextUsage?.();
-					const pct =
-						usage && usage.tokens && usage.window
-							? Math.round((usage.tokens / usage.window) * 100)
-							: undefined;
+					// pi derives the percentage of the model's context window itself; `percent`
+					// is null while the token count is unknown (right after a compaction).
+					const pct = ctx.getContextUsage()?.percent ?? undefined;
 					const warnAt = pressureCfg.warnAtPct ?? PRESSURE_WARN_AT_PCT;
 					if (pct !== undefined && pct >= warnAt) {
 						const pressureDefault = `Context at ~${pct}%. Land what you have — write the durable artifact now, then hand the rest off.`;
@@ -900,55 +906,63 @@ export default function (pi: ExtensionAPI): void {
 					"Short realignment line, imperative register, no self-verdicts. Name something canon does NOT cover — this session's specific failure risk, e.g. 'One writer per file — re-read a shared module before every edit.' Do NOT restate the caveman register or canon rules (verify-before-done, todo discipline): the canon block is in the system prompt every turn.",
 			}),
 			hooks: Type.Optional(
-				Type.Object({
-					register: Type.Optional(
-						Type.Object({
-							enabled: Type.Optional(
-								Type.Boolean({ description: "Register-decay anchor on/off (default true)" }),
-							),
-							ratioWarn: Type.Optional(
-								Type.Number({ description: "thinking:text ratio threshold (default 6)" }),
-							),
-							message: Type.Optional(
-								Type.String({ description: "Custom register re-anchor line" }),
-							),
-						}),
-					),
-					toolChurn: Type.Optional(
-						Type.Object({
-							maxPerWindow: Type.Optional(
-								Type.Number({ description: "Tool calls allowed per window (default 25)" }),
-							),
-							windowTurns: Type.Optional(
-								Type.Number({ description: "Window size in turns (default 8)" }),
-							),
-							message: Type.Optional(Type.String({ description: "Custom churn line" })),
-						}),
-					),
-					pressure: Type.Optional(
-						Type.Object({
-							warnAtPct: Type.Optional(
-								Type.Number({ description: "Context-window % that fires the anchor (default 80)" }),
-							),
-							message: Type.Optional(Type.String({ description: "Custom pressure line" })),
-						}),
-					),
-					blockedToolRepeat: Type.Optional(
-						Type.Object({
-							enabled: Type.Optional(
-								Type.Boolean({ description: "Blocked-repeat anchor on/off (default true)" }),
-							),
-							threshold: Type.Optional(
-								Type.Number({ description: "Blocked results within window that fire (default 3)" }),
-							),
-							windowTurns: Type.Optional(
-								Type.Number({ description: "Window size in turns (default 4)" }),
-							),
-							message: Type.Optional(Type.String({ description: "Custom blocked-repeat line" })),
-						}),
-					),
-				}),
-				{ description: "Optional hook configuration; unknown keys are ignored" },
+				Type.Object(
+					{
+						register: Type.Optional(
+							Type.Object({
+								enabled: Type.Optional(
+									Type.Boolean({ description: "Register-decay anchor on/off (default true)" }),
+								),
+								ratioWarn: Type.Optional(
+									Type.Number({ description: "thinking:text ratio threshold (default 6)" }),
+								),
+								message: Type.Optional(
+									Type.String({ description: "Custom register re-anchor line" }),
+								),
+							}),
+						),
+						toolChurn: Type.Optional(
+							Type.Object({
+								maxPerWindow: Type.Optional(
+									Type.Number({ description: "Tool calls allowed per window (default 25)" }),
+								),
+								windowTurns: Type.Optional(
+									Type.Number({ description: "Window size in turns (default 8)" }),
+								),
+								message: Type.Optional(Type.String({ description: "Custom churn line" })),
+							}),
+						),
+						pressure: Type.Optional(
+							Type.Object({
+								warnAtPct: Type.Optional(
+									Type.Number({
+										description: "Context-window % that fires the anchor (default 80)",
+									}),
+								),
+								message: Type.Optional(Type.String({ description: "Custom pressure line" })),
+							}),
+						),
+						blockedToolRepeat: Type.Optional(
+							Type.Object({
+								enabled: Type.Optional(
+									Type.Boolean({ description: "Blocked-repeat anchor on/off (default true)" }),
+								),
+								threshold: Type.Optional(
+									Type.Number({
+										description: "Blocked results within window that fire (default 3)",
+									}),
+								),
+								windowTurns: Type.Optional(
+									Type.Number({ description: "Window size in turns (default 4)" }),
+								),
+								message: Type.Optional(Type.String({ description: "Custom blocked-repeat line" })),
+							}),
+						),
+					},
+					{
+						description: "Optional hook configuration; unknown keys are ignored",
+					},
+				),
 			),
 		}),
 		// Header only (display): the realignment phrase this session is anchored to.
