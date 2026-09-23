@@ -383,22 +383,24 @@
 		{
 			"id": "A7-todo-parent-with-rpiv",
 			"group": "A7",
-			"packages": ["@tinoy/pi-todo-parent", "@juicesharp/rpiv-todo"],
+			"packages": ["@tinoy/pi-todo-parent"],
+			"requiresInstall": ["@juicesharp/rpiv-todo"],
 			"absent": [],
 			"expectLoaded": 1,
 			"expectTools": { "@tinoy/pi-todo-parent": ["todo_parent"] },
 			"expectLog": [],
-			"notes": "with the neighbour present, no absence line and the tool works"
+			"notes": "the with-neighbour variant: no absence line and the tool works. UNRUNNABLE until the harness can install a registry neighbour alongside the tarballs; the without-neighbour half is A1-todo-parent."
 		},
 		{
 			"id": "A8-intercom-broadcast-with-intercom",
 			"group": "A8",
-			"packages": ["@tinoy/pi-intercom-broadcast", "pi-intercom"],
+			"packages": ["@tinoy/pi-intercom-broadcast"],
+			"requiresInstall": ["pi-intercom"],
 			"absent": [],
 			"expectLoaded": 1,
 			"expectTools": { "@tinoy/pi-intercom-broadcast": ["broadcast"] },
 			"expectLog": [],
-			"notes": "with the neighbour present"
+			"notes": "the with-neighbour variant: no absence line and the tool answers. UNRUNNABLE until the harness can install a registry neighbour alongside the tarballs; the without-neighbour half is A1-intercom-broadcast."
 		},
 		{
 			"id": "M9-foreman-tool-set",

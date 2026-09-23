@@ -184,6 +184,13 @@ function ownerOf(extensionPath, spec) {
 	};
 }
 
+/**
+ * A case's package set names workspace packages: those are the ones the runner resolves and
+ * installs from tarballs. A neighbour that lives on the registry is declared in
+ * `requiresInstall` instead, and while the harness has no way to install one the case is
+ * UNRUNNABLE rather than merely unported — the distinction matters, because unported shrinks
+ * as packages land, while the other needs a harness capability that does not exist yet.
+ */
 function judge(caseSpec, probeReport, spec) {
 	const clauses = [];
 	const results = [];
@@ -403,6 +410,14 @@ async function orchestrate(args) {
 	const tally = { passed: 0, failed: 0, skipped: 0, controls: 0 };
 
 	for (const caseSpec of cases) {
+		const needsInstall = caseSpec.requiresInstall ?? [];
+		if (needsInstall.length > 0) {
+			tally.skipped += 1;
+			console.log(
+				`\n${caseSpec.id}  UNRUNNABLE — needs registry installs the harness cannot perform yet: ${needsInstall.join(", ")}`,
+			);
+			continue;
+		}
 		const missing = (caseSpec.packages ?? []).filter((name) => !packages.has(name));
 		if (missing.length > 0) {
 			tally.skipped += 1;
