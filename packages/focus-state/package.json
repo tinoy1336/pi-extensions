@@ -1,0 +1,31 @@
+{
+	"name": "@tinoy/pi-focus-state",
+	"version": "0.1.0",
+	"description": "The focus-mode state contract for pi extensions: the $XDG_RUNTIME_DIR/pi-focus.json file, the per-session ledgers and their paths.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/focus-state"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/focus-state#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "focus-state.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"pi": {
+		"extensions": []
+	},
+	"files": [
+		"focus-state.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"engines": {
+		"node": ">=22"
+	}
+}

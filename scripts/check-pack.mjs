@@ -27,6 +27,8 @@ const EXPECTED_FILES = {
 		"src/tool-header.ts",
 	],
 	"@tinoy/pi-canon": ["LICENSE", "README.md", "canon.ts", "package.json"],
+	"@tinoy/pi-focus-state": ["LICENSE", "README.md", "focus-state.ts", "package.json"],
+	"@tinoy/pi-tariff": ["LICENSE", "README.md", "package.json", "tariff.ts"],
 };
 
 /** Manifest fields a published package must carry. */

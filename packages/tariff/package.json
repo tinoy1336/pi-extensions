@@ -1,0 +1,34 @@
+{
+	"name": "@tinoy/pi-tariff",
+	"version": "0.1.0",
+	"description": "The house price table's contract for pi extensions: the configured tariff file, its validation, and the refusal an unconfigured machine gets.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/tariff"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/tariff#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "tariff.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"pi": {
+		"extensions": []
+	},
+	"files": [
+		"tariff.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"engines": {
+		"node": ">=22"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0"
+	}
+}
