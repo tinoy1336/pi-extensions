@@ -35,6 +35,6 @@
 		"@earendil-works/pi-coding-agent": "*"
 	},
 	"dependencies": {
-		"@tinoy/pi-ext-lib": "^0.1.0"
+		"@tinoy/pi-ext-lib": "*"
 	}
 }

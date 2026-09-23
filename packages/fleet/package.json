@@ -56,8 +56,8 @@
 		"@juicesharp/rpiv-todo": "*"
 	},
 	"dependencies": {
-		"@tinoy/pi-ext-lib": "^0.1.0",
-		"@tinoy/pi-tariff": "^0.1.0"
+		"@tinoy/pi-ext-lib": "*",
+		"@tinoy/pi-tariff": "*"
 	},
 	"peerDependenciesMeta": {
 		"@juicesharp/rpiv-todo": {
