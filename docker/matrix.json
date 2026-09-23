@@ -285,6 +285,18 @@
 			}
 		},
 		{
+			"id": "A1-pause",
+			"group": "A1",
+			"packages": ["@tinoy/pi-pause"],
+			"absent": [],
+			"expectLoaded": 1,
+			"expectTools": {
+				"@tinoy/pi-pause": []
+			},
+			"expectLog": [],
+			"notes": "MEASURED through this harness (26 packages packed, tarball install): 1 loaded, 0 errors, no absence line, and an empty tool set. The entry registers the commands `pause` and `unpause` (/pause, /unpause) and NO tool, and the scratch home and agent dir are still empty after the probe — the state file is created on the first write, never at load. Commands are recorded rather than asserted: the matrix's clauses judge tool sets."
+		},
+		{
 			"id": "A2",
 			"group": "A2",
 			"packages": [
@@ -294,6 +306,7 @@
 				"@tinoy/pi-tariff",
 				"@tinoy/pi-read-staleness",
 				"@tinoy/pi-orphan-repair",
+				"@tinoy/pi-pause",
 				"@tinoy/pi-cache-prefix-log",
 				"@tinoy/pi-child-request-dump",
 				"@tinoy/pi-desktop-notify",
@@ -315,11 +328,12 @@
 				"@tinoy/pi-fleet"
 			],
 			"absent": [],
-			"expectLoaded": 23,
+			"expectLoaded": 24,
 			"expectTools": {
 				"@tinoy/pi-canon": ["canon_add", "canon_category", "canon_edit", "canon_remove"],
 				"@tinoy/pi-read-staleness": [],
 				"@tinoy/pi-orphan-repair": [],
+				"@tinoy/pi-pause": [],
 				"@tinoy/pi-cache-prefix-log": [],
 				"@tinoy/pi-child-request-dump": [],
 				"@tinoy/pi-desktop-notify": ["desktop_notify"],
@@ -528,7 +542,7 @@
 				"PI_SUBAGENT_CHILD": "",
 				"PI_SUBAGENT": ""
 			},
-			"notes": "UNRUNNABLE until pi-fleet exists. The question: the foreman tool-set application names tools owned by packages that are absent (canon_add, set_anchor, todo_parent). Does it throw, or silently narrow the session's tool set? The acceptable outcomes are (a) no throw with every dropped name reported once, or (b) a typed refusal at activation. A silent narrowing with no line is a failure."
+			"notes": "the foreman tool-set application names tools owned by packages that are absent (canon_add, set_anchor, todo_parent). MEASURED RUNNABLE AND PASSING: both fleet entries load with the marker set, 2 loaded, 0 errors, 0 absence lines, no register-failed, and every tool set matches. What that settles is the LOAD half — the marker changes nothing at load. The activation half lives in fleet's `session_start` handler (`mode.activate`), which the probe never reaches because it opens no session; names missing at activation are reported through `ctx.ui.notify` rather than the diagnostics envelope, so no clause here can observe them. A case that must catch a silent narrowing has to drive a session, not this loader probe."
 		},
 		{
 			"id": "M10-unknown-pi-key",
