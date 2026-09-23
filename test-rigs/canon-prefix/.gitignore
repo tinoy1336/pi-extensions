@@ -1,0 +1,3 @@
+# Per-run harness artifacts (logger rows, hook log, result.txt), stamped per run so a
+# re-run can never be read as the previous run's evidence. RIG_RUNS_DIR moves them.
+runs/

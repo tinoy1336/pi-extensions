@@ -1,0 +1,36 @@
+{
+	"entries": [
+		{
+			"id": "a1b2c3",
+			"text": "Fixture rule: this line exists only so the rig has bytes to render and compare.",
+			"model": "global",
+			"audience": "all",
+			"category": "c0ffee"
+		},
+		{
+			"id": "d4e5f6",
+			"text": "Fixture rule: a parent-scoped line, so the render has two scope groups.",
+			"model": "global",
+			"audience": "parent",
+			"category": "c0ffee",
+			"reason": "rig fixture"
+		},
+		{
+			"id": "a7b8c9",
+			"text": "Fixture rule: a model-scoped subagent line the parent cases must not render.",
+			"model": "deepseek-flash",
+			"audience": "subagent",
+			"category": "f1dd1e"
+		}
+	],
+	"categories": [
+		{
+			"id": "c0ffee",
+			"title": "Fixture rules"
+		},
+		{
+			"id": "f1dd1e",
+			"title": "Fixture model rules"
+		}
+	]
+}
