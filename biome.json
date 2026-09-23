@@ -1,0 +1,75 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+	"files": {
+		"includes": ["**", "!node_modules", "!package-lock.json"]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"lineWidth": 100,
+		"lineEnding": "lf"
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"suspicious": {
+				"noExplicitAny": "off"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double",
+			"trailingCommas": "all"
+		}
+	},
+	"overrides": [
+		{
+			"includes": [
+				"packages/ext-lib/src/hook-log.ts",
+				"packages/ext-lib/src/tool-header.ts",
+				"packages/canon/canon.ts"
+			],
+			"formatter": {
+				"enabled": false
+			}
+		},
+		{
+			"includes": ["packages/ext-lib/src/hook-log.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"useTemplate": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["packages/ext-lib/src/tool-header.ts"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noControlCharactersInRegex": "off",
+						"noShadowRestrictedNames": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["packages/canon/canon.ts"],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"useOptionalChain": "off"
+					},
+					"style": {
+						"noNonNullAssertion": "off",
+						"useConst": "off",
+						"useTemplate": "off"
+					}
+				}
+			}
+		}
+	]
+}

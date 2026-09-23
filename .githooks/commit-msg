@@ -1,0 +1,8 @@
+#!/bin/sh
+# Conventional Commits enforcement at the commit-msg hook.
+#
+# Wired by `git config core.hooksPath .githooks`, which the root package.json's
+# `prepare` script sets on every install. The check runs the workspace-local
+# commitlint binary, so no global tooling is required.
+root=$(git rev-parse --show-toplevel) || exit 0
+exec "$root/node_modules/.bin/commitlint" --edit "$1"

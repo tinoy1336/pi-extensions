@@ -1,0 +1,33 @@
+{
+	"name": "pi-extensions",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Monorepo for pi extensions and the shared library they build on.",
+	"license": "MIT",
+	"type": "module",
+	"workspaces": [
+		"packages/*"
+	],
+	"engines": {
+		"node": ">=22"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"format": "biome format --write .",
+		"changelog": "git-cliff -o CHANGELOG.md",
+		"prepare": "git config core.hooksPath .githooks || true"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.14",
+		"@commitlint/cli": "^21.2.3",
+		"@commitlint/config-conventional": "^21.2.3",
+		"@earendil-works/pi-ai": "0.86.1",
+		"@earendil-works/pi-coding-agent": "0.86.1",
+		"@types/node": "^22.19.0",
+		"git-cliff": "^2.14.2",
+		"typebox": "1.1.38",
+		"typescript": "^5.9.3"
+	}
+}

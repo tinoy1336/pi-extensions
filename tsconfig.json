@@ -1,0 +1,4 @@
+{
+	"extends": "./tsconfig.base.json",
+	"include": ["packages/ext-lib/src/**/*.ts", "packages/canon/*.ts"]
+}
