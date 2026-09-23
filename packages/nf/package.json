@@ -1,0 +1,41 @@
+{
+	"name": "@tinoy/pi-nf",
+	"version": "0.1.0",
+	"description": "Nerd Font glyph reference: search glyph names, render a contact sheet, and audit source files for unassigned or malformed glyph escapes.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/nf"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/nf#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "nf.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"nf.ts",
+		"data/nf.json",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./nf.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*",
+		"typebox": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0"
+	}
+}
