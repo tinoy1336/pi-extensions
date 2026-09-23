@@ -35,6 +35,34 @@ them in (`RELEASE_ORDER`). A package sits after every package it imports.
 | `@tinoy/pi-sudo-approve` | `sudo-approve-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/sudo-approve/CHANGELOG.md` |
 | `@tinoy/pi-todo-parent` | `todo-parent-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/todo-parent/CHANGELOG.md` |
 
+## Packages held from the registry
+
+Five packages are held back from the public registry by operator decision. Their source stays in
+this repository like every other package: the hold is on publication, not on the code.
+
+Four are held for what they name. `@tinoy/pi-cli-keys` names the operator's vault product,
+`@tinoy/pi-sudo-approve` names this machine's approval flow, and `@tinoy/pi-deepseek-cost` and
+`@tinoy/pi-tariff` name a private price table.
+
+The fifth, `@tinoy/pi-fleet`, is held by consequence rather than by disclosure: it depends hard on
+`@tinoy/pi-tariff`, in its manifest and at an import site in `fleet/retire.ts`, so publishing it
+while the tariff stays private would ship a package whose install resolves its own dependency to a
+`404` — the failure the dependency order above exists to prevent. It becomes publishable only if the
+tariff decision changes.
+
+Nothing published depends on a held package, which is why the table and its order are unaffected by
+the hold: `@tinoy/pi-tariff` is depended on by `@tinoy/pi-fleet` and `@tinoy/pi-deepseek-cost`, both
+held, and no other package reaches any held package by a hard dependency. `@tinoy/pi-build` does
+reach `@tinoy/pi-fleet`, and declares it as an optional peer (`peerDependenciesMeta`), which is
+absence-safe — the published set installs end to end.
+
+Publishing a held package requires an explicit decision from the operator. A release pass must not
+release one because it exists as a workspace package and carries a `release/<key>.mjs`: the held
+packages keep their configurations, so the hold stays a publication decision rather than a code
+change, and a held key present in `.github/workflows/release.yml`'s `RELEASE_ORDER` does not
+authorise its publication. If a held package is ever distributed another way — privately, or from a
+different registry — that is a separate decision too, never a default this hold falls back to.
+
 ## What a release does
 
 `.github/workflows/ci.yml` runs the structural checks on every push and pull request:
@@ -135,6 +163,7 @@ in this order.
    Repository | `pi-extensions`
    Workflow filename | `release.yml`
    Environment | *leave empty*
+   Allowed actions | tick `npm publish`
 
    Then repeat on <https://www.npmjs.com/package/@tinoy/pi-canon> and on every other
    package: each one needs its own entry, at
@@ -147,6 +176,32 @@ in this order.
    *file*, not the job. The job in this repository is named `release` and sets no
    environment, which is why the field above stays empty — setting an environment on the
    job without repeating the same name here would break the exchange.
+
+   **`npm publish` is required, not optional.** The exchange matches the organization,
+   repository, workflow filename and environment; it does not match the action. A connection
+   that allows only `npm stage publish` therefore exchanges its OIDC token successfully,
+   signs and logs a provenance statement, and only then has the upload refused:
+
+   ```
+   npm error 403 403 Forbidden - PUT https://registry.npmjs.org/<name> - OIDC permission denied for this action
+   ```
+
+   That refusal names the action, which is what makes it read like a credential problem; the
+   provenance statement logged moments earlier is the tell that it is not one. A newly created
+   connection permits `npm stage publish` only — direct publishing is a separate opt-in — so a
+   package added here arrives one tick away from that failure. It is a default, not a quirk:
+   the same tick is owed per package — the two on the registry now, and each of the other 24 as
+   it is first published, in the dependency order of the table above.
+
+   An existing connection cannot be edited to add the action: delete it and create it again
+   with `npm publish` ticked, or from the CLI (`npm trust` asks for 2FA):
+
+   ```bash
+   npm trust list @tinoy/pi-ext-lib                     # the connection's id
+   npm trust revoke @tinoy/pi-ext-lib --id=<id>
+   npm trust github @tinoy/pi-ext-lib \
+     --file release.yml --repo tinoy1336/pi-extensions --allow-publish
+   ```
 
 5. **Let a release run.** Merge a `feat:` or `fix:` commit to `main` and watch
    *Actions* → *Release*.
