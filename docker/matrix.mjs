@@ -67,6 +67,18 @@ function parseArgs(argv) {
 	return args;
 }
 
+/**
+ * The environment a case runs in: the caller's, minus every PI_* marker, because those
+ * describe the session that INVOKED the matrix, not the case. A worker session's
+ * PI_SUBAGENT_CHILD otherwise decides what a case's extensions register.
+ */
+function withoutPiEnv(extra = {}) {
+	const base = Object.fromEntries(
+		Object.entries(process.env).filter(([key]) => !key.startsWith("PI_")),
+	);
+	return { ...base, ...extra };
+}
+
 /** Run a command with a hard bound. A hung step ends the case, never the runner. */
 function run(command, argv, options = {}) {
 	const result = spawnSync(command, argv, {
@@ -402,18 +414,20 @@ function buildCaseDirectory(work, caseSpec, args, packages) {
 		support.push(`${name}@${pkg.manifest.version}`);
 	}
 
-	const install = run(
-		"bash",
-		[
-			path.join(args.workspace, "scripts", "stranger-install.sh"),
-			appDir,
-			tarballDir,
-			matrixPiVersion(),
-		],
-		{
-			timeoutMs: 300_000,
-		},
-	);
+	const installArgs = [
+		path.join(args.workspace, "scripts", "stranger-install.sh"),
+		appDir,
+		tarballDir,
+		matrixPiVersion(),
+	];
+	const installEnv = withoutPiEnv({ TMPDIR: tmp });
+	let install = run("bash", installArgs, { env: installEnv, timeoutMs: 300_000 });
+	if (!install.ok) {
+		// One retry, announced: a transient npm failure must not read as a package defect,
+		// and it must not be silent either.
+		console.log(`  install retried after: ${install.reason}`);
+		install = run("bash", installArgs, { env: installEnv, timeoutMs: 300_000 });
+	}
 	if (!install.ok) return { error: `install failed: ${install.reason}` };
 
 	const fixtures = [];
@@ -505,15 +519,14 @@ async function orchestrate(args) {
 		const probeFile = path.join(built.appDir, "matrix-probe.mjs");
 		cpSync(new URL(import.meta.url).pathname, probeFile);
 		const probe = run("node", [probeFile, "--probe", "--probe-spec", specFile], {
-			env: {
-				...process.env,
+			env: withoutPiEnv({
 				HOME: built.home,
 				XDG_STATE_HOME: path.join(built.home, "state"),
 				XDG_RUNTIME_DIR: path.join(built.home, "run"),
 				PI_CODING_AGENT_DIR: built.agentDir,
 				TMPDIR: built.tmp,
 				...Object.fromEntries(Object.entries(caseSpec.env ?? {})),
-			},
+			}),
 			timeoutMs: 180_000,
 		});
 		if (!probe.ok) {
@@ -562,6 +575,8 @@ async function orchestrate(args) {
 			}
 			continue;
 		}
+		if (!args.keep) rmSync(path.join(work, "cases", caseSpec.id), { recursive: true, force: true });
+
 		if (firstFailure) {
 			tally.failed += 1;
 			console.log(`  CASE FAIL — clause ${firstFailure.clause}: ${firstFailure.detail}`);
