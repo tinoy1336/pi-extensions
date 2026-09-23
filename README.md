@@ -32,6 +32,7 @@ entry and the shared library packages, which npm installs for you.
 | `@tinoy/pi-tariff` | the house price table's shape, validation and refusal | a tariff table with your own rates (`tariff.json`) — no rate ships | — |
 | `@tinoy/pi-read-staleness` | the body of a repeat full-file read is replaced by a one-line stub | — | — |
 | `@tinoy/pi-orphan-repair` | an orphaned tool result is dropped from the outbound request | — | — |
+| `@tinoy/pi-pause` | the agent loop is parked until a deadline or an explicit resume: `/pause`, `/unpause` and a footer row | a writable runtime directory for the state file | — |
 | `@tinoy/pi-cache-prefix-log` | one JSONL row per cache-prefix change | — | `@tinoy/pi-canon` records the tail-section ids with each row |
 | `@tinoy/pi-child-request-dump` | a structure-only JSONL record of each child session's request | — | — |
 | `@tinoy/pi-desktop-notify` | the `desktop_notify` tool and the settled-response ping | a desktop notification daemon (`notify-send`) | — |

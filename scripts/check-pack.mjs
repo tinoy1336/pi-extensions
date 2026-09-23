@@ -41,6 +41,7 @@ const EXPECTED_FILES = {
 	"@tinoy/pi-intercom-broadcast": ["LICENSE", "README.md", "intercom-broadcast.ts", "package.json"],
 	"@tinoy/pi-no-subagent-fork": ["LICENSE", "README.md", "no-subagent-fork.ts", "package.json"],
 	"@tinoy/pi-orphan-repair": ["LICENSE", "README.md", "orphan-repair.ts", "package.json"],
+	"@tinoy/pi-pause": ["LICENSE", "README.md", "package.json", "pause-state.ts", "pause.ts"],
 	"@tinoy/pi-probe": ["LICENSE", "README.md", "package.json", "probe.ts"],
 	"@tinoy/pi-read-staleness": ["LICENSE", "README.md", "package.json", "read-staleness.ts"],
 	"@tinoy/pi-focus-gate": ["LICENSE", "README.md", "focus-gate.ts", "package.json"],

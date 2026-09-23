@@ -48,7 +48,7 @@ jobs:
       # instead of failing the run, and a key must be the tag prefix its own config declares
       # (release/canon.mjs: tagFormat canon-v${version}), because the withdrawal derives the
       # version from that prefix.
-      RELEASE_ORDER: ext-lib focus-state tariff cache-prefix-log child-request-dump no-subagent-fork canon build child-prompt-freeze cli-keys command-guard deepseek-cost desktop-notify drift-anchor fleet focus-gate image-read intercom-broadcast nf orphan-repair probe read-staleness status-metrics sudo-approve todo-parent
+      RELEASE_ORDER: ext-lib focus-state tariff cache-prefix-log child-request-dump no-subagent-fork canon build child-prompt-freeze cli-keys command-guard deepseek-cost desktop-notify drift-anchor fleet focus-gate image-read intercom-broadcast nf orphan-repair pause probe read-staleness status-metrics sudo-approve todo-parent
       INPUT_PACKAGE: ${{ inputs.package }}
     permissions:
       contents: write # push the release commit and tags, create the GitHub releases

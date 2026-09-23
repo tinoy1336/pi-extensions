@@ -28,6 +28,7 @@ them in (`RELEASE_ORDER`). A package sits after every package it imports.
 | `@tinoy/pi-intercom-broadcast` | `intercom-broadcast-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/intercom-broadcast/CHANGELOG.md` |
 | `@tinoy/pi-nf` | `nf-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/nf/CHANGELOG.md` |
 | `@tinoy/pi-orphan-repair` | `orphan-repair-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/orphan-repair/CHANGELOG.md` |
+| `@tinoy/pi-pause` | `pause-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/pause/CHANGELOG.md` |
 | `@tinoy/pi-probe` | `probe-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/probe/CHANGELOG.md` |
 | `@tinoy/pi-read-staleness` | `read-staleness-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/read-staleness/CHANGELOG.md` |
 | `@tinoy/pi-status-metrics` | `status-metrics-vX.Y.Z` | `@tinoy/pi-ext-lib`, `@tinoy/pi-focus-state` | `packages/status-metrics/CHANGELOG.md` |
