@@ -40,15 +40,21 @@ jobs:
       # dependencies from the registry, so a package that is not released before its
       # dependent cannot be installed at all (measured: resolving one of the new packages
       # against the registry answered 404 while its dependency was unpublished). Every key
-      # sits AFTER every package it depends on: ext-lib, then focus-state and tariff (tariff
-      # itself imports ext-lib), then every package that imports one of them, and the three
-      # dependency-free packages (cache-prefix-log, child-request-dump, no-subagent-fork)
-      # anywhere after the two libraries. This list is the only edit a new release config
-      # needs. A key whose release/<key>.mjs has not landed yet is skipped with a notice
-      # instead of failing the run, and a key must be the tag prefix its own config declares
-      # (release/canon.mjs: tagFormat canon-v${version}), because the withdrawal derives the
-      # version from that prefix.
-      RELEASE_ORDER: ext-lib focus-state tariff cache-prefix-log child-request-dump no-subagent-fork canon build child-prompt-freeze cli-keys command-guard deepseek-cost desktop-notify drift-anchor fleet focus-gate image-read intercom-broadcast nf orphan-repair pause probe read-staleness status-metrics sudo-approve todo-parent
+      # sits AFTER every package it depends on: ext-lib, then focus-state, then every package
+      # that imports it, and the three dependency-free packages (cache-prefix-log,
+      # child-request-dump, no-subagent-fork) anywhere after the libraries. This list is the
+      # only edit a new release config needs. A key whose release/<key>.mjs has not landed yet
+      # is skipped with a notice instead of failing the run, and a key must be the tag prefix
+      # its own config declares (release/canon.mjs: tagFormat canon-v${version}), because the
+      # withdrawal derives the version from that prefix.
+      #
+      # The five packages held from the public registry — cli-keys, sudo-approve,
+      # deepseek-cost, tariff and fleet — are absent on purpose, so a run cannot publish one.
+      # The decision and its reasoning are in RELEASING.md, "Packages held from the registry".
+      # Every held package keeps its release/<key>.mjs, so the hold is applied here rather than
+      # by deleting configuration: putting a key back is the operator's decision, and it is the
+      # whole edit a re-publication needs.
+      RELEASE_ORDER: ext-lib focus-state cache-prefix-log child-request-dump no-subagent-fork canon build child-prompt-freeze command-guard desktop-notify drift-anchor focus-gate image-read intercom-broadcast nf orphan-repair pause probe read-staleness status-metrics todo-parent
       INPUT_PACKAGE: ${{ inputs.package }}
     permissions:
       contents: write # push the release commit and tags, create the GitHub releases

@@ -3,8 +3,10 @@
 Every package is published to npm by CI: a merge to `main` versions, changelogs, tags
 and publishes with no human step, once the one-time bootstrap below is done.
 
-The table is in dependency order — the order `.github/workflows/release.yml` releases
-them in (`RELEASE_ORDER`). A package sits after every package it imports.
+The table is in dependency order, and lists every package in the workspace. What a release pass
+publishes is the subset without the held packages, in that same order (`RELEASE_ORDER` in
+`.github/workflows/release.yml`) — see *Packages held from the registry* below. A package sits
+after every package it imports.
 
 | Package | Tag | Depends on | Changelog |
 | --- | --- | --- | --- |
@@ -59,9 +61,12 @@ absence-safe — the published set installs end to end.
 Publishing a held package requires an explicit decision from the operator. A release pass must not
 release one because it exists as a workspace package and carries a `release/<key>.mjs`: the held
 packages keep their configurations, so the hold stays a publication decision rather than a code
-change, and a held key present in `.github/workflows/release.yml`'s `RELEASE_ORDER` does not
-authorise its publication. If a held package is ever distributed another way — privately, or from a
-different registry — that is a separate decision too, never a default this hold falls back to.
+change. The hold is enforced where the release set is decided — the five keys are absent from
+`RELEASE_ORDER` in `.github/workflows/release.yml`, which is what a run releases, and putting one
+back is that operator decision rather than a side effect of a configuration existing. A dispatch
+naming a held key answers `no package matches`, which is the intended refusal. If a held package is
+ever distributed another way — privately, or from a different registry — that is a separate
+decision too, never a default this hold falls back to.
 
 ## What a release does
 
@@ -81,9 +86,10 @@ and releases each package with semantic-release, driven by Conventional Commits:
    `@semantic-release/changelog`, `@semantic-release/npm` (publish),
    `@semantic-release/git` (the release commit, pushed with `[skip ci]`),
    `@semantic-release/github` (the GitHub release);
-4. **release in dependency order** — the packages are released one after the other in
-   `RELEASE_ORDER` (`.github/workflows/release.yml`): `ext-lib` first, then `focus-state`
-   and `tariff`, then every package that imports them. The order is mandatory, not tidy:
+4. **release in dependency order** — the publishable packages are released one after the other
+   in `RELEASE_ORDER` (`.github/workflows/release.yml`): `ext-lib` first, then `focus-state`,
+   then every package that imports them; the held packages are not in that list at all. The
+   order is mandatory, not tidy:
    a dependent's install resolves its dependencies from the registry, so a dependent
    released before its dependency cannot be installed at all (measured: resolving one of
    the new packages against the registry answered `404` while its dependency was
@@ -127,13 +133,16 @@ in this order.
    npm login
    ```
 
-2. **Publish every package by hand, in dependency order** — `ext-lib`, `focus-state`
-   and `tariff` first, then the rest. The first publish of a scoped package needs
+2. **Publish every publishable package by hand, in dependency order** — `ext-lib` and
+   `focus-state` first, then the rest. The first publish of a scoped package needs
    `--access public`. Dependency order holds here too: a package published before its
-   dependency is not installable until that dependency is up.
+   dependency is not installable until that dependency is up. The five held packages are not
+   published by this step — the loop below leaves them out.
 
    ```bash
-   for k in ext-lib focus-state tariff $(ls packages | grep -vE '^(ext-lib|focus-state|tariff)$'); do
+   # The five held packages are excluded: see "Packages held from the registry".
+   held='cli-keys|sudo-approve|deepseek-cost|tariff|fleet'
+   for k in ext-lib focus-state $(ls packages | grep -vE "^(${held})$"); do
      (cd "packages/$k" && npm publish --access public)
    done
    ```
