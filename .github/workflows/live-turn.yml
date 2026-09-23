@@ -1,0 +1,48 @@
+# One live model turn, chosen by hand.
+#
+# The structural checks (CI) load the extension and exercise its store and refusals
+# without a model. What only a live turn shows is that a real model sees the tools and
+# that a real call writes the store, which costs a model call — so it is a manual
+# dispatch, never a push.
+#
+# Requires the repository secret PI_TEST_API_KEY (RELEASING.md, "The live-turn
+# secret"): a provider API key for the provider named in the input.
+name: Live turn
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: pi provider id
+        type: string
+        default: deepseek
+      model:
+        description: model id or pattern
+        type: string
+        default: deepseek-flash
+      prompt:
+        description: Prompt override (empty uses the canon-tool prompt)
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  live-turn:
+    name: live turn
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: One live model turn
+        env:
+          PI_TEST_API_KEY: ${{ secrets.PI_TEST_API_KEY }}
+          PI_PROVIDER: ${{ inputs.provider }}
+          PI_MODEL: ${{ inputs.model }}
+          PI_PROMPT: ${{ inputs.prompt }}
+        run: bash scripts/live-turn.sh "$PI_PROVIDER" "$PI_MODEL" "$PI_PROMPT"
