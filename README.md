@@ -2,6 +2,8 @@
 
 pi extensions, and the shared library they are built on, in one npm workspace.
 
+Source, releases and issue tracker: <https://github.com/tinoy1336/pi-extensions>.
+
 Each package under `packages/` is published to npm on its own. `@tinoy/pi-canon`
 is a pi extension; `@tinoy/pi-ext-lib` is a plain library that other packages in
 this repo (and any future extension package) depend on.

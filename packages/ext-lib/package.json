@@ -3,6 +3,15 @@
 	"version": "0.1.0",
 	"description": "Shared helpers for pi extensions: the hook log envelope, TUI tool headers, and the system-prompt block seam.",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/ext-lib"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/ext-lib#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
 	"type": "module",
 	"exports": {
 		".": "./src/index.ts"

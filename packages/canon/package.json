@@ -3,6 +3,15 @@
 	"version": "0.1.0",
 	"description": "Durable system-prompt rules for pi: an on-disk canon store, its tools, and the /canon commands.",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/canon"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/canon#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
 	"type": "module",
 	"main": "canon.ts",
 	"keywords": [

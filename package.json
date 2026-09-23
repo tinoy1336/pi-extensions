@@ -4,6 +4,14 @@
 	"private": true,
 	"description": "Monorepo for pi extensions and the shared library they build on.",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
 	"type": "module",
 	"workspaces": [
 		"packages/*"
