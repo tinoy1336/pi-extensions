@@ -324,6 +324,32 @@ function judge(caseSpec, probeReport, spec) {
 	return results;
 }
 
+/**
+ * Every workspace package a case's declared packages depend on, transitively: the SUPPORT
+ * set. Staged from the workspace like the subject, because a case must never reach the
+ * registry for a package this workspace ships — a dependency resolved from the registry is
+ * invisible in the checkout, so the matrix could stay green while the workspace copy was
+ * broken.
+ */
+function workspaceDependencyClosure(seeds, packages) {
+	const closure = new Set();
+	const queue = [...seeds];
+	while (queue.length > 0) {
+		const pkg = packages.get(queue.shift());
+		if (!pkg) continue;
+		const declared = {
+			...(pkg.manifest.dependencies ?? {}),
+			...(pkg.manifest.peerDependencies ?? {}),
+		};
+		for (const name of Object.keys(declared)) {
+			if (!packages.has(name) || seeds.includes(name) || closure.has(name)) continue;
+			closure.add(name);
+			queue.push(name);
+		}
+	}
+	return [...closure].sort();
+}
+
 function buildCaseDirectory(work, caseSpec, args, packages) {
 	const root = path.join(work, "cases", caseSpec.id);
 	const appDir = path.join(root, "app");
@@ -333,22 +359,47 @@ function buildCaseDirectory(work, caseSpec, args, packages) {
 	const tmp = path.join(root, "tmp");
 	for (const dir of [appDir, home, agentDir, tarballDir, tmp]) mkdirSync(dir, { recursive: true });
 
+	// The case's own packages are the SUBJECT: clauses 2 and 3 judge them. Every workspace
+	// package they depend on is SUPPORT: staged as a local tarball so npm resolves it from
+	// this workspace rather than the registry, and recorded with an EMPTY entry list, which
+	// keeps clause 2 vacuous for it, keeps clause 3 failing if it loads unexpectedly, and
+	// keeps clause 4 counting it as installed.
 	const installed = [];
+	const staged = new Set();
+	const stage = (name, pkg, support) => {
+		const version = pkg.manifest.version;
+		const tarball = tarballFor(args.tarballs, name, version);
+		if (!tarball) {
+			return `no tarball for ${name}@${version} in ${args.tarballs} (run the pack step first)`;
+		}
+		if (!staged.has(tarball)) {
+			staged.add(tarball);
+			execFileSync("ln", ["-sf", tarball, path.join(tarballDir, path.basename(tarball))]);
+		}
+		installed.push({
+			name,
+			version,
+			support,
+			dir: path.join(appDir, "node_modules", ...name.split("/")),
+			entries: support ? [] : (pkg.manifest.pi?.extensions ?? []),
+		});
+		return null;
+	};
+
 	for (const name of caseSpec.packages ?? []) {
 		const pkg = packages.get(name);
 		if (!pkg) return { skip: name };
-		const version = pkg.manifest.version;
-		const tarball = tarballFor(args.tarballs, name, version);
-		if (!tarball)
-			return {
-				error: `no tarball for ${name}@${version} in ${args.tarballs} (run the pack step first)`,
-			};
-		execFileSync("ln", ["-sf", tarball, path.join(tarballDir, path.basename(tarball))]);
-		installed.push({
-			name,
-			dir: path.join(appDir, "node_modules", ...name.split("/")),
-			entries: pkg.manifest.pi?.extensions ?? [],
-		});
+		const failure = stage(name, pkg, false);
+		if (failure) return { error: failure };
+	}
+
+	const support = [];
+	for (const name of workspaceDependencyClosure(caseSpec.packages ?? [], packages)) {
+		if (installed.some((entry) => entry.name === name)) continue;
+		const pkg = packages.get(name);
+		const failure = stage(name, pkg, true);
+		if (failure) return { error: failure };
+		support.push(`${name}@${pkg.manifest.version}`);
 	}
 
 	const install = run(
@@ -389,7 +440,7 @@ function buildCaseDirectory(work, caseSpec, args, packages) {
 		...installed.flatMap((pkg) => pkg.entries.map((entry) => path.resolve(pkg.dir, entry))),
 		...fixtures.flatMap((f) => f.entries),
 	];
-	return { appDir, home, agentDir, tmp, installed, fixtures, entries, tarballDir };
+	return { appDir, home, agentDir, tmp, installed, fixtures, entries, tarballDir, support };
 }
 
 function matrixPiVersion() {
@@ -480,6 +531,9 @@ async function orchestrate(args) {
 		const control = caseSpec.expectFailClause;
 
 		console.log(`\n${caseSpec.id}`);
+		console.log(
+			`  judged: ${(caseSpec.packages ?? []).join(", ") || "(fixtures only)"}  |  workspace support: ${built.support.join(", ") || "none"}  |  registry: ${(caseSpec.requiresInstall ?? []).join(", ") || "none"}`,
+		);
 		for (const result of results) {
 			console.log(`  clause ${result.clause}  ${result.ok ? "pass" : "FAIL"}  ${result.detail}`);
 		}
