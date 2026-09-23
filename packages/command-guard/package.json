@@ -1,0 +1,39 @@
+{
+	"name": "@tinoy/pi-command-guard",
+	"version": "0.1.0",
+	"description": "Block destructive shell commands before they run, and name the safe alternative in the block reason.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/command-guard"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/command-guard#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "command-guard.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"command-guard.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./command-guard.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0"
+	}
+}
