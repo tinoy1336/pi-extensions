@@ -19,7 +19,8 @@
 	],
 	"files": [
 		"canon.ts",
-		"README.md"
+		"README.md",
+		"LICENSE"
 	],
 	"pi": {
 		"extensions": [

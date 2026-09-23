@@ -16,6 +16,7 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 /** Every published package: name -> the exact files npm must upload. */
 const EXPECTED_FILES = {
 	"@tinoy/pi-ext-lib": [
+		"LICENSE",
 		"README.md",
 		"package.json",
 		"src/hook-log.ts",
@@ -23,7 +24,7 @@ const EXPECTED_FILES = {
 		"src/system-prompt.ts",
 		"src/tool-header.ts",
 	],
-	"@tinoy/pi-canon": ["README.md", "canon.ts", "package.json"],
+	"@tinoy/pi-canon": ["LICENSE", "README.md", "canon.ts", "package.json"],
 };
 
 /** Manifest fields a published package must carry. */
