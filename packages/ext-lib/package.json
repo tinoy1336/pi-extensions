@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-ext-lib",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Shared helpers for pi extensions: the hook log envelope, TUI tool headers, and the system-prompt block seam.",
 	"license": "MIT",
 	"repository": {
