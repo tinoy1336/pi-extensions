@@ -76,6 +76,15 @@ lockfile is inside the release commit (`npm version` rewrites the root
   version, a tag or the registry. The per-package path gate goes further: a
   `feat(canon)` push never starts the `ext-lib` release at all, so a package cannot be
   published for commits that never touched it.
+- **No baseline tag, no release.** A package with no `<key>-v*` tag is refused before
+  semantic-release runs. semantic-release measures the next version from the last tag, so
+  with none it computes a first release of `1.0.0` and prepares that version into the
+  manifest — not the `0.1.0` the manifest carries. The refusal sits in
+  `.github/workflows/release.yml`, ahead of the path gate: an automatic run names the
+  package in a warning annotation and skips it while releasing the rest, and an explicit
+  dispatch that named that package fails (`::error::`, exit 2) instead of reporting success
+  for a release that could not happen. The way past it is the bootstrap below — never a
+  hand-made tag, which is why the guard exists rather than a test.
 - **A failed publish leaves no tag.** semantic-release creates and pushes the tag
   *before* it runs the publish plugins (`Create the tag before calling the publish
   plugins as some require the tag to exists`, `semantic-release/lib/index.js`), so the
@@ -151,6 +160,15 @@ in this order.
    environment, which is why the field above stays empty — setting an environment on the
    job without repeating the same name here would break the exchange.
 
+   **This registration is the one operator step standing between the repository and a
+   working release path, and no repository secret substitutes for it.** The workflow is
+   tokenless by design: it holds no npm credential and reads none, and the OIDC exchange
+   with the registry is the only credential its publish step ever has. A package with no
+   publisher entry therefore has nothing to authenticate with, which is why its release
+   stops at `verifyConditions` with `404 OIDC token exchange error - package not found`
+   followed by `ENONPMTOKEN No npm token specified` — the second line is the plugin
+   reporting that it had no token to fall back on, not a missing secret.
+
    **`npm publish` is required, not optional.** The exchange matches the organization,
    repository, workflow filename and environment; it does not match the action. A connection
    that allows only `npm stage publish` therefore exchanges its OIDC token successfully,
@@ -180,9 +198,17 @@ in this order.
 5. **Let a release run.** Merge a `feat:` or `fix:` commit to `main` and watch
    *Actions* → *Release*.
 
-If a release fails at `verifyConditions` with `EINVALIDNPMTOKEN`, the OIDC exchange was
-refused: either step 4 is not configured for that exact package, or the workflow
-filename does not match.
+If a release fails at `verifyConditions` with `ENONPMTOKEN No npm token specified`, the
+line above it is the cause: `OIDC token exchange with the npm registry failed: 404 OIDC
+token exchange error - package not found`. The registry answered 404 because the OIDC
+claims matched no trusted publisher for that exact package name — the package has no entry
+yet, or its entry names a different workflow file or environment. Step 4 (and, for a
+package that is not on the registry at all, steps 1 and 2 first) is the fix. The 404 is
+not evidence that the package is absent from the registry: a published package with no
+publisher entry answers the same thing.
+
+`EINVALIDNPMTOKEN` is the other shape of the same wall: something presented a token (an
+`NPM_TOKEN` variable, or an `_authToken` in `.npmrc`) and the registry refused it.
 
 ## The live-turn secret
 

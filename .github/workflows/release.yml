@@ -85,9 +85,12 @@ jobs:
 
       # Each package is released on its own tag and its own commits. The gate refuses when
       # nothing in the package changed since its tag, which is what keeps a canon-only push
-      # from publishing a new ext-lib. Packages run in RELEASE_ORDER, one after the other,
-      # because a dependent's dependency has to be in the registry by the time the dependent
-      # is published.
+      # from publishing a new ext-lib. A package with NO tag at all is refused before the
+      # gate is consulted: a tag is what semantic-release measures the next version from, so
+      # with none it computes a first release of 1.0.0 for a package whose manifest carries
+      # 0.1.0. The first publish is the manual bootstrap in RELEASING.md. Packages run in
+      # RELEASE_ORDER, one after the other, because a dependent's dependency has to be in the
+      # registry by the time the dependent is published.
       - name: Release the packages, in dependency order
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -112,6 +115,25 @@ jobs:
                 exit 2
               fi
               echo "::notice::${config} is not in the repository yet — skipping ${pkg}"
+              continue
+            fi
+
+            # Refuse a package with no baseline tag. A tag is the version semantic-release
+            # measures from: with none it computes a FIRST release of 1.0.0
+            # (semantic-release lib/get-next-version.js, FIRST_RELEASE) and prepares that
+            # version into the manifest, so an untagged package is published with the wrong
+            # major. The first publish is the manual bootstrap in RELEASING.md — which is
+            # what publishes the package by hand, pushes its `<pkg>-v0.1.0` tag and wires its
+            # npm trusted publisher — and CI must not stand in for it. An automatic run skips
+            # the package and releases the rest; an explicit dispatch that named it fails,
+            # because it asked for a release that cannot happen.
+            baseline="$(git describe --tags --abbrev=0 --match "${pkg}-v*" 2>/dev/null || true)"
+            if [ -z "${baseline}" ]; then
+              if [ "${want}" != "both" ]; then
+                echo "::error::${pkg} has no baseline tag ${pkg}-v* — its first publish is the manual bootstrap in RELEASING.md: publish the package by hand, push ${pkg}-v0.1.0, then wire its npm trusted publisher" >&2
+                exit 2
+              fi
+              echo "::warning::${pkg} has no baseline tag ${pkg}-v* — skipping it; the package needs the manual bootstrap in RELEASING.md before CI can release it"
               continue
             fi
 
