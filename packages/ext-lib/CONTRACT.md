@@ -42,9 +42,13 @@ export default function (pi: ExtensionAPI): void {
 }
 ```
 
-A load-time read is permitted only behind a `try` that produces a refusal value, never a
-throw: the tariff module reads its table inside the initializer and answers
-`{ ok: false, reason }` when the file is missing or shaped wrong.
+A read at load is permitted only when it cannot be deferred behind an accessor, and even then
+always behind a `try` that produces a refusal value, never a throw. Prefer the accessor: the
+read runs on its first call and is memoized to one read per process, so importing the package
+performs no I/O and a consumer that never uses the value never touches the store —
+`loadTariff()` in `@tinoy/pi-tariff` reads the configured table on its first call and answers
+`{ ok: false, reason }` when the file is missing or shaped wrong, while the module body stays
+declarations only.
 
 ## R2 — Static imports only for what is guaranteed
 
