@@ -20,11 +20,11 @@
  *   - the running total is shown in the footer in BOTH currencies with the
  *     window it is currently in, next to pi's own `$` figure.
  *
- * The rates are not in this file: `lib/tariff.ts` owns the table and reads it
+ * The rates are not in this file: `@tinoy/pi-tariff` owns the table and reads it
  * from `tariff.json` in this directory, and the module compiles no rate of its
  * own — a machine with no such file prices NOTHING and gets a refusal naming the
- * file to write (see the header of `lib/tariff.ts`). The footer then stays empty,
- * rather than showing a figure derived from the module's example table.
+ * file to write (see the header of `@tinoy/pi-tariff`). The footer then stays
+ * empty, rather than showing a figure derived from the module's example table.
  * Peak = Beijing time, Monday–Friday 09:00–12:00 and 14:00–18:00; everything
  * else (including all weekend) is valley. V4 Pro is priced by its own entry in
  * models.json and is not handled here.
@@ -46,7 +46,7 @@ import { closeSync, openSync, readdirSync, readSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { hookLog } from "@tinoy/pi-ext-lib";
-import { liveTariff, TARIFF, type TariffTable, type Window } from "@tinoy/pi-tariff";
+import { liveTariff, loadTariff, type TariffTable, type Window } from "@tinoy/pi-tariff";
 
 /** Rendered label per price window — SYMBOL ONLY; the internal names
  *  (`valley` = discounted/off-peak, `peak` = full price) stay for all logic.
@@ -398,12 +398,14 @@ function reportSuppression(message: string): void {
 export default function (pi: ExtensionAPI): void {
 	// No configured table, no pricing: this extension registers nothing at all
 	// rather than show a footer figure derived from the module's example table, and
-	// the one line it logs names the file to write.
-	if (!TARIFF.ok) {
-		reportSuppression(`[deepseek-cost] pricing disabled — ${TARIFF.reason}`);
+	// the one line it logs names the file to write. The read happens here, never in
+	// the package's module body.
+	const tariff = loadTariff();
+	if (!tariff.ok) {
+		reportSuppression(`[deepseek-cost] pricing disabled — ${tariff.reason}`);
 		return;
 	}
-	const table = TARIFF.table;
+	const table = tariff.table;
 	let totalCny = 0;
 	let totalUsd = 0;
 	let pricedMessages = 0;

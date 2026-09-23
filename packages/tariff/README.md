@@ -28,19 +28,20 @@ in the tarball.
 
 ## What an unconfigured machine gets
 
-A refusal, never a price. `TARIFF.ok` is false and `TARIFF.reason` names the file to write
+A refusal, never a price. `loadTariff().ok` is false and its `reason` names the file to write
 and the shape to write it in, with the example table inlined. Each consumer decides how that
 surfaces: the cost footer registers no pricing and stays empty, while the fleet's retirement
 check returns its own typed refusal naming the same file.
 
-The file is read once, when the module is first imported, so an edit applies to the next
-session, not the running one.
+The file is read once per process, by the first `loadTariff()` call, so an edit applies to the
+next session, not the running one. Importing the module does no I/O: a consumer that never
+prices never touches the file.
 
 ## API
 
 | Export | Purpose |
 | --- | --- |
-| `TARIFF` | `{ ok: true, table, path }` or `{ ok: false, reason, path }` |
+| `loadTariff()` | `{ ok: true, table, path }` or `{ ok: false, reason, path }`; reads the file on the first call and memoizes the result |
 | `liveTariff()` | the configured table, or a throw carrying the refusal reason — the one gate a pricer goes through |
 | `TARIFF_CONFIG_PATH` | where the table was read from |
 | `EXAMPLE_TARIFF` | the synthetic shape documentation; never a price |

@@ -9,11 +9,12 @@
  * directory beside `models.json`). It is THIS MACHINE'S PRIVATE TABLE: the packages
  * that read it are publishable, so that file is never part of a published payload —
  * with `PI_TARIFF_CONFIG` it can live anywhere the pack does not reach. The file is
- * read once when this module is first imported, so an edit is live in the NEXT
- * session, never in the running one.
+ * read once per process, by the first `loadTariff()` call, so an edit is live in the
+ * NEXT session, never in the running one — and importing this module does no I/O at
+ * all.
  *
- * WHAT AN UNCONFIGURED MACHINE GETS: a REFUSAL, never a price. `TARIFF.ok` is
- * false and `TARIFF.reason` names the file to write and the shape to write in it,
+ * WHAT AN UNCONFIGURED MACHINE GETS: a REFUSAL, never a price. `loadTariff().ok` is
+ * false and its `reason` names the file to write and the shape to write in it,
  * because a rate that is not the one this machine is billed at is worse than no
  * figure at all. `EXAMPLE_TARIFF` documents that shape in code and supplies the
  * example inside the refusal; it holds a synthetic 1 : 10 : 100 ladder that is no
@@ -183,8 +184,27 @@ export type TariffLoad =
 	| { ok: true; table: TariffConfig; path: string }
 	| { ok: false; reason: string; path: string };
 
-/** The live table: the configured file's rates, or a refusal. */
-export const TARIFF: TariffLoad = (() => {
+/** The live table once it has been read, so the file is touched once per process. */
+let loaded: TariffLoad | undefined;
+
+/**
+ * The live table: the configured file's rates, or a refusal.
+ *
+ * The read happens HERE, on the first call, never in the module body: importing a
+ * package must not perform I/O, and a consumer that never prices must not touch the
+ * file at all. Every refusal is a value, so this cannot throw; the one line naming
+ * the file to write is logged here, once per process, because a session must not have
+ * to infer from an empty figure that no table was configured.
+ */
+export function loadTariff(): TariffLoad {
+	if (loaded !== undefined) return loaded;
+	loaded = readTariff();
+	if (!loaded.ok) hookLog("tariff", "no-table", { path: loaded.path, reason: loaded.reason });
+	return loaded;
+}
+
+/** The configured file's rates, or the refusal that stands in for them. */
+function readTariff(): TariffLoad {
 	let text: string;
 	try {
 		text = readFileSync(TARIFF_CONFIG_PATH, "utf8");
@@ -204,7 +224,7 @@ export const TARIFF: TariffLoad = (() => {
 				reason: `the tariff table is unusable: ${parsed} — ${SHAPE_HINT}`,
 			}
 		: { ok: true, table: parsed, path: TARIFF_CONFIG_PATH };
-})();
+}
 
 /**
  * The configured table, or a throw carrying the refusal reason — the ONE gate a
@@ -212,15 +232,10 @@ export const TARIFF: TariffLoad = (() => {
  * from the example ladder or from any substituted default.
  */
 export function liveTariff(): TariffConfig {
-	if (!TARIFF.ok) throw new Error(TARIFF.reason);
-	return TARIFF.table;
+	const tariff = loadTariff();
+	if (!tariff.ok) throw new Error(tariff.reason);
+	return tariff.table;
 }
-
-// One line, once per process, naming the file to write: a session must not have to
-// infer from an empty figure that no table was configured. The read above and this
-// line are the module's whole load-time work, and both are inside the refusal
-// contract: neither can throw.
-if (!TARIFF.ok) hookLog("tariff", "no-table", { path: TARIFF.path, reason: TARIFF.reason });
 
 /**
  * The model ids billed at this tariff. Their registry rows are the zeroed ones

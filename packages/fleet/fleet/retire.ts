@@ -27,7 +27,7 @@
  */
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { HOUSE_TARIFF_MODELS, ratios, TARIFF } from "@tinoy/pi-tariff";
+import { HOUSE_TARIFF_MODELS, loadTariff, ratios } from "@tinoy/pi-tariff";
 import { AGENT_DIR, FLEET_DIR, human } from "./status.ts";
 
 /** The price table: one owner for every rate this model uses, read from the agent
@@ -175,7 +175,7 @@ export function readPrice(
 		};
 	}
 	// The HOUSE TARIFF first. The registry's rows for this model are zeroed on
-	// purpose (see lib/tariff.ts): pi fills its own cost notice from that metadata,
+	// purpose (see @tinoy/pi-tariff): pi fills its own cost notice from that metadata,
 	// and the zeros are what keep pi's flat `$` figure from competing with the house
 	// tariff. Looking this model up in the registry would therefore refuse a model
 	// that is perfectly well priced.
@@ -183,8 +183,9 @@ export function readPrice(
 	if (HOUSE_TARIFF_MODELS.includes(want)) {
 		// The house tariff refuses when this machine has no configured table: a price
 		// derived from its example rates would move every number downstream.
-		if (!TARIFF.ok) return { ok: false, reason: TARIFF.reason };
-		const { r, mult, outputPerInput } = ratios(TARIFF.table);
+		const tariff = loadTariff();
+		if (!tariff.ok) return { ok: false, reason: tariff.reason };
+		const { r, mult, outputPerInput } = ratios(tariff.table);
 		return {
 			ok: true,
 			price: {
@@ -192,8 +193,8 @@ export function readPrice(
 				source: "house-tariff",
 				// The USD valley column: the comparable unit for a dollar-denominated
 				// decision. The RATIOS are the same in every column and window.
-				input: TARIFF.table.usd.valley.cacheMiss,
-				cacheRead: TARIFF.table.usd.valley.cacheHit,
+				input: tariff.table.usd.valley.cacheMiss,
+				cacheRead: tariff.table.usd.valley.cacheHit,
 				r,
 				mult,
 				outputPerInput,
