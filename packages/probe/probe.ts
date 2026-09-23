@@ -44,7 +44,7 @@ function exec(
 							: err
 								? 1
 								: 0,
-					out: `${stdout}${stderr ? "\n" + stderr : ""}${spawnMessage}`.trim(),
+					out: `${stdout}${stderr ? `\n${stderr}` : ""}${spawnMessage}`.trim(),
 				});
 			},
 		);
@@ -55,7 +55,7 @@ function cap(text: string, maxLines: number, maxBytes = 4096): string {
 	const lines = text.split("\n");
 	let out = lines.slice(0, maxLines).join("\n");
 	if (lines.length > maxLines) out += `\n… (+${lines.length - maxLines} lines)`;
-	if (out.length > maxBytes) out = out.slice(0, maxBytes) + `… (+${out.length - maxBytes}B)`;
+	if (out.length > maxBytes) out = `${out.slice(0, maxBytes)}… (+${out.length - maxBytes}B)`;
 	return out;
 }
 
