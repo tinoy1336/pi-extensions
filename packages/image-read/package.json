@@ -1,0 +1,40 @@
+{
+	"name": "@tinoy/pi-image-read",
+	"version": "0.1.0",
+	"description": "Read an image with token-cost control: downscale or crop it, return it inline, and report the token estimate.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/image-read"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/image-read#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "image-read.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"image-read.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./image-read.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*",
+		"typebox": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0"
+	}
+}
