@@ -1,0 +1,44 @@
+# Structural checks. No model calls: the check job runs the workspace gates, and the
+# smoke job installs the `npm pack` tarballs in a clean container and loads the
+# extension there (the failure class it exists for is a package that installs for its
+# author and throws for a stranger).
+#
+# The Release workflow triggers on this workflow's successful completion on main.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          # The version the packages declare as their floor (`engines.node`).
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run check:pack
+
+  smoke:
+    name: smoke
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run smoke

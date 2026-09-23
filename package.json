@@ -25,6 +25,10 @@
 		"lint:fix": "biome check --write .",
 		"format": "biome format --write .",
 		"changelog": "git-cliff -o CHANGELOG.md",
+		"check:pack": "node scripts/check-pack.mjs",
+		"smoke": "bash scripts/smoke.sh",
+		"smoke:local": "bash scripts/smoke.sh --local",
+		"release:dry": "bash scripts/release-dry-run.sh",
 		"prepare": "git config core.hooksPath .githooks || true"
 	},
 	"devDependencies": {
@@ -33,8 +37,16 @@
 		"@commitlint/config-conventional": "^21.2.3",
 		"@earendil-works/pi-ai": "0.86.1",
 		"@earendil-works/pi-coding-agent": "0.86.1",
+		"@semantic-release/changelog": "^7.0.0",
+		"@semantic-release/commit-analyzer": "^13.0.1",
+		"@semantic-release/git": "^11.0.1",
+		"@semantic-release/github": "^12.0.10",
+		"@semantic-release/npm": "^13.2.0",
+		"@semantic-release/release-notes-generator": "^14.1.1",
 		"@types/node": "^22.19.0",
+		"conventional-changelog-conventionalcommits": "^9.3.1",
 		"git-cliff": "^2.14.2",
+		"semantic-release": "^25.0.9",
 		"typebox": "1.1.38",
 		"typescript": "^5.9.3"
 	}
