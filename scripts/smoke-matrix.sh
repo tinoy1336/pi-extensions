@@ -12,7 +12,23 @@
 #
 #   --case ID may follow in either mode and narrows the run to one case.
 #
+# This wrapper judges the RUN, not only the runner's exit code, because a run can exit 0 having
+# graded nothing: the runner reports every package-naming case as NOT YET PORTED when it cannot
+# find the workspace, and its summary says so while the exit status stays 0. Its verdicts:
+#
+#   * MATRIX PASS     — the run judged its packages; the runner's own summary is printed.
+#   * MATRIX VACUOUS  — the run exited 0 but graded nothing: the runner found no workspace
+#                       packages, or package-naming cases were skipped for absence of
+#                       packages. Exit 4, and the skipped cases are named. A run that grades
+#                       nothing must never read as a pass.
+#   * any other exit  — the runner's or the engine's own status is propagated unchanged (3 when
+#                       no engine answers, 2 for a usage error), so the caller keeps its
+#                       existing classes for those.
+#
 # The container engine is `docker` unless CONTAINER_ENGINE names another one.
+#
+# SMOKE_MATRIX_LOG=<file> with SMOKE_MATRIX_STATUS=<code> classifies a RECORDED run instead of
+# running one, so every verdict above is exercisable on a machine with no daemon.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -39,6 +55,46 @@ done
 work="$(mktemp -d "${TMPDIR:-/tmp}/pi-extensions-matrix.XXXXXX")"
 trap 'rm -rf "${work}"' EXIT
 
+# The run's own output, kept so the verdict below reads the run's summary rather than guessing
+# from an exit code.
+run_log="${work}/run.log"
+
+# Judge a run's output: MATRIX PASS when it judged its packages, MATRIX VACUOUS (exit 4) when it
+# exited 0 having skipped package-naming cases or found no packages at all, and the run's own
+# status otherwise.
+classify() {
+	local status="$1" log="$2" packages skipped summary
+	if [ "${status}" -ne 0 ]; then
+		return "${status}"
+	fi
+	packages="$(sed -n 's/^workspace: \([0-9]\{1,\}\) package(s).*/\1/p' "${log}" | tail -1)"
+	summary="$(grep '^matrix summary:' "${log}" | tail -1 || true)"
+	skipped="$(grep -E '^[^[:space:]].*NOT YET PORTED' "${log}" || true)"
+	if [ -z "${skipped}" ] && [ -n "${packages}" ] && [ "${packages}" -gt 0 ]; then
+		echo "MATRIX PASS${summary:+: ${summary}}"
+		return 0
+	fi
+	echo "MATRIX VACUOUS: the run exited 0 having graded nothing — a pass here would report a" >&2
+	echo "job that tested almost nothing as a success." >&2
+	if [ -z "${packages}" ]; then
+		echo "  the runner never printed its 'workspace: N package(s)' line" >&2
+	elif [ "${packages}" -eq 0 ]; then
+		echo "  the runner found 0 workspace packages, so no package-naming case could run" >&2
+	fi
+	if [ -n "${skipped}" ]; then
+		printf '%s\n' "${skipped}" | sed 's/^/  skipped: /' >&2
+	fi
+	if [ -n "${summary}" ]; then
+		echo "  ${summary}" >&2
+	fi
+	return 4
+}
+
+if [ -n "${SMOKE_MATRIX_LOG:-}" ]; then
+	classify "${SMOKE_MATRIX_STATUS:-0}" "${SMOKE_MATRIX_LOG}"
+	exit 0
+fi
+
 # Every workspace package is packed, so a package added later is in the matrix without
 # this script being edited.
 echo "packing the workspace packages into ${work}/tarballs"
@@ -47,7 +103,11 @@ timeout 300 npm pack --pack-destination "${work}/tarballs" --workspaces >/dev/nu
 
 if [ "${mode}" = "--local" ]; then
 	echo "running the matrix against the local tarball installs"
-	timeout 3600 node docker/matrix.mjs --tarballs "${work}/tarballs" --workspace "$(pwd)" "${case_args[@]+"${case_args[@]}"}"
+	set +e
+	timeout 3600 node docker/matrix.mjs --tarballs "${work}/tarballs" --workspace "$(pwd)" "${case_args[@]+"${case_args[@]}"}" 2>&1 | tee "${run_log}"
+	status="${PIPESTATUS[0]}"
+	set -e
+	classify "${status}" "${run_log}"
 	exit 0
 fi
 
@@ -87,4 +147,8 @@ fi
 echo "staged ${staged_manifests} package manifest(s) into the build context"
 
 timeout 900 "${engine}" build -t pi-extensions-matrix --target matrix -f docker/Dockerfile "${stage}"
-timeout 3600 "${engine}" run --rm pi-extensions-matrix "${case_args[@]+"${case_args[@]}"}"
+set +e
+timeout 3600 "${engine}" run --rm pi-extensions-matrix "${case_args[@]+"${case_args[@]}"}" 2>&1 | tee "${run_log}"
+status="${PIPESTATUS[0]}"
+set -e
+classify "${status}" "${run_log}"
