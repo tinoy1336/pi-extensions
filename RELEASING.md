@@ -95,6 +95,50 @@ job's `id-token: write` permission is for and why that permission stays on in to
 the repository is public, which npm requires for an attestation. Under trusted publishing
 npm generates the same attestation automatically, without the flag.
 
+## The first publish
+
+A package's first version is the one publish semantic-release cannot compute: it measures
+the next version from the last tag, so with no tag it prepares `1.0.0` for a manifest
+carrying `0.1.0`. That is why the release job refuses a package with no `<key>-v*` tag
+instead of releasing it. The first publish is therefore a deliberate, named act, done once
+per package, and never a side effect of a merge.
+
+`.github/workflows/first-publish.yml` is the route for exactly that act. It is a manual
+dispatch, one package key from `RELEASE_ORDER` as its only input, and it publishes **the
+version already in that package's `package.json`**, with public access and a provenance
+attestation, then reads the version back from the registry:
+
+```bash
+gh workflow run first-publish.yml --repo tinoy1336/pi-extensions -f package=sudo-approve
+gh run watch --repo tinoy1336/pi-extensions
+```
+
+It exists because the hand route is not always available: npm rate-limits publishes per
+*source*, so an account that has just published a batch of packages from one machine can be
+refused from that machine (`E429 … rate limited exceeded`) while a build runner publishing
+the same account's packages is not.
+
+What it refuses to do, and why each refusal is there:
+
+- **A second version of anything.** Before it presents a credential it asks the registry
+  whether the name exists at all. `404` is the only answer that lets the run continue; a
+  `200` naming the versions already published stops it; any other answer stops it too,
+  because a check that cannot tell "absent" from "unreachable" must not publish. The
+  version published is the manifest's, and there is no input for a version or a dist-tag,
+  so the path cannot mint a version, re-publish one, or move `latest` onto an older
+  release.
+- **A set of packages.** The input names one package. `both` — the release dispatch's word
+  for every package — is rejected, and so is any value that is not a package key in this
+  repository.
+- **A push.** The workflow has one trigger, `workflow_dispatch`, and its job holds
+  `contents: read` and `id-token: write` only: no merge to `main` can start it, it creates
+  no tag, and it pushes no commit. The baseline tag is the other half of the bootstrap and
+  is pushed separately, on the commit whose manifest carries the version that was just
+  published.
+
+It shares the `release` concurrency group with `release.yml`, so a first publish and a
+release never work the registry account at the same time.
+
 ## Guardrails
 
 - **Only after a green check.** The release trigger is CI's successful completion on
@@ -111,8 +155,10 @@ npm generates the same attestation automatically, without the flag.
   `.github/workflows/release.yml`, ahead of the path gate: an automatic run names the
   package in a warning annotation and skips it while releasing the rest, and an explicit
   dispatch that named that package fails (`::error::`, exit 2) instead of reporting success
-  for a release that could not happen. The way past it is the bootstrap below — never a
-  hand-made tag, which is why the guard exists rather than a test.
+  for a release that could not happen. The way past it is *The first publish* above — the
+  dispatch publishes the version the manifest already carries, and the `<key>-v0.1.0` tag
+  is pushed on that commit — never a hand-made tag, which is why the guard exists rather
+  than a test.
 - **A failed publish leaves no tag.** semantic-release creates and pushes the tag
   *before* it runs the publish plugins (`Create the tag before calling the publish
   plugins as some require the tag to exists`, `semantic-release/lib/index.js`), so the
@@ -157,6 +203,11 @@ Both halves are manual work, once per package. Do this in order.
    A package that is already on the registry at that version answers
    `EPUBLISHCONFLICT`; that is the expected answer for the packages published before
    this loop ran, and it is what "already bootstrapped" looks like.
+
+   A hand publish can be refused with `E429 … rate limited exceeded`: that limit is
+   bound to the source the publish comes from, so the same package goes out from CI
+   through the dispatch in *The first publish* above instead, which publishes the same
+   `package.json` version. Either route leaves the tag below as the remaining step.
 
 3. **Push a baseline tag for every package**, on the commit whose `package.json`
    carries version `0.1.0`. semantic-release measures from the last tag: with no tag its
