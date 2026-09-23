@@ -1,0 +1,39 @@
+{
+	"name": "@tinoy/pi-read-staleness",
+	"version": "0.1.0",
+	"description": "Elide a repeat full-file read: the body of an unchanged file's second read is replaced by a one-line stub.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/read-staleness"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/read-staleness#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "read-staleness.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"read-staleness.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./read-staleness.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0"
+	}
+}

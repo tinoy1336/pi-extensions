@@ -1,0 +1,36 @@
+{
+	"name": "@tinoy/pi-no-subagent-fork",
+	"version": "0.1.0",
+	"description": "Rewrite a subagent spawn's `context: \"fork\"` to `\"fresh\"`.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/no-subagent-fork"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/no-subagent-fork#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "no-subagent-fork.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"no-subagent-fork.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./no-subagent-fork.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*"
+	}
+}

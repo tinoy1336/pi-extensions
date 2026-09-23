@@ -1,0 +1,39 @@
+{
+	"name": "@tinoy/pi-orphan-repair",
+	"version": "0.1.0",
+	"description": "Drop an orphaned tool result from the outbound provider request.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/orphan-repair"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/orphan-repair#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "orphan-repair.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"orphan-repair.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./orphan-repair.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0"
+	}
+}
