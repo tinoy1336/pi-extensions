@@ -189,7 +189,7 @@
 			"env": {
 				"PI_SUBAGENT_CHILD": ""
 			},
-			"notes": "load-fatal today; the case is the acceptance spec for the optional import. MEASURED: the tool is registered in a CHILD session (PI_SUBAGENT_CHILD=1) and the spawning session registers none \u2014 it runs the watcher \u2014 so the case pins the parent shape with an empty marker and expects no tool; the rpiv-todo absence line is emitted in both shapes, because the neighbour is resolved once at load."
+			"notes": "load-fatal today; the case is the acceptance spec for the optional import. MEASURED: the tool is registered in a CHILD session (PI_SUBAGENT_CHILD=1) and the spawning session registers none — it runs the watcher — so the case pins the parent shape with an empty marker and expects no tool; the rpiv-todo absence line is emitted in both shapes, because the neighbour is resolved once at load."
 		},
 		{
 			"id": "A1-focus-gate",
@@ -273,12 +273,12 @@
 			"group": "A1",
 			"packages": ["@tinoy/pi-fleet"],
 			"absent": [],
-			"expectLoaded": 1,
+			"expectLoaded": 2,
 			"expectTools": {
 				"@tinoy/pi-fleet[io-guard]": ["io_status"]
 			},
 			"expectLog": [],
-			"notes": "the io-guard entry alone, loaded out of the fleet package",
+			"notes": "pi-fleet declares both entries, so installing the package loads the fleet entry and the io-guard entry; the tool sets of both are asserted (measured 2 loaded)",
 			"env": {
 				"PI_SUBAGENT_CHILD": "",
 				"PI_SUBAGENT": ""
@@ -315,10 +315,39 @@
 				"@tinoy/pi-fleet"
 			],
 			"absent": [],
-			"expectLoaded": null,
-			"expectTools": {},
-			"expectLog": [],
-			"notes": "the known-good full set; loaded and tool expectations come from the A1 rows once every package exists"
+			"expectLoaded": 23,
+			"expectTools": {
+				"@tinoy/pi-canon": ["canon_add", "canon_category", "canon_edit", "canon_remove"],
+				"@tinoy/pi-read-staleness": [],
+				"@tinoy/pi-orphan-repair": [],
+				"@tinoy/pi-cache-prefix-log": [],
+				"@tinoy/pi-child-request-dump": [],
+				"@tinoy/pi-desktop-notify": ["desktop_notify"],
+				"@tinoy/pi-probe": ["probe"],
+				"@tinoy/pi-intercom-broadcast": ["broadcast"],
+				"@tinoy/pi-no-subagent-fork": [],
+				"@tinoy/pi-image-read": ["image_read"],
+				"@tinoy/pi-command-guard": [],
+				"@tinoy/pi-status-metrics": [],
+				"@tinoy/pi-nf": ["nf"],
+				"@tinoy/pi-build": ["build"],
+				"@tinoy/pi-child-prompt-freeze": [],
+				"@tinoy/pi-todo-parent": [],
+				"@tinoy/pi-focus-gate": [],
+				"@tinoy/pi-drift-anchor": ["set_anchor"],
+				"@tinoy/pi-deepseek-cost": [],
+				"@tinoy/pi-cli-keys": [],
+				"@tinoy/pi-sudo-approve": ["sudo_approve"],
+				"@tinoy/pi-fleet[fleet]": ["fleet"],
+				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+			},
+			"expectLog": [
+				{
+					"source": "todo-parent",
+					"neighbour": "@juicesharp/rpiv-todo"
+				}
+			],
+			"notes": "the known-good full set; loaded and tool expectations come from the A1 rows once every package exists — measured: all 23 entries load with 0 errors, every tool set matches, and the one neighbour-absent line is todo-parent naming @juicesharp/rpiv-todo, which the harness cannot install from a registry"
 		},
 		{
 			"id": "A2-present",
@@ -335,7 +364,7 @@
 				"@tinoy/pi-canon": ["canon_add", "canon_category", "canon_edit", "canon_remove"]
 			},
 			"expectLog": [],
-			"notes": "the present subset of A2: the three libraries declare no entries and load nothing, so the loaded count is 1 \u2014 canon alone, with its four tools"
+			"notes": "the present subset of A2: the three libraries declare no entries and load nothing, so the loaded count is 1 — canon alone, with its four tools"
 		},
 		{
 			"id": "A3-ext-lib",
@@ -419,10 +448,18 @@
 				"@tinoy/pi-fleet"
 			],
 			"absent": [],
-			"expectLoaded": null,
-			"expectTools": {},
+			"expectLoaded": 7,
+			"expectTools": {
+				"@tinoy/pi-focus-gate": [],
+				"@tinoy/pi-drift-anchor": ["set_anchor"],
+				"@tinoy/pi-deepseek-cost": [],
+				"@tinoy/pi-cli-keys": [],
+				"@tinoy/pi-sudo-approve": ["sudo_approve"],
+				"@tinoy/pi-fleet[fleet]": ["fleet"],
+				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+			},
 			"expectLog": [],
-			"notes": "every machine-bound package together in a container with no desktop, vault or crew: every refusal belongs at call time"
+			"notes": "every machine-bound package together in a container with no desktop, vault or crew: every refusal belongs at call time — measured: all 7 entries load with 0 errors"
 		},
 		{
 			"id": "A6-fleet-without-rpiv",
@@ -522,7 +559,7 @@
 					}
 				}
 			],
-			"notes": "MEASURED: an unknown key inside the pi manifest is IGNORED \u2014 the fixture declares pi.caveats alongside pi.extensions and loads with 0 errors, so the machine-readable caveat mirror is unblocked."
+			"notes": "MEASURED: an unknown key inside the pi manifest is IGNORED — the fixture declares pi.caveats alongside pi.extensions and loads with 0 errors, so the machine-readable caveat mirror is unblocked."
 		},
 		{
 			"id": "M11-duplicate-tool-name",
@@ -566,15 +603,19 @@
 					}
 				}
 			],
-			"notes": "A known-bad combination, recorded rather than avoided. MEASURED: both extensions load and one error row names the conflict against the LATER registrant (the first owner keeps the tool definition), and the loser's own tool map still lists the name \u2014 so the expectation is 2 loaded with both maps naming dup_tool, not one survivor."
+			"notes": "A known-bad combination, recorded rather than avoided. MEASURED: both extensions load and one error row names the conflict against the LATER registrant (the first owner keeps the tool definition), and the loser's own tool map still lists the name — so the expectation is 2 loaded with both maps naming dup_tool, not one survivor."
 		},
 		{
 			"id": "P1-no-subagent-fork-plus-fleet",
 			"group": "P1",
 			"packages": ["@tinoy/pi-no-subagent-fork", "@tinoy/pi-fleet"],
 			"absent": ["@juicesharp/rpiv-todo", "pi-subagents"],
-			"expectLoaded": null,
-			"expectTools": {},
+			"expectLoaded": 3,
+			"expectTools": {
+				"@tinoy/pi-no-subagent-fork": [],
+				"@tinoy/pi-fleet[fleet]": ["fleet"],
+				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+			},
 			"expectLog": [],
 			"notes": "both rewrite subagent calls; ordering matters, so the case runs in both load orders"
 		},
@@ -583,8 +624,12 @@
 			"group": "P1",
 			"packages": ["@tinoy/pi-image-read", "@tinoy/pi-fleet"],
 			"absent": [],
-			"expectLoaded": null,
-			"expectTools": {},
+			"expectLoaded": 3,
+			"expectTools": {
+				"@tinoy/pi-image-read": ["image_read"],
+				"@tinoy/pi-fleet[fleet]": ["fleet"],
+				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+			},
 			"expectLog": [],
 			"notes": "both touch the active tool set; the case runs in both load orders"
 		},
@@ -595,7 +640,9 @@
 			"absent": [],
 			"expectLoaded": 3,
 			"expectTools": {
-				"@tinoy/pi-desktop-notify": ["desktop_notify"]
+				"@tinoy/pi-focus-gate": [],
+				"@tinoy/pi-desktop-notify": ["desktop_notify"],
+				"@tinoy/pi-status-metrics": []
 			},
 			"expectLog": [],
 			"notes": "one shared focus-state library, three readers"
@@ -605,8 +652,12 @@
 			"group": "P1",
 			"packages": ["@tinoy/pi-deepseek-cost", "@tinoy/pi-fleet"],
 			"absent": ["@juicesharp/rpiv-todo"],
-			"expectLoaded": null,
-			"expectTools": {},
+			"expectLoaded": 3,
+			"expectTools": {
+				"@tinoy/pi-deepseek-cost": [],
+				"@tinoy/pi-fleet[fleet]": ["fleet"],
+				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+			},
 			"expectLog": [],
 			"notes": "both read the tariff package"
 		},
