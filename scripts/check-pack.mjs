@@ -29,6 +29,15 @@ const EXPECTED_FILES = {
 	"@tinoy/pi-canon": ["LICENSE", "README.md", "canon.ts", "package.json"],
 	"@tinoy/pi-focus-state": ["LICENSE", "README.md", "focus-state.ts", "package.json"],
 	"@tinoy/pi-tariff": ["LICENSE", "README.md", "package.json", "tariff.ts"],
+	"@tinoy/pi-cache-prefix-log": ["LICENSE", "README.md", "cache-prefix-log.ts", "package.json"],
+	"@tinoy/pi-child-prompt-freeze": ["LICENSE", "README.md", "child-prompt-freeze.ts", "package.json"],
+	"@tinoy/pi-child-request-dump": ["LICENSE", "README.md", "child-request-dump.ts", "package.json"],
+	"@tinoy/pi-desktop-notify": ["LICENSE", "README.md", "desktop-notify.ts", "package.json"],
+	"@tinoy/pi-intercom-broadcast": ["LICENSE", "README.md", "intercom-broadcast.ts", "package.json"],
+	"@tinoy/pi-no-subagent-fork": ["LICENSE", "README.md", "no-subagent-fork.ts", "package.json"],
+	"@tinoy/pi-orphan-repair": ["LICENSE", "README.md", "orphan-repair.ts", "package.json"],
+	"@tinoy/pi-probe": ["LICENSE", "README.md", "package.json", "probe.ts"],
+	"@tinoy/pi-read-staleness": ["LICENSE", "README.md", "package.json", "read-staleness.ts"],
 };
 
 /** Manifest fields a published package must carry. */

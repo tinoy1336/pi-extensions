@@ -1,0 +1,39 @@
+{
+	"name": "@tinoy/pi-child-prompt-freeze",
+	"version": "0.1.0",
+	"description": "Pin a child session's rewritten system prompt and restore it on any request that arrives without it.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/child-prompt-freeze"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/child-prompt-freeze#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "child-prompt-freeze.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"child-prompt-freeze.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./child-prompt-freeze.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0"
+	}
+}
