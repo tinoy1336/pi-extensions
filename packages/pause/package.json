@@ -1,0 +1,40 @@
+{
+	"name": "@tinoy/pi-pause",
+	"version": "0.1.0",
+	"description": "Park pi's agent loop until a deadline or an explicit resume: /pause, /unpause and a footer row.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/pause"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/pause#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "pause.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"pause.ts",
+		"pause-state.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./pause.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0"
+	}
+}
