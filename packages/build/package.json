@@ -1,0 +1,46 @@
+{
+	"name": "@tinoy/pi-build",
+	"version": "0.1.0",
+	"description": "Run a build, compile, lint or typecheck command with bounded output, and report the exit code, the error lines and the log path.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/build"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/build#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "build.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"build.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./build.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*",
+		"@tinoy/pi-fleet": "*",
+		"typebox": "*"
+	},
+	"peerDependenciesMeta": {
+		"@tinoy/pi-fleet": {
+			"optional": true
+		}
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0"
+	}
+}
