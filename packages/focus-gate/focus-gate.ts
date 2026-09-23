@@ -127,7 +127,7 @@ function writeState(mode: FocusMode): WrittenFocusState {
 		since: mode === "off" ? "" : new Date().toISOString(),
 	};
 	try {
-		writeFileSync(FOCUS_STATE_PATH, JSON.stringify(state, null, 2) + "\n");
+		writeFileSync(FOCUS_STATE_PATH, `${JSON.stringify(state, null, 2)}\n`);
 	} catch {
 		/* state write failure: the footer/notice still reflect the intent */
 	}
@@ -247,7 +247,7 @@ function appendLedger(
 			pattern,
 			inputDigest: digest,
 		};
-		appendFileSync(ledger, JSON.stringify(row) + "\n");
+		appendFileSync(ledger, `${JSON.stringify(row)}\n`);
 	} catch {
 		/* ledger failure must never turn a block into an execution */
 	}

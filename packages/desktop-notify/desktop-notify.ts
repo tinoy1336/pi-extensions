@@ -137,7 +137,7 @@ export default function (pi: ExtensionAPI) {
 		// has no user watching a terminal either.
 		const dbg = (m: string) => {
 			try {
-				require("node:fs").appendFileSync("/tmp/pi-notify-debug.log", m + "\n");
+				require("node:fs").appendFileSync("/tmp/pi-notify-debug.log", `${m}\n`);
 			} catch {}
 		};
 		dbg(

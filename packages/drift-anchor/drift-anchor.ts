@@ -194,7 +194,7 @@ function readConfig(): AnchorConfig {
 function writeConfig(cfg: AnchorConfig): void {
 	try {
 		mkdirSync(CONFIG_DIR, { recursive: true });
-		writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2) + "\n");
+		writeFileSync(CONFIG_PATH, `${JSON.stringify(cfg, null, 2)}\n`);
 		configCache = null;
 	} catch {
 		/* config write failure never crashes */
