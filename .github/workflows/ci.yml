@@ -29,6 +29,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run check:pack
+      - run: npm run check:caveats
 
   smoke:
     name: smoke
@@ -42,3 +43,28 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run smoke
+
+  # The subset matrix: every case installs its own tarballs in a clean container and is
+  # judged on the five clauses (load errors, entries loaded, tool sets, declared absences,
+  # registration failures). This is the container path's first real execution: locally only
+  # `--local` has ever run, which uses the same runner and installer without an image.
+  smoke-matrix:
+    name: smoke-matrix
+    runs-on: ubuntu-latest
+    needs: check
+    # A ceiling, not the working bound: docker/matrix.mjs has no bound of its own while
+    # scripts/smoke-matrix.sh bounds the image build (900s) and the container run (3600s).
+    # Sitting above their sum (75 min) is deliberate — the phase timeout fires first and
+    # names the phase, and this only catches a stall outside both.
+    timeout-minutes: 85
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Container engine
+        run: docker info --format 'docker {{.ServerVersion}}'
+      - name: Run the subset matrix in the container
+        run: bash .github/scripts/smoke-matrix-ci.sh

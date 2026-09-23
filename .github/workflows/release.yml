@@ -17,9 +17,8 @@ on:
   workflow_dispatch:
     inputs:
       package:
-        description: Which package to release
-        type: choice
-        options: [both, ext-lib, canon]
+        description: Which package to release (both, or one key from RELEASE_ORDER)
+        type: string
         default: both
 
 permissions:
@@ -35,6 +34,18 @@ jobs:
     name: release
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    timeout-minutes: 30
+    env:
+      # Dependency order, dependencies first: a dependent package's install resolves its
+      # dependencies from the registry, so a package that is not released before its
+      # dependent cannot be installed at all (measured: resolving one of the new packages
+      # against the registry answered 404 while its dependency was unpublished). This list
+      # is the only edit a new release config needs. A key whose release/<key>.mjs has not
+      # landed yet is skipped with a notice instead of failing the run, and a key must be
+      # the tag prefix its own config declares (release/canon.mjs: tagFormat
+      # canon-v${version}), because the withdrawal derives the version from that prefix.
+      RELEASE_ORDER: ext-lib canon
+      INPUT_PACKAGE: ${{ inputs.package }}
     permissions:
       contents: write # push the release commit and tags, create the GitHub releases
       issues: write # comment on released issues
@@ -65,43 +76,64 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      # Each package is released on its own tag and its own commits. The gate refuses
-      # when nothing in the package changed since its tag, which is what keeps a
-      # canon-only push from publishing a new ext-lib.
-      - name: Release @tinoy/pi-ext-lib
-        id: ext_lib
-        if: github.event_name == 'workflow_run' || inputs.package == 'both' || inputs.package == 'ext-lib'
+      # Each package is released on its own tag and its own commits. The gate refuses when
+      # nothing in the package changed since its tag, which is what keeps a canon-only push
+      # from publishing a new ext-lib. Packages run in RELEASE_ORDER, one after the other,
+      # because a dependent's dependency has to be in the registry by the time the dependent
+      # is published.
+      - name: Release the packages, in dependency order
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if ! bash scripts/release-relevant.sh ext-lib; then
-            exit 0
+          set -euo pipefail
+          want="${INPUT_PACKAGE:-both}"
+          matched=0
+          for pkg in ${RELEASE_ORDER}; do
+            if [ "${want}" != "both" ] && [ "${want}" != "${pkg}" ]; then
+              continue
+            fi
+            matched=1
+
+            config="./release/${pkg}.mjs"
+            if [ ! -f "${config}" ]; then
+              # A package in the order whose config has not landed yet is skipped, so an
+              # automatic run keeps going while the configs arrive. An explicit dispatch
+              # naming that package is a request, so it fails instead of reporting success
+              # for a release that could not happen.
+              if [ "${want}" != "both" ]; then
+                echo "::error::${config} is not in the repository yet — ${pkg} cannot be released" >&2
+                exit 2
+              fi
+              echo "::notice::${config} is not in the repository yet — skipping ${pkg}"
+              continue
+            fi
+
+            if ! bash scripts/release-relevant.sh "${pkg}"; then
+              continue
+            fi
+
+            package_name="$(node -p "require('./packages/${pkg}/package.json').name")"
+            before="${RUNNER_TEMP}/tags-before-${pkg}.txt"
+            git tag | sort > "${before}"
+
+            echo "::group::semantic-release ${package_name} (${pkg})"
+            release_status=0
+            npx --no-install semantic-release --extends "${config}" || release_status=$?
+            echo "::endgroup::"
+
+            if [ "${release_status}" -ne 0 ]; then
+              # semantic-release creates the tag before it runs the publish plugins, so a
+              # failed publish would otherwise leave the tag behind. The snapshot above is
+              # the set of tags that predate this package's release, and the helper asks the
+              # registry first: a release that failed after npm publish succeeded keeps its
+              # tag, so the next run cuts the following version instead of the one npm
+              # already holds.
+              bash .github/scripts/withdraw-tag-if-unpublished.sh "${before}" "${package_name}" "${pkg}-v" || true
+              exit "${release_status}"
+            fi
+          done
+
+          if [ "${matched}" -eq 0 ]; then
+            echo "::error::no package matches '${want}' — RELEASE_ORDER is: ${RELEASE_ORDER}" >&2
+            exit 2
           fi
-          git tag | sort > "$RUNNER_TEMP/tags-before-ext-lib.txt"
-          npx --no-install semantic-release --extends ./release/ext-lib.mjs
-
-      # semantic-release creates the tag before it runs the publish plugins, so a
-      # failed publish would otherwise leave the tag behind: the snapshot taken above
-      # is the set of tags that predate this step, and everything else is this step's.
-      # The registry decides whether withdrawing it is safe: a step that failed after
-      # npm publish succeeded keeps its tag, so the next run cuts the following version
-      # instead of the one npm already holds.
-      - name: Withdraw the tag if the ext-lib release failed before publishing
-        if: steps.ext_lib.outcome == 'failure'
-        run: bash .github/scripts/withdraw-tag-if-unpublished.sh "$RUNNER_TEMP/tags-before-ext-lib.txt" @tinoy/pi-ext-lib ext-lib-v
-
-      - name: Release @tinoy/pi-canon
-        id: canon
-        if: github.event_name == 'workflow_run' || inputs.package == 'both' || inputs.package == 'canon'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if ! bash scripts/release-relevant.sh canon; then
-            exit 0
-          fi
-          git tag | sort > "$RUNNER_TEMP/tags-before-canon.txt"
-          npx --no-install semantic-release --extends ./release/canon.mjs
-
-      - name: Withdraw the tag if the canon release failed before publishing
-        if: steps.canon.outcome == 'failure'
-        run: bash .github/scripts/withdraw-tag-if-unpublished.sh "$RUNNER_TEMP/tags-before-canon.txt" @tinoy/pi-canon canon-v
