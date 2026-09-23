@@ -15,6 +15,10 @@
 #                         cases were never judged. Never read as a package defect.
 #   * ENGINE ABSENT     — no container engine, or no daemon (scripts/smoke-matrix.sh exit 3).
 #   * RUNNER USAGE      — the runner rejected its own arguments (exit 2), which is neither.
+#   * MATRIX VACUOUS    — the run did not judge every case it declares (scripts/smoke-matrix.sh
+#                         exit 4): the workspace carried no packages, or package-naming cases were
+#                         skipped for absence of packages. A run that judged almost nothing must
+#                         never read as a pass, and it is not a package defect either.
 #
 # Bounds are explicit and layered: the job carries a timeout ceiling, scripts/smoke-matrix.sh
 # bounds the image build and the container run, and this script adds none of its own, so the
@@ -54,6 +58,7 @@ harness_failures="$(matching '^[[:space:]]+FAIL  (harness|probe) ')"
 clause_failures="$(matching '^[[:space:]]+clause [1-5]  FAIL')"
 summary_line="$(matching '^matrix summary:' | tail -1)"
 runner_banner="$(matching '^matrix: [0-9]+ case\(s\) from ' | tail -1)"
+vacuous_skips="$(matching '^[[:space:]]+skipped: ')"
 
 emit() {
 	local label="$1" lines="$2" line
@@ -74,6 +79,7 @@ report() {
 		emit "failing case" "${failing_cases}"
 		emit "failing clause" "${clause_failures}"
 		emit "harness/probe" "${harness_failures}"
+		emit "skipped case" "${vacuous_skips}"
 	} >>"${GITHUB_STEP_SUMMARY:-/dev/stdout}"
 }
 
@@ -87,6 +93,20 @@ if [ "${status}" -eq 3 ]; then
 	echo "ENGINE ABSENT: the matrix needs a container engine and none answered" >&2
 	matching "no container engine|is not reachable" >&2
 	report "ENGINE ABSENT — the container path did not run (no engine)"
+	exit 1
+fi
+
+# Exit 4 is the wrapper's verdict that the run did not judge every case it declares. It must be
+# read BEFORE the banner test, because a vacuous run does print a banner and would otherwise
+# fall through to the clause-failure class — which states a fact that is not true, since no case
+# violated a clause.
+if [ "${status}" -eq 4 ]; then
+	echo "MATRIX VACUOUS: the run did not judge every case it declares — the workspace carried no" >&2
+	echo "packages, or package-naming cases were skipped for absence of packages. The skipped cases" >&2
+	echo "are listed below; this is not a package defect." >&2
+	matching '^workspace: |MATRIX VACUOUS' >&2
+	printf '%s\n' "${vacuous_skips}" >&2
+	report "MATRIX VACUOUS — the run did not judge every case it declares"
 	exit 1
 fi
 
