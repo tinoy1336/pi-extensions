@@ -63,11 +63,28 @@ fi
 
 # The build context mirrors the repository layout: the runner resolves
 # scripts/stranger-install.sh relative to its own parent directory inside the image.
+#
+# The workspace's package MANIFESTS are staged and nothing else of the checkout: the runner
+# reads `packages/<name>/package.json` to decide which cases are runnable, so the manifests ARE
+# the workspace as far as the image is concerned. Without them the container's workspace is
+# empty and every package-naming case is skipped while the runner still exits 0.
 stage="${work}/context"
 mkdir -p "${stage}/scripts" "${stage}/docker"
 cp -a "${work}/tarballs" "${stage}/tarballs"
 cp scripts/stranger-install.sh "${stage}/scripts/stranger-install.sh"
 cp docker/matrix.mjs docker/matrix.json "${stage}/docker/"
+staged_manifests=0
+for manifest in packages/*/package.json; do
+	[ -f "${manifest}" ] || continue
+	mkdir -p "${stage}/$(dirname "${manifest}")"
+	cp "${manifest}" "${stage}/${manifest}"
+	staged_manifests=$((staged_manifests + 1))
+done
+if [ "${staged_manifests}" -eq 0 ]; then
+	echo "MATRIX VACUOUS: no package manifest to stage, so the image would judge nothing" >&2
+	exit 4
+fi
+echo "staged ${staged_manifests} package manifest(s) into the build context"
 
 timeout 900 "${engine}" build -t pi-extensions-matrix --target matrix -f docker/Dockerfile "${stage}"
 timeout 3600 "${engine}" run --rm pi-extensions-matrix "${case_args[@]+"${case_args[@]}"}"

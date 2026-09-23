@@ -5,6 +5,13 @@
 #   docker build --target matrix -f docker/Dockerfile <context>
 #   docker run --rm pi-extensions-matrix [--case <id>]
 #
+# The image carries the workspace's package MANIFESTS and nothing else of the checkout: the
+# runner reads `packages/<name>/package.json` to decide which cases are runnable, so the
+# manifests are the whole workspace as far as this image is concerned, and `--workspace /work`
+# points the runner at them. Staging the sources instead would put the tree the matrix judges
+# the tarballs from INSIDE the image. Without the manifests the runner sees an empty workspace,
+# reports every package-naming case as NOT YET PORTED and still exits 0.
+#
 # A separate stage, and it is NOT the last one: the smoke stage below stays the default
 # build target, so scripts/smoke.sh keeps building the image it always did. The layout
 # inside the image mirrors the repository, because the runner resolves
@@ -15,11 +22,12 @@ ARG PI_VERSION=0.86.1
 
 WORKDIR /work
 COPY tarballs/ /tarballs/
+COPY packages/ /work/packages/
 COPY scripts/stranger-install.sh /work/scripts/stranger-install.sh
 COPY docker/matrix.mjs /work/docker/matrix.mjs
 COPY docker/matrix.json /work/docker/matrix.json
 ENV PI_VERSION=${PI_VERSION}
-ENTRYPOINT ["node", "/work/docker/matrix.mjs", "--tarballs", "/tarballs"]
+ENTRYPOINT ["node", "/work/docker/matrix.mjs", "--tarballs", "/tarballs", "--workspace", "/work"]
 
 # ---- stranger-install smoke test -------------------------------------------------
 #
