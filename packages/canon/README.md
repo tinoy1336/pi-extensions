@@ -19,11 +19,41 @@ pi install npm:@tinoy/pi-canon
 - **Peer notices** — entry changes are broadcast over the pi-intercom bus (namespace `canon`); receivers match the entry scope against their own model and audience.
 - **Tail sections** — another extension contributes prompt text through the `canon:section` event; its ids are published on `canon:sections`.
 
+## Exports
+
+`canon.ts` is the package entry, and it is also the module API:
+
+| Export | What it is |
+| --- | --- |
+| default | the pi extension factory — the hooks, the four tools and the two commands |
+| `setTailSection(id, text)` | contribute a tail section, replaced per id |
+| `registeredSectionIds()` | the ids currently registered |
+
+The tail-section registry stays here because it owns this package's event contract: the
+`canon:section` / `canon:sections` names, the `canon` hook-log source, and the section
+cap. `setTailSection` / `registeredSectionIds` are exported for this package's own use
+and are never re-exported elsewhere; another extension reaches the registry through the
+`canon:section` event, because an exported function is unreachable across the loader's
+module isolation.
+
+## The system-prompt seam
+
+The seam canon composes the tail through — `canonicalSystemPrompt(systemPrompt, block)`,
+`systemPromptSlot(payload)` and the append separator `PROMPT_APPEND_SEP` — is NOT
+exported from this package. It lives in `@tinoy/pi-ext-lib` (`src/system-prompt.ts`),
+together with the rule that makes it shared: `before_agent_start` fires only from the
+interactive `prompt()` path, so an appended block has to be re-normalized on every
+provider request for the request prefix to stay byte-identical. Canon imports it from
+there, and so does any other extension that appends to the system prompt — import
+`@tinoy/pi-ext-lib`, not this package. What stays here is the policy: the block's
+content, its scope rules, and what happens when the payload carries no rewritable slot.
+
 ## Dependencies
 
 pi supplies these, so they are declared as peer dependencies with `*` and are not
 bundled: `@earendil-works/pi-ai`, `@earendil-works/pi-coding-agent`, `typebox`.
-`@tinoy/pi-ext-lib` is a plain dependency.
+`@tinoy/pi-ext-lib` is a plain dependency; the prompt seam above is imported from it,
+not re-exported by this package.
 
 ## Licence
 
