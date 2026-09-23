@@ -83,9 +83,12 @@ jobs:
       # semantic-release creates the tag before it runs the publish plugins, so a
       # failed publish would otherwise leave the tag behind: the snapshot taken above
       # is the set of tags that predate this step, and everything else is this step's.
-      - name: Withdraw the tag if the ext-lib release failed
+      # The registry decides whether withdrawing it is safe: a step that failed after
+      # npm publish succeeded keeps its tag, so the next run cuts the following version
+      # instead of the one npm already holds.
+      - name: Withdraw the tag if the ext-lib release failed before publishing
         if: steps.ext_lib.outcome == 'failure'
-        run: bash scripts/withdraw-tag.sh "$RUNNER_TEMP/tags-before-ext-lib.txt"
+        run: bash .github/scripts/withdraw-tag-if-unpublished.sh "$RUNNER_TEMP/tags-before-ext-lib.txt" @tinoy/pi-ext-lib ext-lib-v
 
       - name: Release @tinoy/pi-canon
         id: canon
@@ -99,6 +102,6 @@ jobs:
           git tag | sort > "$RUNNER_TEMP/tags-before-canon.txt"
           npx --no-install semantic-release --extends ./release/canon.mjs
 
-      - name: Withdraw the tag if the canon release failed
+      - name: Withdraw the tag if the canon release failed before publishing
         if: steps.canon.outcome == 'failure'
-        run: bash scripts/withdraw-tag.sh "$RUNNER_TEMP/tags-before-canon.txt"
+        run: bash .github/scripts/withdraw-tag-if-unpublished.sh "$RUNNER_TEMP/tags-before-canon.txt" @tinoy/pi-canon canon-v
