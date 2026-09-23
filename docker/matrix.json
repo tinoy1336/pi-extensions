@@ -1,5 +1,5 @@
 {
-	"$comment": "The subset matrix: one entry per case. A case is RUNNABLE when every package it names exists under packages/; otherwise the runner reports it as 'not yet ported' and counts it as neither a pass nor a failure, so the matrix grows as L3/L4/L5 land without the runner being rewritten. PASS is the five clauses in docker/matrix.mjs: zero unexpected load errors, every installed package's entries loaded, each extension's tool set equal to its expected set, exactly one neighbour-absent line per declared absent neighbour (and none naming an installed package), and no register-failed line or undeclared absence line.",
+	"$comment": "The subset matrix: one entry per case. A case is RUNNABLE when every package it names exists under packages/ and every registry neighbour it declares in requiresInstall can be installed; anything else is reported as 'not yet ported' and counted as neither a pass nor a failure, so the matrix grows as L3/L4/L5 land without the runner being rewritten. `packages` is the JUDGED set (clauses 2 and 3); `requiresInstall` entries are installed into the case's app directory as SUPPORT beside the subject's tarball, and carry a pinned version for the same reason piVersion is pinned — a third party's next release must not move this matrix. PASS is the five clauses in docker/matrix.mjs: zero unexpected load errors, every installed package's entries loaded, each extension's tool set equal to its expected set, exactly one neighbour-absent line per declared absent neighbour (and none naming an installed package), and no register-failed line or undeclared absence line.",
 	"piVersion": "0.86.1",
 	"cases": [
 		{
@@ -487,27 +487,30 @@
 			"id": "A7-todo-parent-with-rpiv",
 			"group": "A7",
 			"packages": ["@tinoy/pi-todo-parent"],
-			"requiresInstall": ["@juicesharp/rpiv-todo"],
+			"requiresInstall": ["@juicesharp/rpiv-todo@2.11.0"],
 			"absent": [],
 			"expectLoaded": 1,
 			"expectTools": {
 				"@tinoy/pi-todo-parent": ["todo_parent"]
 			},
 			"expectLog": [],
-			"notes": "the with-neighbour variant: no absence line and the tool works. UNRUNNABLE until the harness can install a registry neighbour alongside the tarballs; the without-neighbour half is A1-todo-parent."
+			"env": {
+				"PI_SUBAGENT_CHILD": "1"
+			},
+			"notes": "the with-neighbour variant: the child shape registers the tool, and no absence line may name the neighbour the case installed. The without-neighbour half is A1-todo-parent."
 		},
 		{
 			"id": "A8-intercom-broadcast-with-intercom",
 			"group": "A8",
 			"packages": ["@tinoy/pi-intercom-broadcast"],
-			"requiresInstall": ["pi-intercom"],
+			"requiresInstall": ["pi-intercom@0.13.0"],
 			"absent": [],
 			"expectLoaded": 1,
 			"expectTools": {
 				"@tinoy/pi-intercom-broadcast": ["broadcast"]
 			},
 			"expectLog": [],
-			"notes": "the with-neighbour variant: no absence line and the tool answers. UNRUNNABLE until the harness can install a registry neighbour alongside the tarballs; the without-neighbour half is A1-intercom-broadcast."
+			"notes": "the with-neighbour variant: pi-intercom's own entry stays out of the loaded set (the case passes no entry for it), so the evidence is that the subject loads with the neighbour present and emits no absence line. The neighbour is reached over pi-intercom's event bus rather than by import, so the tool's own answer is not exercised here; the without-neighbour half is A1-intercom-broadcast."
 		},
 		{
 			"id": "M9-foreman-tool-set",

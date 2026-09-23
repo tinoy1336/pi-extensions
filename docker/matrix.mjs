@@ -25,6 +25,11 @@
 // A case whose packages are not in this workspace yet is reported as NOT YET PORTED and is
 // counted as neither a pass nor a failure, so the matrix grows as packages land. A case
 // with expectFailClause is the runner's own control: it MUST fail, on that clause.
+//
+// A package the case needs from the registry rather than from this workspace is declared in
+// `requiresInstall` and installed into the case's app directory as SUPPORT: it resolves for
+// the subject's optional import, and clauses 2 and 3 still judge the case's declared
+// packages alone.
 import { execFileSync, spawnSync } from "node:child_process";
 import {
 	cpSync,
@@ -82,6 +87,7 @@ function withoutPiEnv(extra = {}) {
 /** Run a command with a hard bound. A hung step ends the case, never the runner. */
 function run(command, argv, options = {}) {
 	const result = spawnSync(command, argv, {
+		cwd: options.cwd ?? process.cwd(),
 		encoding: "utf8",
 		env: options.env ?? process.env,
 		timeout: options.timeoutMs ?? 300_000,
@@ -116,6 +122,15 @@ function workspacePackages(root) {
 		found.set(manifest.name, { dir: path.join(packagesDir, entry.name), manifest });
 	}
 	return found;
+}
+
+/**
+ * A registry install spec's package name: `name` or `name@version`, scope-aware ("@scope/a"
+ * carries one @ at index 0, which is the scope rather than the version separator).
+ */
+function registrySpecName(spec) {
+	const at = spec.lastIndexOf("@");
+	return at > 0 ? spec.slice(0, at) : spec;
 }
 
 /** The packed tarball for a workspace package, matched by the name npm pack produces. */
@@ -199,9 +214,10 @@ function ownerOf(extensionPath, spec) {
 /**
  * A case's package set names workspace packages: those are the ones the runner resolves and
  * installs from tarballs. A neighbour that lives on the registry is declared in
- * `requiresInstall` instead, and while the harness has no way to install one the case is
- * UNRUNNABLE rather than merely unported — the distinction matters, because unported shrinks
- * as packages land, while the other needs a harness capability that does not exist yet.
+ * `requiresInstall` instead and installed into the same app directory as support: clauses 2
+ * and 3 judge the case's declared packages alone, and clause 4 counts the neighbour
+ * installed, so an absence line naming a neighbour the case installed is a failure — the
+ * whole point of a with-neighbour case.
  */
 function judge(caseSpec, probeReport, spec) {
 	const clauses = [];
@@ -430,6 +446,35 @@ function buildCaseDirectory(work, caseSpec, args, packages) {
 	}
 	if (!install.ok) return { error: `install failed: ${install.reason}` };
 
+	// A registry neighbour the case declares: installed into the case's app directory beside
+	// the subject's tarball, so the subject's optional import resolves. Recorded as SUPPORT —
+	// an empty entry list keeps clauses 2 and 3 judging the case's declared packages alone,
+	// while clause 4 counts it installed, which is what makes an absence line naming it fail.
+	const registry = [];
+	const registrySpecs = caseSpec.requiresInstall ?? [];
+	if (registrySpecs.length > 0) {
+		const installRegistry = () =>
+			run("npm", ["install", "--no-audit", "--no-fund", "--no-save", ...registrySpecs], {
+				cwd: appDir,
+				env: installEnv,
+				timeoutMs: 300_000,
+			});
+		let registryInstall = installRegistry();
+		if (!registryInstall.ok) {
+			console.log(`  registry install retried after: ${registryInstall.reason}`);
+			registryInstall = installRegistry();
+		}
+		if (!registryInstall.ok) return { error: `registry install failed: ${registryInstall.reason}` };
+		for (const spec of registrySpecs) {
+			const name = registrySpecName(spec);
+			const dir = path.join(appDir, "node_modules", ...name.split("/"));
+			if (!existsSync(dir)) return { error: `registry install placed no ${name} in ${appDir}` };
+			const version = JSON.parse(readFileSync(path.join(dir, "package.json"), "utf8")).version;
+			installed.push({ name, version, support: true, dir, entries: [] });
+			registry.push(`${name}@${version}`);
+		}
+	}
+
 	const fixtures = [];
 	for (const fixture of caseSpec.fixtures ?? []) {
 		const dir = path.join(appDir, "fixtures", fixture.name);
@@ -454,7 +499,18 @@ function buildCaseDirectory(work, caseSpec, args, packages) {
 		...installed.flatMap((pkg) => pkg.entries.map((entry) => path.resolve(pkg.dir, entry))),
 		...fixtures.flatMap((f) => f.entries),
 	];
-	return { appDir, home, agentDir, tmp, installed, fixtures, entries, tarballDir, support };
+	return {
+		appDir,
+		home,
+		agentDir,
+		tmp,
+		installed,
+		fixtures,
+		entries,
+		tarballDir,
+		support,
+		registry,
+	};
 }
 
 function matrixPiVersion() {
@@ -475,14 +531,6 @@ async function orchestrate(args) {
 	const tally = { passed: 0, failed: 0, skipped: 0, controls: 0 };
 
 	for (const caseSpec of cases) {
-		const needsInstall = caseSpec.requiresInstall ?? [];
-		if (needsInstall.length > 0) {
-			tally.skipped += 1;
-			console.log(
-				`\n${caseSpec.id}  UNRUNNABLE — needs registry installs the harness cannot perform yet: ${needsInstall.join(", ")}`,
-			);
-			continue;
-		}
 		const missing = (caseSpec.packages ?? []).filter((name) => !packages.has(name));
 		if (missing.length > 0) {
 			tally.skipped += 1;
@@ -545,7 +593,7 @@ async function orchestrate(args) {
 
 		console.log(`\n${caseSpec.id}`);
 		console.log(
-			`  judged: ${(caseSpec.packages ?? []).join(", ") || "(fixtures only)"}  |  workspace support: ${built.support.join(", ") || "none"}  |  registry: ${(caseSpec.requiresInstall ?? []).join(", ") || "none"}`,
+			`  judged: ${(caseSpec.packages ?? []).join(", ") || "(fixtures only)"}  |  workspace support: ${built.support.join(", ") || "none"}  |  registry: ${built.registry.join(", ") || "none"}`,
 		);
 		for (const result of results) {
 			console.log(`  clause ${result.clause}  ${result.ok ? "pass" : "FAIL"}  ${result.detail}`);
