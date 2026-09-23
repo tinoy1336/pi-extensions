@@ -38,6 +38,12 @@ const EXPECTED_FILES = {
 	"@tinoy/pi-orphan-repair": ["LICENSE", "README.md", "orphan-repair.ts", "package.json"],
 	"@tinoy/pi-probe": ["LICENSE", "README.md", "package.json", "probe.ts"],
 	"@tinoy/pi-read-staleness": ["LICENSE", "README.md", "package.json", "read-staleness.ts"],
+	"@tinoy/pi-build": ["LICENSE", "README.md", "build.ts", "package.json"],
+	"@tinoy/pi-command-guard": ["LICENSE", "README.md", "command-guard.ts", "package.json"],
+	"@tinoy/pi-image-read": ["LICENSE", "README.md", "image-read.ts", "package.json"],
+	"@tinoy/pi-nf": ["LICENSE", "README.md", "data/nf.json", "nf.ts", "package.json"],
+	"@tinoy/pi-status-metrics": ["LICENSE", "README.md", "package.json", "status-metrics.ts"],
+	"@tinoy/pi-todo-parent": ["LICENSE", "README.md", "package.json", "todo-parent.ts"],
 };
 
 /** Manifest fields a published package must carry. */
