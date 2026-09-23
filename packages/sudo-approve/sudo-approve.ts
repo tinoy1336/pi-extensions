@@ -619,6 +619,13 @@ export default function (pi: ExtensionAPI): void {
 			// ── promptd invocation FAILED with an error (down/unreachable/broken)
 			// — the legitimate fallback trigger. NO timeout anywhere: a live
 			// promptd window waits as long as the user needs. ──
+			// R8: the channel that is missing is named FIRST, ahead of the request it
+			// is about to run through the fallback, because a terminal confirm that
+			// says nothing about the missing window reads as the intended path.
+			const windowMissing =
+				reply === ""
+					? `the AGS approval window is unavailable — ${AGS_ROUTE} answered nothing, so no promptd instance is reachable`
+					: `the AGS approval window failed — ${reply.slice(0, 200)}`;
 			audit({
 				decision: "fallback-reason",
 				reply: reply.slice(0, 500),
@@ -626,7 +633,7 @@ export default function (pi: ExtensionAPI): void {
 			});
 
 			const title = `Approve ${commands.length} command(s) as root?`;
-			const body = buildRequestText(commands, collective);
+			const body = `${windowMissing}\n\n${buildRequestText(commands, collective)}`;
 			const approved = await ctx.ui.confirm(title, body);
 
 			if (!approved) {
@@ -635,8 +642,8 @@ export default function (pi: ExtensionAPI): void {
 				audit({ decision: "deny", channel: "fallback", reason, commands });
 				const text =
 					reason.trim().length > 0
-						? `User denied approval: ${reason}`
-						: "User denied approval (no reason given).";
+						? `${windowMissing}. User denied approval: ${reason}`
+						: `${windowMissing}. User denied approval (no reason given).`;
 				return {
 					content: [{ type: "text", text }],
 					details: { decision: "deny", channel: "fallback", reason, commands },

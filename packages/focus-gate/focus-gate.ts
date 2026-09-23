@@ -154,31 +154,41 @@ const BASH_PATTERNS: GatePattern[] = [
 	// the working 0.56 form is Lua (`hyprctl dispatch 'hl.dsp.focus({...})'`) — a
 	// quote follows `dispatch`, so matching argument shapes (workspace/focus/…)
 	// gated almost nothing.
-	{ re: /hyprctl\s+dispatch\b/i, label: "hyprctl dispatch (compositor state change)" },
-	{ re: /hyprctl\s+keyword/i, label: "hyprctl keyword" },
+	{ re: /hyprctl\s+dispatch\b/i, label: "Hyprland: hyprctl dispatch (compositor state change)" },
+	{ re: /hyprctl\s+keyword/i, label: "Hyprland: hyprctl keyword" },
 	// Screenshots
-	{ re: /\b(grim|grimblast|hyprshot|spectacle|scrot|maim|flameshot)\b/i, label: "screenshot tool" },
+	{
+		re: /\b(grim|grimblast|hyprshot|spectacle|scrot|maim|flameshot)\b/i,
+		label: "grim: desktop screenshot (grimblast, hyprshot, spectacle, scrot, maim, flameshot)",
+	},
 	// Input takeover — the raw tools AND the `inject` wrapper, which is the
 	// sanctioned front end and therefore the likelier call shape.
-	{ re: /\b(ydotool|wtype|dotool|xdotool|kdotool)\b/i, label: "input-injection tool" },
+	{
+		re: /\b(ydotool|wtype|dotool|xdotool|kdotool)\b/i,
+		label: "inject: input takeover, raw form (ydotool, wtype, dotool, xdotool, kdotool)",
+	},
 	{
 		re: /(?:^|[;&|(]\s*)(?:[\w./-]*\/)?inject\s+(?:click|drag|move|scroll|type|key|release)\b/i,
-		label: "input injection (inject wrapper)",
+		label: "inject: input takeover (the sanctioned wrapper)",
 	},
 	// Window/app spawns
-	{ re: /\bgtk-launch\b/i, label: "gtk-launch (app spawn)" },
+	{ re: /\bgtk-launch\b/i, label: "gtk-launch: app spawn" },
 	// Terminal emulators, matched at COMMAND POSITION only: a `&`-anywhere
 	// heuristic also caught read-only commands (`find kitty -type f && …`).
 	{
 		re: /(?:^|[;&|(]\s*|\b(?:nohup|setsid|exec|timeout\s+\S+)\s+)(?:[\w./-]*\/)?(kitty|alacritty|foot|wezterm|ghostty)\b/i,
-		label: "terminal spawn",
+		label: "terminal emulator: app spawn (kitty, alacritty, foot, wezterm, ghostty)",
 	},
 	// App spawns. `AGS_BUNDLE_WARM=1` makes run.sh build-only (it never execs the
 	// app), so that form stays allowed while a launching call is gated.
-	{ re: /\brun\.sh\s+[^\s|&;]+/i, unless: /AGS_BUNDLE_WARM/, label: "app spawn (shell run.sh)" },
-	{ re: /\bags\s+run\b/i, label: "app spawn (ags run)" },
-	{ re: /\bags(-route)?\.sh\b.*\b(open|toggle)\b/i, label: "ags open/toggle" },
-	{ re: /ags\s+-i\s+\S+\s+request\s+".*\b(open|toggle)\b/i, label: "ags open/toggle" },
+	{
+		re: /\brun\.sh\s+[^\s|&;]+/i,
+		unless: /AGS_BUNDLE_WARM/,
+		label: "AGS: app spawn (shell run.sh)",
+	},
+	{ re: /\bags\s+run\b/i, label: "AGS: app spawn (ags run)" },
+	{ re: /\bags(-route)?\.sh\b.*\b(open|toggle)\b/i, label: "AGS: app open/toggle" },
+	{ re: /ags\s+-i\s+\S+\s+request\s+".*\b(open|toggle)\b/i, label: "AGS: app open/toggle" },
 ];
 
 function inputDigest(toolName: string, input: unknown): string {
@@ -253,9 +263,16 @@ function appendLedger(
 	}
 }
 
-function blockReason(state: FocusState, ledger: string): string {
+/**
+ * The refusal a blocked call carries. R8: it names the capability that was refused
+ * FIRST — the rule label already leads with the binary or service (AGS, Hyprland,
+ * grim, the inject wrapper) — so the model reads WHAT it may not do before the
+ * instructions about what to do instead.
+ */
+function blockReason(state: FocusState, ledger: string, refused: string): string {
 	return (
 		`focus-gate: FOCUS MODE (${state.mode.toUpperCase()}) ACTIVE — user is away. ` +
+		`BLOCKED: ${refused}. ` +
 		`This action is queued to ${ledger}. ` +
 		`Do NOT retry or work around it; continue your task without it and note the deferral in your report.`
 	);
@@ -574,7 +591,7 @@ export default function (pi: ExtensionAPI): void {
 				inputDigest(event.toolName, event.input),
 			);
 			hookLog("focus-gate", "block", { tool: event.toolName, pattern: hit.pattern });
-			return { block: true, reason: blockReason(state, ledger) };
+			return { block: true, reason: blockReason(state, ledger, hit.pattern) };
 		} catch {
 			return; // fail-open: a gate bug must not crash the session
 		}
