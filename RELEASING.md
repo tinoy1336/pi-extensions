@@ -1,12 +1,38 @@
 # Releasing
 
-Both packages are published to npm by CI: a merge to `main` versions, changelogs, tags
+Every package is published to npm by CI: a merge to `main` versions, changelogs, tags
 and publishes with no human step, once the one-time bootstrap below is done.
 
-Package | Tag | Changelog
---- | --- | ---
-`@tinoy/pi-ext-lib` | `ext-lib-vX.Y.Z` | `packages/ext-lib/CHANGELOG.md`
-`@tinoy/pi-canon` | `canon-vX.Y.Z` | `packages/canon/CHANGELOG.md`
+The table is in dependency order — the order `.github/workflows/release.yml` releases
+them in (`RELEASE_ORDER`). A package sits after every package it imports.
+
+| Package | Tag | Depends on | Changelog |
+| --- | --- | --- | --- |
+| `@tinoy/pi-ext-lib` | `ext-lib-vX.Y.Z` | — | `packages/ext-lib/CHANGELOG.md` |
+| `@tinoy/pi-focus-state` | `focus-state-vX.Y.Z` | — | `packages/focus-state/CHANGELOG.md` |
+| `@tinoy/pi-tariff` | `tariff-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/tariff/CHANGELOG.md` |
+| `@tinoy/pi-cache-prefix-log` | `cache-prefix-log-vX.Y.Z` | — | `packages/cache-prefix-log/CHANGELOG.md` |
+| `@tinoy/pi-child-request-dump` | `child-request-dump-vX.Y.Z` | — | `packages/child-request-dump/CHANGELOG.md` |
+| `@tinoy/pi-no-subagent-fork` | `no-subagent-fork-vX.Y.Z` | — | `packages/no-subagent-fork/CHANGELOG.md` |
+| `@tinoy/pi-canon` | `canon-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/canon/CHANGELOG.md` |
+| `@tinoy/pi-build` | `build-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/build/CHANGELOG.md` |
+| `@tinoy/pi-child-prompt-freeze` | `child-prompt-freeze-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/child-prompt-freeze/CHANGELOG.md` |
+| `@tinoy/pi-cli-keys` | `cli-keys-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/cli-keys/CHANGELOG.md` |
+| `@tinoy/pi-command-guard` | `command-guard-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/command-guard/CHANGELOG.md` |
+| `@tinoy/pi-deepseek-cost` | `deepseek-cost-vX.Y.Z` | `@tinoy/pi-ext-lib`, `@tinoy/pi-tariff` | `packages/deepseek-cost/CHANGELOG.md` |
+| `@tinoy/pi-desktop-notify` | `desktop-notify-vX.Y.Z` | `@tinoy/pi-ext-lib`, `@tinoy/pi-focus-state` | `packages/desktop-notify/CHANGELOG.md` |
+| `@tinoy/pi-drift-anchor` | `drift-anchor-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/drift-anchor/CHANGELOG.md` |
+| `@tinoy/pi-fleet` | `fleet-vX.Y.Z` | `@tinoy/pi-ext-lib`, `@tinoy/pi-tariff` | `packages/fleet/CHANGELOG.md` |
+| `@tinoy/pi-focus-gate` | `focus-gate-vX.Y.Z` | `@tinoy/pi-ext-lib`, `@tinoy/pi-focus-state` | `packages/focus-gate/CHANGELOG.md` |
+| `@tinoy/pi-image-read` | `image-read-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/image-read/CHANGELOG.md` |
+| `@tinoy/pi-intercom-broadcast` | `intercom-broadcast-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/intercom-broadcast/CHANGELOG.md` |
+| `@tinoy/pi-nf` | `nf-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/nf/CHANGELOG.md` |
+| `@tinoy/pi-orphan-repair` | `orphan-repair-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/orphan-repair/CHANGELOG.md` |
+| `@tinoy/pi-probe` | `probe-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/probe/CHANGELOG.md` |
+| `@tinoy/pi-read-staleness` | `read-staleness-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/read-staleness/CHANGELOG.md` |
+| `@tinoy/pi-status-metrics` | `status-metrics-vX.Y.Z` | `@tinoy/pi-ext-lib`, `@tinoy/pi-focus-state` | `packages/status-metrics/CHANGELOG.md` |
+| `@tinoy/pi-sudo-approve` | `sudo-approve-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/sudo-approve/CHANGELOG.md` |
+| `@tinoy/pi-todo-parent` | `todo-parent-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/todo-parent/CHANGELOG.md` |
 
 ## What a release does
 
@@ -26,11 +52,17 @@ and releases each package with semantic-release, driven by Conventional Commits:
    `@semantic-release/changelog`, `@semantic-release/npm` (publish),
    `@semantic-release/git` (the release commit, pushed with `[skip ci]`),
    `@semantic-release/github` (the GitHub release);
-4. `ext-lib` runs before `canon`, because `canon` depends on it.
+4. **release in dependency order** — the packages are released one after the other in
+   `RELEASE_ORDER` (`.github/workflows/release.yml`): `ext-lib` first, then `focus-state`
+   and `tariff`, then every package that imports them. The order is mandatory, not tidy:
+   a dependent's install resolves its dependencies from the registry, so a dependent
+   released before its dependency cannot be installed at all (measured: resolving one of
+   the new packages against the registry answered `404` while its dependency was
+   unpublished).
 
-The two packages version independently: each has its own tag, its own changelog and its
-own release-worthy commits. Configuration lives in `release/ext-lib.mjs` and
-`release/canon.mjs`, and both are run from the repository root so the workspace
+The packages version independently: each has its own tag, its own changelog and its
+own release-worthy commits. Configuration lives in one `release/<key>.mjs` per package,
+and every one of them is run from the repository root so the workspace
 lockfile is inside the release commit (`npm version` rewrites the root
 `package-lock.json`; a lockfile left out of the commit makes the next `npm ci` fail).
 
@@ -51,8 +83,8 @@ lockfile is inside the release commit (`npm version` rewrites the root
   `scripts/withdraw-tag.sh` deletes exactly the tags that appeared — remote ref and
   local ref — leaving a previous successful package's tag alone.
 - **Trusted publishing, no stored token.** The release job holds `id-token: write` and
-  publishes over npm's OIDC exchange, with provenance generated for both packages; no
-  npm token exists in the repository or in secrets.
+  publishes over npm's OIDC exchange, with provenance generated for every package it
+  publishes; no npm token exists in the repository or in secrets.
 
 ## One-time bootstrap
 
@@ -66,23 +98,31 @@ in this order.
    npm login
    ```
 
-2. **Publish both packages by hand, `ext-lib` first** (canon depends on it). The first
-   publish of a scoped package needs `--access public`.
+2. **Publish every package by hand, in dependency order** — `ext-lib`, `focus-state`
+   and `tariff` first, then the rest. The first publish of a scoped package needs
+   `--access public`. Dependency order holds here too: a package published before its
+   dependency is not installable until that dependency is up.
 
    ```bash
-   (cd packages/ext-lib && npm publish --access public)
-   (cd packages/canon && npm publish --access public)
+   for k in ext-lib focus-state tariff $(ls packages | grep -vE '^(ext-lib|focus-state|tariff)$'); do
+     (cd "packages/$k" && npm publish --access public)
+   done
    ```
 
-3. **Push the baseline tags**, on the commit whose `package.json` carries version
-   `0.1.0`. semantic-release measures from the last tag: with no tag its first release
-   would be `1.0.0`, which would not match what was just published.
+   A package that is already on the registry at that version answers
+   `EPUBLISHCONFLICT`; that is the expected answer for the packages published before
+   this loop ran, and it is what "already bootstrapped" looks like.
+
+3. **Push a baseline tag for every package**, on the commit whose `package.json`
+   carries version `0.1.0`. semantic-release measures from the last tag: with no tag its
+   first release would be `1.0.0`, which would not match what was just published.
 
    ```bash
-   git tag ext-lib-v0.1.0
-   git tag canon-v0.1.0
-   git push origin ext-lib-v0.1.0 canon-v0.1.0
+   for k in $(ls packages); do git tag "${k}-v0.1.0"; done
+   git push origin $(git tag --list '*-v0.1.0')
    ```
+
+   A tag that already exists is reported by git and needs no action.
 
 4. **Wire the trusted publisher on npm, once per package.** On
    <https://www.npmjs.com/package/@tinoy/pi-ext-lib> → *Settings* → *Trusted Publisher*
@@ -95,7 +135,11 @@ in this order.
    Workflow filename | `release.yml`
    Environment | *leave empty*
 
-   Then repeat on <https://www.npmjs.com/package/@tinoy/pi-canon>.
+   Then repeat on <https://www.npmjs.com/package/@tinoy/pi-canon> and on every other
+   package: each one needs its own entry, at
+   `https://www.npmjs.com/package/<name>` → *Settings* → *Trusted Publisher*. A package
+   without an entry cannot use OIDC at all: its release stops at `verifyConditions` with
+   `404 OIDC token exchange error - package not found`, before any tag is created.
 
    The workflow filename must be exactly `release.yml`: npm matches that field (and the
    environment, when one is set) against the OIDC token's claims, and it matches the
@@ -139,8 +183,8 @@ workflow's dispatch inputs (`provider`, `model`, `prompt`) choose what the turn 
   anything: an authenticated npm session (`npm login` — without one it stops at
   `EINVALIDNPMTOKEN`), and a reachable `origin` (semantic-release reads the remote's
   branches, so the GitHub repository has to exist and answer `git ls-remote`).
-- **Force a release by hand**: *Actions* → *Release* → *Run workflow*, choosing
-  `both`, `ext-lib` or `canon`. A dispatch still honours both guardrails — the path gate
+- **Force a release by hand**: *Actions* → *Release* → *Run workflow*, choosing `both`
+  or any one key from `RELEASE_ORDER`. A dispatch still honours both guardrails — the path gate
   and the "no release-worthy commit" rule — so a dispatch with nothing to release does
   nothing. To publish a patch when no release-worthy commit exists (a repair after a
   failed publish, for instance), commit an empty `fix:` first:
