@@ -15,9 +15,13 @@
  *
  * There is NO timeout on the promptd request — the window stays open until the
  * approver answers, because a timeout is what fired a second prompt while the
- * window was still up. FALLBACK (2): when the promptd INVOCATION fails with an
- * error (service down / unreachable / broken reply), the TUI confirm dialog + the
- * yad askpass bridge run instead. Fallback triggers on errors ONLY.
+ * window was still up. FALLBACK (2): when the promptd invocation produces NO
+ * reply (service down / unreachable / killed / broken output), the TUI confirm
+ * dialog + the yad askpass bridge run instead. A reply whose first line starts
+ * with `error:` is an ANSWER, not a dead channel: the router maps that prefix to
+ * a non-zero exit, so `error: cancelled` — the approver dismissing the window —
+ * arrives exactly like a transport failure did and IS the denial, and any other
+ * `error:` is that path's own failure, recorded as one.
  *
  * Where promptd is reached: the request router this extension invokes (a
  * `tinshell-route`-style command that forwards `promptd <cmd>` to the live instance
@@ -219,7 +223,13 @@ const MAX_FAILED_ROUNDS = 3;
  *  channel was servable resolves "error: channel-dead" too; a child error
  *  while never servable keeps the invocation-failure semantics ("") that
  *  trigger the TUI fallback. On agent abort the child is killed and the
- *  reply is "error: aborted". */
+ *  reply is "error: aborted".
+ *
+ *  THE REPLY DECIDES FIRST, THE TRANSPORT SECOND. A child exit is a transport
+ *  failure only when it carries NO stdout: the router exits non-zero whenever
+ *  the reply's first line starts with `error:`, which is the normal shape of
+ *  `error: cancelled`, so the exit status alone cannot tell a denial from a
+ *  dead host. A reply is the answer; classifying it belongs to the call site. */
 export function promptdRequest(cmd: string, signal: AbortSignal | undefined): Promise<string> {
 	return new Promise((resolve) => {
 		const missing = routerMissingRefusal();
@@ -248,6 +258,14 @@ export function promptdRequest(cmd: string, signal: AbortSignal | undefined): Pr
 
 		const child = execFile(ROUTER_PATH, ["promptd", cmd], { signal }, (err, stdout, stderr) => {
 			if (settled) return;
+			// The reply first: a reply is the ANSWER whatever the exit status, because the
+			// router exits non-zero for an `error:` first line. Only the ABSENCE of a reply
+			// (spawn failure, kill, empty stdout) is a transport failure.
+			const reply = stdout.trim();
+			if (reply !== "") {
+				finish(reply);
+				return;
+			}
 			if (err) {
 				audit({
 					decision: "promptd-call-failed",
@@ -255,9 +273,9 @@ export function promptdRequest(cmd: string, signal: AbortSignal | undefined): Pr
 					stderr: String(stderr ?? "").slice(0, 500),
 				});
 				finish(signal?.aborted ? "error: aborted" : everServable ? "error: channel-dead" : "");
-			} else {
-				finish(stdout.trim());
+				return;
 			}
+			finish(reply);
 		});
 
 		const declareDead = (): void => {
@@ -596,6 +614,20 @@ export default function (pi: ExtensionAPI): void {
 					],
 					details: { decision: "channel-dead", channel: "promptd" },
 				};
+			}
+			if (reply.startsWith("error:")) {
+				// A reply, not a dead channel: the promptd path answered with its own failure
+				// (the router maps an `error:` first line to a non-zero exit, so it arrives
+				// exactly like a transport failure did). Record that failure under the
+				// call-failed decision — its `reply` field carries the path's own answer, where a
+				// transport failure's row carries the child's stderr — then let the documented
+				// fallback decide.
+				audit({
+					decision: "promptd-call-failed",
+					reply: reply.slice(0, 500),
+					channel: "promptd",
+					commands,
+				});
 			}
 			if (reply.startsWith("{") && reply.endsWith("}")) {
 				try {
