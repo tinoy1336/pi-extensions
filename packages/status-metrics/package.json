@@ -1,0 +1,40 @@
+{
+	"name": "@tinoy/pi-status-metrics",
+	"version": "0.1.0",
+	"description": "Session counters in pi's footer: tool calls blocked, anchors injected, bytes kept out of context, actions queued by focus mode.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/status-metrics"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/status-metrics#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "status-metrics.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"status-metrics.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./status-metrics.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0",
+		"@tinoy/pi-focus-state": "^0.1.0"
+	}
+}
