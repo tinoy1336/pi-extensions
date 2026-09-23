@@ -29,6 +29,9 @@
 	"keywords": [
 		"pi-package"
 	],
+	"pi": {
+		"extensions": []
+	},
 	"engines": {
 		"node": ">=22"
 	}
