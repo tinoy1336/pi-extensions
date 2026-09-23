@@ -17,7 +17,12 @@
 		".": "./src/index.ts"
 	},
 	"files": [
-		"src",
+		"src/hook-log.ts",
+		"src/index.ts",
+		"src/neighbour.ts",
+		"src/system-prompt.ts",
+		"src/tool-header.ts",
+		"CONTRACT.md",
 		"README.md",
 		"LICENSE"
 	],

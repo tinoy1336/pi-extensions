@@ -28,6 +28,19 @@ An extension package depends on it through npm:
 | `PROMPT_APPEND_SEP` | `system-prompt.ts` | the separator between a base system prompt and an appended block |
 | `canonicalSystemPrompt(systemPrompt, block)` | `system-prompt.ts` | the one canonical form of the system prompt — base + separator + block, appended exactly once at the end, whatever run-start path built it |
 | `systemPromptSlot(payload)` | `system-prompt.ts` | read/write access to a provider payload's system-prompt slot, or `null` for a payload shape that carries none |
+| `optionalNeighbour(neighbour, load, report)` | `neighbour.ts` | resolve an optional neighbour with a guarded dynamic import: never throws, resolves each `(source, neighbour)` pair once per process, and emits one `neighbour-absent` line per absent pair |
+| `NeighbourReport` | `neighbour.ts` | what that line carries: the reporting `source`, the lost `effect`, and an install `hint` |
+
+## Degradation contract
+
+[CONTRACT.md](CONTRACT.md) is the normative text every package in this repository
+implements: no work and no throw at module scope, optional neighbours resolved through
+`optionalNeighbour`, a named `neighbour-absent` line instead of an error, tool names owned
+outright, the active tool set touched only through a package's own name, one owner per
+shared path, order-free event seams, machine-bound capability refused at call time, and
+caveats declared as a README table row (machine-readable mirror gated on the loader
+ignoring an unknown `pi` key). Check a package with `node scripts/check-caveats.mjs` and
+`node --experimental-strip-types packages/ext-lib/src/neighbour.probe.ts`.
 
 ## What is deliberately not here
 

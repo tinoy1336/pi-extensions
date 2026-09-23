@@ -10,6 +10,7 @@
  * package that depends on this one.
  */
 export { HOOK_LOG_PATH, hookLog } from "./hook-log.ts";
+export { type NeighbourReport, optionalNeighbour } from "./neighbour.ts";
 export {
 	canonicalSystemPrompt,
 	PROMPT_APPEND_SEP,
