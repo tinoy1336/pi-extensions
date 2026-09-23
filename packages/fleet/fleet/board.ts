@@ -120,7 +120,7 @@ export interface CrewPeer {
  * The worker a row's subject attributes it to. The crew's convention is
  * `<name>: <imperative subject>` and NOTHING else counts as an attribution: a
  * subject without that prefix belongs to no worker with confidence, and guessing
- * would write a false owner onto the board the user reads.
+ * would put a false owner on the board.
  */
 export function rowWorker(subject: unknown): string | null {
 	if (typeof subject !== "string") return null;

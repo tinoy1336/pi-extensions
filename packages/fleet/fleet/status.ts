@@ -24,7 +24,7 @@ export const AGENT_DIR =
 /** The installed extension's own directory: `config.json` lives here. */
 export const FLEET_DIR = join(AGENT_DIR, "extensions/fleet");
 
-/** The owner's temp root, reproduced exactly as pi-subagents scopes it. */
+/** The pi-subagents temp root, reproduced exactly as it is scoped there. */
 export const SUBAGENT_TEMP_ROOT = process.env.PI_SUBAGENTS_TEMP_ROOT?.trim()
 	? resolve(process.env.PI_SUBAGENTS_TEMP_ROOT.trim())
 	: join(
@@ -32,17 +32,17 @@ export const SUBAGENT_TEMP_ROOT = process.env.PI_SUBAGENTS_TEMP_ROOT?.trim()
 			`pi-subagents-${typeof process.getuid === "function" ? `uid-${process.getuid()}` : "user"}`,
 		);
 
-/** The owner's run-record root. */
+/** pi-subagents' run-record root. */
 const SUBAGENT_ASYNC_DIR = join(SUBAGENT_TEMP_ROOT, "async-subagent-runs");
 
-/** The owner's staged result-record root, and the two index segment names it
+/** pi-subagents' staged result-record root, and the two index segment names it
  *  builds paths from (`runs/background/result-files.ts`). */
 export const SUBAGENT_RESULTS_DIR = join(SUBAGENT_TEMP_ROOT, "async-subagent-results");
 const RESULT_INDEX_DIR = "result-index";
 const RUN_INDEX_DIR = "runs";
 
 /**
- * One `asyncSnapshot.runs[]` row, as the owner REALLY emits it (captured live):
+ * One `asyncSnapshot.runs[]` row, as pi-subagents REALLY emits it:
  * `{id, kind, label, state, startedAt, updatedAt, activity:{lastActivityAt}, children:[…]}`
  * — the timestamp is NESTED under `activity`, and the row carries no tokens
  * (those live in the `fleet` DTO, which has no run ids to map onto).
@@ -61,7 +61,7 @@ export interface RunRow {
 	reportPath?: string;
 }
 
-/** The row's last-activity stamp, wherever the owner actually put it. */
+/** The row's last-activity stamp, wherever pi-subagents actually put it. */
 export function rowLastActivity(row: RunRow): number | null {
 	const v =
 		row.activity?.lastActivityAt ??
@@ -84,9 +84,9 @@ export function rowTokens(row: RunRow): number | null {
  * The run's OWN record — `async-subagent-runs/<runId>/status.json` — retains its
  * cumulative usage (`totalTokens{input,output,total,window,windowPeak}`). This is
  * the only per-run usage source: the status snapshot rows carry no token field,
- * and the owner's `fleet` DTO entries are opaque-keyed ("never a run identifier")
+ * and pi-subagents' `fleet` DTO entries are opaque-keyed ("never a run identifier")
  * and cover only ACTIVE runs, so they cannot be attributed to a named worker.
- * `tokens` is the owner's own total convention (input+output); `windowPeak` is
+ * `tokens` is pi-subagents' own total convention (input+output); `windowPeak` is
  * the direct context-pressure signal. Returns null when the record is absent
  * (never launched, or pruned by retention).
  */
@@ -262,7 +262,7 @@ function shortTokens(count: number): string {
 
 /**
  * The worker's own session record path, read from its run record. Used when a
- * completion payload does not carry the child session file (the owner's
+ * completion payload does not carry the child session file (pi-subagents'
  * single-run payload puts it on `results[0].sessionFile`, not at top level).
  */
 export function runSessionFile(runId: string | null | undefined): string | null {
@@ -279,7 +279,7 @@ export function runSessionFile(runId: string | null | undefined): string | null 
 }
 
 /**
- * A run's own record, as the owner's control surfaces read it. `sessionId` is the
+ * A run's own record, as pi-subagents' control surfaces read it. `sessionId` is the
  * PARENT SESSION FILE PATH the run was launched under (pi-subagents
  * `resolveCurrentSessionId`), and every cross-session guard compares exactly that
  * field — which is why adoption re-stamps it and nothing else.
@@ -368,7 +368,7 @@ export function readRunRecord(runId: string | null | undefined): RunRecord | nul
 /**
  * Why a run has no row, when it has none — the distinction an `assign` turns on.
  * `missing` (no status file) is an ABSENCE: it is no evidence of a live run, so a
- * resume may be attempted and the owner answers. `unreadable` (a status file that
+ * resume may be attempted and pi-subagents answers. `unreadable` (a status file that
  * exists and yielded no record) is an ambiguity about a run that was there, and
  * the caller refuses on it. A null run id answers `missing`; the caller refuses on
  * the identity itself before it asks this question.
@@ -573,10 +573,10 @@ export function isPidAlive(pid: number | null | undefined): boolean {
 }
 
 /**
- * A run row built from the run's OWN record rather than from the owner's status
+ * A run row built from the run's OWN record rather than from pi-subagents' status
  * snapshot. The snapshot covers only the runs THIS process started, so a crew adopted
  * from a handoff has no row in it at all; the record is the only source an adopted crew
- * has, and it is the same file the owner's own resume path reconciles.
+ * has, and it is the same file pi-subagents' own resume path reconciles.
  *
  * Liveness is decided from the pid, never from the record's word: a record left saying
  * `running` by a process that has since died is read as settled, which is the direction
@@ -758,7 +758,7 @@ export function runFailureCause(sessionFile: string | null | undefined): string 
 
 /**
  * Ids a resume reply can be naming, PRE-resume id excluded. `details.asyncId`
- * leads because that is the revived run's id in the owner's own receipt
+ * leads because that is the revived run's id in pi-subagents' own receipt
  * (`subagent-executor.ts`: `const revivedId = result.details.asyncId ?? runId`);
  * ids harvested from the receipt text follow, since a bare text id may well be
  * the run the caller passed in rather than the new one.
@@ -808,7 +808,7 @@ export function newLiveRows(
 }
 
 /**
- * Why a resume failed — the distinction a sticky verdict depends on. The owner
+ * Why a resume failed — the distinction a sticky verdict depends on. pi-subagents
  * refuses a resume of a RUNNING child ("is still running"), which is transient:
  * the run is resumable the moment it settles. Only a verdict about the run
  * itself (no persisted session to continue) may mark a worker `not-resumable`,

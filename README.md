@@ -43,15 +43,15 @@ entry and the shared library packages, which npm installs for you.
 | `@tinoy/pi-command-guard` | destructive shell commands are blocked with the safe alternative named | — | — |
 | `@tinoy/pi-status-metrics` | footer counters: calls blocked, bytes kept out of context, anchors, gated actions | — | `@tinoy/pi-command-guard` and `@tinoy/pi-read-staleness` feed two of its rows |
 | `@tinoy/pi-nf` | `nf`: glyph search, contact sheet, escape audit | `python3` with Pillow and a Nerd Font file for `sheet` (`search` and `audit` need nothing) | — |
-| `@tinoy/pi-build` | the bounded `build` tool for a compile, lint or typecheck command | a shell with the toolchain the command itself uses | `@tinoy/pi-fleet` for crew isolation |
+| `@tinoy/pi-build` | the bounded `build` tool for a compile, lint or typecheck command | a shell with the toolchain the command itself uses | `@tinoy/pi-fleet` for claim-guarded isolation |
 | `@tinoy/pi-child-prompt-freeze` | a child session's rewritten system prompt is pinned and restored | a child session (inert in a parent) | — |
 | `@tinoy/pi-todo-parent` | the child session's todo tool, applied to the spawning session's list | `@juicesharp/rpiv-todo` in the spawning session, and the pi-subagents supervisor channel to carry the mutation | — |
 | `@tinoy/pi-focus-gate` | machine-global focus mode: a session works but cannot touch the desktop | Hyprland, AGS, `grim` and the `inject` wrapper for the actions it gates | — |
 | `@tinoy/pi-drift-anchor` | reasoning-register drift is detected and re-anchored with a tail line | — | `@tinoy/pi-canon`, whose block the anchor texts name |
 | `@tinoy/pi-deepseek-cost` | the session footer priced from the house tariff | a tariff table with your own rates (`tariff.json`) | — |
-| `@tinoy/pi-cli-keys` | provider API keys hydrated into the session environment | a Proton Pass vault plus a local `cli-keys` command | — |
-| `@tinoy/pi-sudo-approve` | root commands run behind a user-approved prompt, with an audit log | AGS/promptd for the approval window | — |
-| `@tinoy/pi-fleet` | the crew tool and its write coordination: roster, per-worker claims, locks, version checks (two entries) | pi-subagents for the transports, and `@juicesharp/rpiv-todo` for the board | `@tinoy/pi-canon`, whose foreman discipline section reaches the system prompt |
+| `@tinoy/pi-cli-keys` | provider API keys hydrated into the session environment | a credential vault CLI and a local `cli-keys`-style command | — |
+| `@tinoy/pi-sudo-approve` | root commands run behind an approved prompt, with an audit log | `promptd` for the approval window, reached through a router named by `SUDO_APPROVE_ROUTE` or `TINSHELL_HOME` | — |
+| `@tinoy/pi-fleet` | a fleet of long-lived worker sessions and the write coordination around one shared tree: roster, per-worker claims, locks, version checks (two entries) | pi-subagents for the transports, and `@juicesharp/rpiv-todo` for the board | `@tinoy/pi-canon`, whose fleet discipline section reaches the system prompt |
 
 **Install everything.** The full set above is the known-good set: matrix case `A2` installs
 all of it from the tarballs and loads it in one pi process, and the case fails unless every
@@ -68,7 +68,7 @@ feature refuses at call time with the reason. `Needs` above names the capability
 the package, for everything that is outside npm — a missing one never stops the install
 and never stops the load.
 
-**Two operator settings that are not packages.** Both are configuration for the session
+**Two settings that are not packages.** Both are configuration for the session
 that hosts these extensions, and neither ships in a package:
 
 - the `context` setting of `subagent/config.json` — the default a subagent spawn resolves

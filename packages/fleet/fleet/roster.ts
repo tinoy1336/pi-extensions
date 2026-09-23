@@ -48,7 +48,7 @@ export interface Worker {
 	 *  the stored id is then known-dead and steer/retire refuse instead of aiming
 	 *  at the pre-resume run. Cleared by the next successful reconcile. */
 	handleUnverified: boolean;
-	/** Why the worker was marked not-resumable, verbatim from the owner. The
+	/** Why the worker was marked not-resumable, verbatim from the caller. The
 	 *  reason is what makes the state clearable: only a structural verdict (no
 	 *  persisted session) survives a reconcile; a transient refusal is never
 	 *  recorded here at all. */

@@ -29,8 +29,8 @@
  * else (including all weekend) is valley. V4 Pro is priced by its own entry in
  * models.json and is not handled here.
  *
- * Subagent sources and why they are not used: the async run receipts under
- * /tmp/pi-subagents-uid-1000/ (status.json, events.jsonl, recovery-descriptor)
+ * Subagent sources and why they are not used: the async run receipts
+ * pi-subagents writes (status.json, events.jsonl, recovery-descriptor)
  * carry a run TOTAL per child (input/output/cacheRead/cacheWrite) but no
  * per-request timestamps, so they cannot be priced at the tariff in force when
  * each request was made — and the child session jsonl they point at carries
@@ -193,12 +193,11 @@ const isDeepseekFlash = (model: unknown): boolean => {
  * (a resumed child appends a new `run-<n>` dir). Nested children would sit under
  * their own parent's session dir, so the walk descends a few levels.
  *
- * Unusable alternatives: the async run receipts under
- * /tmp/pi-subagents-uid-1000/async-subagent-runs/<runId>/ (status.json,
- * events.jsonl, recovery-descriptor.json, subagent-log) record a per-child run
- * TOTAL without per-request timestamps — no peak/valley window can be applied
- * to them — and ~/.local/pi/foreman/headless-runs.jsonl is a foreman-specific
- * ledger of launched processes with a session path and nothing priceable.
+ * Unusable alternatives: the async run receipts pi-subagents writes per run
+ * (status.json, events.jsonl, recovery-descriptor.json, subagent-log) record a
+ * per-child run TOTAL without per-request timestamps — no peak/valley window can
+ * be applied to them — and a launch ledger records a spawned process with a
+ * session path but nothing priceable.
  */
 function childSessionFiles(sessionFile: string): string[] {
 	const dir = sessionFile.endsWith(".jsonl") ? sessionFile.slice(0, -".jsonl".length) : sessionFile;
@@ -250,9 +249,9 @@ interface FootUi {
 //
 // pi itself renders a "Cache miss" transcript notice (core: addCacheMissNotice),
 // but its cost comes from `missedCost`, derived from the message's `usage.cost` —
-// which pi fills from the model's `cost` metadata. models.json's Flash entry has
-// no cost fields (they were removed so pi's flat `$` figure would not compete
-// with this extension's tariff), so that notice prints no cost at all.
+// which pi fills from the model's `cost` metadata. models.json's Flash entry carries
+// no cost fields, so pi's flat `$` figure never competes with this extension's tariff
+// and that notice prints no cost at all.
 //
 // The notice here is the same signal, costed by THIS extension: the re-billed
 // tokens are charged the cache-miss rate minus the cache-hit rate they would

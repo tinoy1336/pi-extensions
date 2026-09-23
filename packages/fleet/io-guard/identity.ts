@@ -47,7 +47,7 @@ function isLive(pid: number, procStart: string | null): boolean {
 	if (!Number.isInteger(pid) || pid <= 0) return false;
 	const now = procStartTime(pid);
 	if (now !== null) {
-		// /proc gave us a start time: pid reuse cannot masquerade as the owner.
+		// /proc gave us a start time: pid reuse cannot masquerade as the claimant.
 		return procStart === null ? true : now === procStart;
 	}
 	// No /proc (non-Linux, or a restricted host): fall back to a signal probe.
@@ -222,7 +222,7 @@ export function identityHolder(root: string, env: NodeJS.ProcessEnv = process.en
  * The runtime record IS the identity claim (`claimProcessIdentity` writes it), so
  * this answers the same question a second claimant asks before standing down, with
  * the SAME liveness rule — the kernel start time for the pid, so a reused pid
- * cannot pass as the owner. Read fresh on every call: a caller deciding whether a
+ * cannot pass as the claimant. Read fresh on every call: a caller deciding whether a
  * worker is gone must see the current answer, not a memo from an earlier moment.
  * An absent or unparseable record answers false — no process holds the identity
  * — which is the state a reboot leaves behind.

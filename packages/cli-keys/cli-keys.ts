@@ -2,12 +2,13 @@
  * cli-keys — hand pi's provider API keys to the environment, and say so when
  * none of them can be resolved.
  *
- * `~/.local/bin/cli-keys` fetches the provider keys from the Proton Pass vault
- * into a mode-600 cache under the XDG STATE directory, which survives a reboot —
- * `$XDG_RUNTIME_DIR` is a tmpfs, so a cache kept there is gone at every boot.
- * The path is not restated here: the script owns it and answers `cli-keys
- * cache-path`, because two readers of one credential file must not be able to
- * disagree about where it is. models.json names that
+ * `~/.local/bin/cli-keys` fetches the provider keys from the credential vault its
+ * own client is logged in to, into a mode-600 cache under the XDG STATE directory,
+ * which survives a reboot — `$XDG_RUNTIME_DIR` is a tmpfs, so a cache kept there is
+ * gone at every boot. The path is not restated here: the script owns it and answers
+ * `cli-keys cache-path`, because two readers of one credential file must not be able
+ * to disagree about where it is. Which script is run is settable — `CLI_KEYS_SCRIPT`,
+ * defaulting to the per-user path above. models.json names that
  * script in pi's COMMAND form — `"apiKey": "!<path>/cli-keys key <NAME>"` — and
  * that command is the guarantee that a provider resolves: pi counts a command
  * value as configured from the configuration alone, without running it
@@ -34,11 +35,10 @@
  * says so — a UI notice where there is a UI, one stderr line where there is not.
  * It prints no credential and no cache content.
  *
- * Hydration and `cli-keys-refresh.service` both drive that script: when the cache
+ * Hydration and a refresh service both drive that script: when the cache
  * is past the expiry it carries, hydration runs the fetch itself, bounded, before
- * copying anything, and the service reconciles on every NetworkManager
- * connectivity change so a machine that comes back online is refreshed without a
- * session. The script is idempotent — a fresh cache returns before touching the
+ * copying anything, and a service that reconciles on every network change keeps a
+ * machine that comes back online refreshed without a session. The script is idempotent — a fresh cache returns before touching the
  * vault — so the common path costs one file read and one process. The cache can
  * also be absent, and the expiry decides only WHEN TO REFRESH: an expired cache is
  * still served, because an hours-old credential resolves a request and no
@@ -46,11 +46,11 @@
  * place the freshness window is defined.
  *
  * Two things drive that script from this process, and both end at ONE hydration
- * function. `/cli-keys refresh` runs it with the script's own `--force`, so an
- * operator can demand the fetch the freshness window would otherwise skip, and a
+ * function. `/cli-keys refresh` runs it with the script's own `--force`, so a fetch
+ * can be demanded where the freshness window would otherwise skip it, and a
  * watch on the cache's directory re-reads the file whenever ANY writer commits a new
- * generation — the refresh service, a forced fetch in another process, an operator's
- * own `cli-keys`. The watch is what a fetch alone cannot do: the value hydrated at
+ * generation — the refresh service, a forced fetch in another process, your own
+ * `cli-keys`. The watch is what a fetch alone cannot do: the value hydrated at
  * load lives in `process.env` for the life of the session, so without it a rotated
  * credential reaches neither this process's environment nor the tool children that
  * inherit it. `--force` remains the script's flag to honour, so the command reports
@@ -76,9 +76,16 @@ import { hookLog } from "@tinoy/pi-ext-lib";
  */
 
 /**
- * The fetch script, from the home directory pi and the rest of the tree resolve
- *  through `os.homedir()`. */
-export const SCRIPT_PATH = `${process.env.HOME || homedir()}/.local/bin/cli-keys`;
+ * The fetch script: `CLI_KEYS_SCRIPT` when set, else the per-user default under
+ * the home directory pi and the rest of the tree resolve through `os.homedir()`.
+ * The script owns the cache path and answers `cache-path`; this package reads
+ * neither the vault nor the cache's location from anywhere else.
+ */
+export const SCRIPT_PATH: string = (() => {
+	const override = process.env.CLI_KEYS_SCRIPT?.trim();
+	if (override && override !== "") return override;
+	return `${process.env.HOME || homedir()}/.local/bin/cli-keys`;
+})();
 
 /**
  * Bound on the script's own path answer, which is an echo and no network call.
@@ -287,8 +294,8 @@ function refreshCache(force: boolean): RefreshResult {
  * The ONE hydration path: refresh when the caller's mode allows it, read the cache,
  * copy it into `env`. Load, session start, the explicit command and a cache write by
  * another process all arrive here, so the serving rule cannot differ between them. The
- * refresh verdict travels back with the names written, because an operator is told the
- * outcome and a `force` the script did not honour must never be reported as a fetch.
+ * refresh verdict travels back with the names written, because the outcome is
+ * reported and a `force` the script did not honour must never be reported as a fetch.
  */
 function hydrateAt(phase: HydrationPhase, refresh: HydrationRefresh = "if-stale"): HydrationResult {
 	try {
@@ -330,8 +337,8 @@ let cacheWatch: FSWatcher | undefined;
 /**
  * Re-read the cache whenever a writer commits a new generation. `process.env` holds
  * the generation this process started with, and a fetch by any OTHER writer — the
- * refresh service, an operator's own `cli-keys`, a forced refresh in another pi —
- * cannot reach it; without this, a rotated credential stays invisible to this process
+ * refresh service, a forced refresh in another pi, your own `cli-keys` — cannot reach
+ * it; without this, a rotated credential stays invisible to this process
  * and to every child spawned from it until the session is restarted.
  *
  * The watch is on the cache's DIRECTORY, never on the file: the fetch commits by
@@ -396,7 +403,7 @@ function configuredCommands(): ConfiguredCommand[] {
 }
 
 /**
- * A command reduced to what an operator needs: its program and its
+ * A command reduced to what the report needs: its program and its
  * identifier-shaped arguments (a key name). Anything else is dropped, so no
  * notice and no hook-log row can echo a value a command string happens to carry.
  */
@@ -486,13 +493,13 @@ function reportUnresolvable(ctx: ExtensionContext): void {
 // commits a new cache generation — never at module evaluation, which pi reaches before a
 // session exists and where a shell-out has no tty to answer it.
 
-/** What a hydration wrote, in the terms an operator needs: names, never values. */
+/** What a hydration wrote, in the terms the command reports: names, never values. */
 function hydrationLine(result: HydrationResult): string {
 	const names = result.names.length > 0 ? result.names.join(", ") : "none";
 	return `${result.names.length} name(s) in this process's environment: ${names}`;
 }
 
-/** The reply to `/cli-keys refresh`: whether the fetch the operator asked for landed. */
+/** The reply to `/cli-keys refresh`: whether the fetch the caller asked for landed. */
 function refreshLine(result: HydrationResult): string {
 	const run = result.refresh;
 	const fetch = run?.forceIgnored
@@ -545,7 +552,7 @@ export default function (pi: ExtensionAPI) {
 		}
 	});
 
-	// /cli-keys — the operator's surface on a cache that otherwise refreshes on its own
+	// /cli-keys — a surface on a cache that otherwise refreshes on its own
 	// schedule. `refresh` demands the fetch now (the script's --force), `status` reports
 	// the generation on disk against this process's copy of it; the drift between the two
 	// is the state no fetch alone can clear.

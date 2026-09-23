@@ -159,9 +159,9 @@ export function serializeTask(
 const FINISHED = new Set(["complete", "completed", "failed", "stopped", "not-resumable"]);
 
 /**
- * Steer refusals that mean the RUN IS GONE rather than busy: the owner has no
+ * Steer refusals that mean the RUN IS GONE rather than busy: pi-subagents has no
  * async run under that id any more. `No async run found for '<id>'.` is what a
- * reboot leaves behind — the detached run died with the machine and the owner that
+ * reboot leaves behind — the detached run died with the machine and pi-subagents that
  * would steer it came back with no memory of it — so it settles the worker exactly
  * like an already-finished run: there is no process to clock out, and no handoff
  * is coming either.
@@ -170,7 +170,7 @@ const RUN_GONE =
 	/not running or queued|cannot be steered|no persisted session|not resumable|no async run found|no async run status/i;
 
 /**
- * How a retire settles. A FINISHED run — the owner's row is terminal, or the
+ * How a retire settles. A FINISHED run — pi-subagents' row is terminal, or the
  * owner refuses the steer because it is not steerable — retires as a plain
  * transition: a dead run cannot write a handoff, and leaving the worker
  * `retiring` is a limbo nothing can clear. A delivered steer leaves it
@@ -204,21 +204,21 @@ export function retireDisposition(
  * The evidence that a worker's run is PROVABLY GONE — the shape a reboot leaves.
  *
  * A detached crew is killed with the machine: its process is gone, the run record
- * died with the temp root it lived in, and the owner answers `No async run found`
+ * died with the temp root it lived in, and pi-subagents answers `No async run found`
  * to every steer. Such a worker holds its claim for nobody, and no other route can
  * settle it — the run-row reconcile has no row to read, and a clock-out steer has
  * nothing to land in.
  *
  * Every fact must point the same way, or the worker is left ALONE for the ordinary
  * paths: a run id the roster cannot vouch for (`handleUnverified`), a run id still
- * known to the owner or surviving as a record, or a process still holding the
+ * known to pi-subagents or surviving as a record, or a process still holding the
  * worker's identity, each answers false.
  */
 export function runProvablyGone(facts: {
 	handleUnverified: boolean;
 	/** Every async run id the worker's handle lineage has used. */
 	lineage: string[];
-	/** Run ids the owner's snapshot or a surviving run record still knows. */
+	/** Run ids pi-subagents' snapshot or a surviving run record still knows. */
 	knownRunIds: string[];
 	/** True while a process holds the worker's identity claim. */
 	ownerAlive: boolean;

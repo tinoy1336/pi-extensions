@@ -8,7 +8,7 @@ pi install npm:@tinoy/pi-cli-keys
 
 ## What it needs at call time
 
-The operator's own `cli-keys` script and its cache; hydration runs at session start, on the explicit command, and on a cache change, never at module evaluation.
+The machine's own `cli-keys`-style script and its cache: hydration runs at session start, on the explicit command, and on a cache change, never at module evaluation. The script is found through `CLI_KEYS_SCRIPT` (default `~/.local/bin/cli-keys`), and it answers for its own cache path.
 
 ## Registers
 

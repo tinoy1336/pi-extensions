@@ -1,23 +1,32 @@
 /**
- * sudo-approve: user-approved root command execution for pi.
+ * sudo-approve: approved root command execution for pi.
  *
  * Registers the sudo_approve tool. The agent passes one or more commands with
  * per-command and/or collective justifications. Approval flow, in order:
  *
- * 1. PRIMARY — ags/promptd (io.Astal.promptd): one centered window shows the
- *    command list + justifications + a masked password field. The password is
+ * 1. PRIMARY — the desktop approval window (promptd, owned on the session bus as
+ *    `io.Astal.<instance>`): one centered window shows the command list +
+ *    justifications + a masked password field. The password is
  *    validated INSIDE promptd (`sudo -S -v`, window stays open on wrong
  *    attempts, red text until edited, max 3); on success promptd writes it to
  *    a 0600 temp file and returns only the path; the commands run via
  *    `sudo -A` with SUDO_ASKPASS pointing at a cat-that-file script, and the
  *    temp file is deleted afterwards. The password never enters pi.
  *
- * There is NO timeout on the promptd request — the window stays open until
- * the user answers (the user's "indef" choice; a timeout is what caused the
- * dreaded double-prompt when it fired while the window was legitimately up).
- * FALLBACK (2): when the promptd INVOCATION fails with an error (service
- * down / unreachable / broken reply), the TUI confirm dialog + the yad
- * askpass bridge run instead. Fallback triggers on errors ONLY.
+ * There is NO timeout on the promptd request — the window stays open until the
+ * approver answers, because a timeout is what fired a second prompt while the
+ * window was still up. FALLBACK (2): when the promptd INVOCATION fails with an
+ * error (service down / unreachable / broken reply), the TUI confirm dialog + the
+ * yad askpass bridge run instead. Fallback triggers on errors ONLY.
+ *
+ * Where promptd is reached: the request router this extension invokes (a
+ * `tinshell-route`-style command that forwards `promptd <cmd>` to the live instance
+ * hosting the window) is resolved from the environment — `SUDO_APPROVE_ROUTE` for
+ * the router's own path, else `TINSHELL_HOME` for the checkout that holds it
+ * (`common/shell/tinshell-route.sh`). Neither set refuses by name rather than
+ * approving through the fallback: a path guessed from a home directory is a promise
+ * about where a checkout sits, and this package has none to make.
+ * `SUDO_APPROVE_INSTANCES` overrides the probed instance list.
  *
  * Every attempt (approve/deny/result) is appended as JSONL to
  * ~/.local/share/sudo-approve/audit.log.
@@ -29,7 +38,7 @@
 import { execFile, spawn } from "node:child_process";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, unlinkSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { AgentToolUpdateCallback, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { argText, clip, type HeaderPart, safeToolHeader } from "@tinoy/pi-ext-lib";
 import { type Static, Type } from "typebox";
@@ -79,44 +88,46 @@ function audit(entry: Record<string, unknown>): void {
 	}
 }
 
-/** The checkout root — the same rule the tree's own common/path/tree-root.ts uses:
- *  TINSHELL_HOME when a launcher exports it, else the dev checkout. */
-function checkoutRoot(): string {
-	return process.env.TINSHELL_HOME || join(homedir(), "dev", "tinshell");
-}
-
-/** The request router's location — RESOLVED, never hard-coded. It routes
- *  "promptd …" to the live instance (shell first, dev island fallback) and
- *  cold-starts when neither is up. SUDO_APPROVE_ROUTE wins (tests, a
- *  non-standard install); otherwise it is derived from the checkout root,
- *  because a literal path is a promise about where the tree sits. */
+/** The request router's location, resolved from the environment in one order:
+ *  `SUDO_APPROVE_ROUTE` when it names the router directly, else `TINSHELL_HOME`
+ *  joined with the router's path inside that checkout. The router forwards
+ *  "promptd …" to the live instance (the shell first, a dev island second) and
+ *  starts one when neither is up. With neither variable set the result is empty
+ *  and `routerMissingRefusal` refuses by name: a literal home path here would be a
+ *  promise about where a checkout sits, and this package has none to make. */
 function resolveRouterPath(): string {
-	return process.env.SUDO_APPROVE_ROUTE || join(checkoutRoot(), "common/shell/tinshell-route.sh");
+	const explicit = process.env.SUDO_APPROVE_ROUTE?.trim();
+	if (explicit && explicit !== "") return explicit;
+	const checkout = process.env.TINSHELL_HOME?.trim();
+	return checkout && checkout !== "" ? join(checkout, "common", "shell", "tinshell-route.sh") : "";
 }
 
-const AGS_ROUTE = resolveRouterPath();
+const ROUTER_PATH = resolveRouterPath();
 
 /** A missing router is an ENVIRONMENT fault, not an approval decision. Name the
- *  path and the variables that fix it, and never let the call site fall through
+ *  variable that fixes it, and never let the call site fall through
  *  to the confirm dialog: a UI-less session answers that with an empty reason,
- *  which reads to the model (and to the operator) as a human denial. */
+ *  which reads to the model as a human denial. */
 function routerMissingRefusal(): string | null {
-	if (existsSync(AGS_ROUTE)) return null;
+	if (ROUTER_PATH && existsSync(ROUTER_PATH)) return null;
+	const why = ROUTER_PATH ? `${ROUTER_PATH} does not exist` : "SUDO_APPROVE_ROUTE is unset";
 	return (
-		`error: router-missing: ${AGS_ROUTE} does not exist, so the approval window is unreachable. ` +
-		"Set SUDO_APPROVE_ROUTE to the router path, or TINSHELL_HOME to the checkout root. " +
+		`error: router-missing: ${why}, so the approval window is unreachable. ` +
+		"Set SUDO_APPROVE_ROUTE to the router this machine routes requests with. " +
 		"No approval was requested and none was denied."
 	);
 }
 
 /** Instances that may host promptd, route-map.conf order (production first).
- *  SUDO_APPROVE_INSTANCES overrides (tests only — never probe real shells). */
+ *  SUDO_APPROVE_INSTANCES overrides (tests only — never probe real shells). The
+ *  map is read beside the router itself, so the two cannot disagree about where
+ *  the tree keeps it. */
 function promptdInstances(): string[] {
 	if (process.env.SUDO_APPROVE_INSTANCES) {
 		return process.env.SUDO_APPROVE_INSTANCES.split(",").filter(Boolean);
 	}
 	try {
-		const map = readFileSync(join(checkoutRoot(), "common/shell/route-map.conf"), "utf8");
+		const map = readFileSync(join(dirname(ROUTER_PATH), "route-map.conf"), "utf8");
 		for (const line of map.split("\n")) {
 			const m = /^promptd=([\w,-]+)\s*$/.exec(line);
 			if (m) return m[1].split(",").filter(Boolean);
@@ -146,10 +157,10 @@ function busOwned(name: string): Promise<boolean> {
 	});
 }
 
-/** Servable probe — the same empty-request check ags-route.sh uses: a
- *  healthy instance answers instantly with its command namespaces. Catches
- *  the alive-but-frozen case (bus owned, mainloop wedged — 2026-08-31 OOM
- *  storm) that bus ownership alone cannot see. */
+/** Servable probe — the same empty-request check the router itself uses: a
+ *  healthy instance answers instantly with its command namespaces. Catches the
+ *  alive-but-frozen case (bus owned, mainloop wedged) that bus ownership alone
+ *  cannot see. */
 function probeServable(instances: string[], timeoutMs: number): Promise<boolean> {
 	return new Promise((resolve) => {
 		let done = false;
@@ -192,12 +203,12 @@ const PROBE_INTERVAL_MS = 3000;
 const PROBE_TIMEOUT_MS = 2500;
 const MAX_FAILED_ROUNDS = 3;
 
-/** Run `ags-route promptd <cmd>`; resolves with stdout ("" on failure).
+/** Run the router as `promptd <cmd>`; resolves with stdout ("" on failure).
  *
  *  NO timeout while the host is alive and answering — the prompt window
- *  stays open until the user answers (the user's "indef" choice).
+ *  stays open until it is answered.
  *
- *  MID-WAIT DEATH DETECTION (2026-08-31): while waiting, bus ownership of
+ *  MID-WAIT DEATH DETECTION: while waiting, bus ownership of
  *  a hosting instance + the servable probe run every PROBE_INTERVAL_MS.
  *  If the owning bus name vanishes, or the probe fails MAX_FAILED_ROUNDS
  *  consecutive times after the channel was once servable, the channel is
@@ -215,8 +226,8 @@ export function promptdRequest(cmd: string, signal: AbortSignal | undefined): Pr
 		if (missing) {
 			audit({
 				decision: "router-missing",
-				path: AGS_ROUTE,
-				hint: "SUDO_APPROVE_ROUTE|TINSHELL_HOME",
+				path: ROUTER_PATH,
+				hint: "SUDO_APPROVE_ROUTE",
 			});
 			resolve(missing);
 			return;
@@ -235,7 +246,7 @@ export function promptdRequest(cmd: string, signal: AbortSignal | undefined): Pr
 			resolve(value);
 		};
 
-		const child = execFile(AGS_ROUTE, ["promptd", cmd], { signal }, (err, stdout, stderr) => {
+		const child = execFile(ROUTER_PATH, ["promptd", cmd], { signal }, (err, stdout, stderr) => {
 			if (settled) return;
 			if (err) {
 				audit({
@@ -366,7 +377,7 @@ function runSudo(
 	return spawnSudo(argv, askpass, passwordFile, signal);
 }
 
-/** Desktop notification on final auth failure (user may be away). */
+/** Desktop notification on final auth failure (the approver may be away). */
 function notifyAuthFailed(attempt: number): void {
 	try {
 		spawn("notify-send", [
@@ -409,7 +420,7 @@ async function runBatch(
 			details: undefined,
 		});
 		let { code, output } = await runSudo(command, askpass, passwordFile, signal);
-		// CACHE-MODE FALLBACK (2026-08): sudo timestamps are PER-TTY. promptd's
+		// CACHE-MODE FALLBACK: sudo timestamps are PER-TTY. promptd's
 		// cache probe warms the no-tty slot, but this process's sudo inherits
 		// the agent session's pty, so `sudo -n` can miss the timestamp and fail
 		// instantly with "a password is required" right after a cache-mode
@@ -492,11 +503,11 @@ export default function (pi: ExtensionAPI): void {
 		name: "sudo_approve",
 		label: "Sudo Approve",
 		description:
-			"Run one or more commands with root privileges after the user approves them. " +
-			"Every command and its justification is shown to the user in a single approval " +
-			"window (ags/promptd); nothing runs without explicit user approval, and denial " +
-			"returns the user's reason (if any) to the model. The user's sudo password is " +
-			"entered by the user in a masked field and never passes through pi: it is " +
+			"Run one or more commands with root privileges after they are approved. " +
+			"Every command and its justification is shown in a single approval " +
+			"window (promptd); nothing runs without explicit approval, and denial " +
+			"returns the approver's reason (if any) to the model. The sudo password is " +
+			"entered in a masked field and never passes through pi: it is " +
 			"validated inside promptd (wrong password = window stays open with red text, " +
 			"max 3 attempts, then a critical desktop notification + abort) and on success " +
 			"written to a 0600 temp file consumed directly by sudo. Commands run " +
@@ -504,10 +515,10 @@ export default function (pi: ExtensionAPI): void {
 			"must carry their own flags (e.g. --noconfirm) in the command line. Output is " +
 			`truncated to ${MAX_OUTPUT_PER_COMMAND} chars per command and ${MAX_TOTAL_OUTPUT} chars total. ` +
 			"Use this tool for any privileged operation instead of attempting sudo directly.",
-		promptSnippet: "Run approved commands as root after explicit user approval",
+		promptSnippet: "Run approved commands as root after explicit approval",
 		promptGuidelines: [
 			"Use sudo_approve when a task requires root privileges; never attempt sudo, pkexec, or other privilege escalation directly.",
-			"Provide a justification for every sudo_approve command so the user can make an informed approval decision.",
+			"Provide a justification for every sudo_approve command so the approver can make an informed approval decision.",
 			"Batch related privileged commands into a single sudo_approve call with a collective justification.",
 			"Make sudo_approve commands non-interactive (e.g. pacman -Syu --noconfirm) because they run without a terminal.",
 		],
@@ -549,14 +560,14 @@ export default function (pi: ExtensionAPI): void {
 				};
 			}
 			if (reply === "error: cancelled") {
-				// User dismissed the promptd window — that IS the denial; do not
+				// The approver dismissed the promptd window — that IS the denial; do not
 				// re-prompt in the TUI.
 				audit({ decision: "deny", channel: "promptd", commands });
 				return {
 					content: [
 						{
 							type: "text",
-							text: "User denied approval in the promptd window.",
+							text: "Approval denied in the promptd window.",
 						},
 					],
 					details: { decision: "deny", channel: "promptd" },
@@ -648,7 +659,7 @@ export default function (pi: ExtensionAPI): void {
 						content: [
 							{
 								type: "text",
-								text: "User denied approval in the promptd window.",
+								text: "Approval denied in the promptd window.",
 							},
 						],
 						details: { decision: "deny", channel: "promptd" },
@@ -660,14 +671,14 @@ export default function (pi: ExtensionAPI): void {
 
 			// ── promptd invocation FAILED with an error (down/unreachable/broken)
 			// — the legitimate fallback trigger. NO timeout anywhere: a live
-			// promptd window waits as long as the user needs. ──
-			// R8: the channel that is missing is named FIRST, ahead of the request it
+			// promptd window waits as long as it needs. ──
+			// The channel that is missing is named FIRST, ahead of the request it
 			// is about to run through the fallback, because a terminal confirm that
 			// says nothing about the missing window reads as the intended path.
 			const windowMissing =
 				reply === ""
-					? `the AGS approval window is unavailable — ${AGS_ROUTE} answered nothing, so no promptd instance is reachable`
-					: `the AGS approval window failed — ${reply.slice(0, 200)}`;
+					? `the desktop approval window is unavailable — ${ROUTER_PATH} answered nothing, so no promptd instance is reachable`
+					: `the desktop approval window failed — ${reply.slice(0, 200)}`;
 			audit({
 				decision: "fallback-reason",
 				reply: reply.slice(0, 500),
@@ -684,8 +695,8 @@ export default function (pi: ExtensionAPI): void {
 				audit({ decision: "deny", channel: "fallback", reason, commands });
 				const text =
 					reason.trim().length > 0
-						? `${windowMissing}. User denied approval: ${reason}`
-						: `${windowMissing}. User denied approval (no reason given).`;
+						? `${windowMissing}. Approval denied: ${reason}`
+						: `${windowMissing}. Approval denied (no reason given).`;
 				return {
 					content: [{ type: "text", text }],
 					details: { decision: "deny", channel: "fallback", reason, commands },

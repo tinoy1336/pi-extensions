@@ -1,5 +1,5 @@
 /**
- * fleet — the foreman crew tool (FOREMAN SESSIONS ONLY).
+ * fleet — the multi-worker fleet tool (foreman mode only).
  *
  * One action-style tool that REPLACES the raw `subagent` tool while foreman mode
  * is on: every crew action is addressed by WORKER NAME (the tool owns the
@@ -142,9 +142,9 @@ function sid(ctx: Ctx): string {
 
 /**
  * The identity pi-subagents compares on every guard: the session FILE path when there
- * is one, the session id otherwise — the same expression as the owner's
+ * is one, the session id otherwise — the same expression as pi-subagents'
  * `resolveCurrentSessionId`. Adoption stamps exactly this value onto an adopted run,
- * so the successor's own control calls pass the owner's check by construction.
+ * so the successor's own control calls pass pi-subagents' check by construction.
  */
 function sessionIdentity(ctx: Ctx): string {
 	return ctx?.sessionManager?.getSessionFile?.() ?? sid(ctx);
@@ -296,11 +296,11 @@ export default function (pi: ExtensionAPI): void {
 	async function statusRows(): Promise<RunRow[]> {
 		const r = await rpc(pi, "status", {});
 		const rows = r.ok ? normalizeRuns(r.data) : [];
-		// The owner's snapshot is its own in-memory view and covers only the runs THIS
+		// pi-subagents' snapshot is its own in-memory view and covers only the runs THIS
 		// process started, so an adopted crew has no row in it — which used to leave every
 		// adopted worker unverifiable (`warmCheck` reported no row, and no resume
 		// followed). The
-		// runs' own records are the second source: they are what the owner's resume path
+		// runs' own records are the second source: they are what pi-subagents' resume path
 		// reconciles, and they are on disk under this machine's subagents temp root.
 		const session = crewCtx?.sessionManager?.getSessionId?.();
 		if (session) {
@@ -393,7 +393,7 @@ export default function (pi: ExtensionAPI): void {
 					if (w.state !== "retiring") w.state = "live";
 				}
 				// A `not-resumable` verdict is cleared the moment a fresh reconcile can
-				// see the run, unless the owner's own reason was structural (nothing to
+				// see the run, unless pi-subagents' own reason was structural (nothing to
 				// continue). A transient refusal is never recorded, and an unknown one
 				// is not a death sentence: the state must not outlive its evidence.
 				if (
@@ -450,7 +450,7 @@ export default function (pi: ExtensionAPI): void {
 					contextHighWater: usage?.windowPeak ?? null,
 					// An unknown spent-token count cannot be called non-fatigued. The basis
 					// is stated in the output so the flag is never read as a context rule:
-					// fatigue keys on the SPEND figure, on the user's 800k rule (never
+					// fatigue keys on the SPEND figure, on the configured 800k rule (never
 					// silently rescoped).
 					fatigue: tokens === null ? null : tokens >= FATIGUE_TOKENS,
 					fatigueBasis: `spentTokens >= ${FATIGUE_TOKENS}`,
@@ -837,7 +837,7 @@ export default function (pi: ExtensionAPI): void {
 					Array.isArray(args.exclusive) ? (args.exclusive as string[]) : [],
 				);
 				if (!exclusive.ok) return refuse(action, exclusive.message);
-				// An item with NO claim at all is not an item: §7 makes the claim part of
+				// An item with NO claim at all is not an item: a claim is part of
 				// its definition, and this is the same helper hire/assign refuse through.
 				const decl = declared(args);
 				if (decl.error) return refuse(action, decl.error);
@@ -899,10 +899,10 @@ export default function (pi: ExtensionAPI): void {
 					if ((args.exclusive as string[]).includes("none")) claims.exclusiveDeclared = true;
 				}
 				if (claims.owns !== undefined || claims.exclusive !== undefined) patch.claims = claims;
-				// An item that is live or done MUST name its owner. §7 gives every item exactly
+				// An item that is live or done MUST name its owner. Every item has exactly
 				// one worker, and the first flight left all thirteen marked `unassigned` — which
 				// left a takeover with no way to go from an item to the run that produced the
-				// evidence for it. The owner is the link, so it is required at the transition
+				// evidence for it. The worker is the link, so it is required at the transition
 				// rather than hoped for.
 				const existingOwner = items.listItems(session).find((it) => it.id === id)?.worker;
 				if (
@@ -1413,7 +1413,7 @@ export default function (pi: ExtensionAPI): void {
 			// THE BOARD GUARD. A worker is not retirable while it still owns open rows:
 			// the reconciliation below closes them (abandoned, or superseded), which would
 			// erase the fact that it stopped with work outstanding — the board is the
-			// crew's at-a-glance state, and that is the state the user reads. The read is
+			// crew's at-a-glance state, and that is the state the board shows. The read is
 			// a read: it runs before the disposition, the state write, the claim release
 			// and the closure, so a refusal leaves the board, the roster and the claim
 			// exactly as they were. Rows belonging to other workers never block this
@@ -1446,7 +1446,7 @@ export default function (pi: ExtensionAPI): void {
 					);
 				}
 			}
-			// Reconcile the run FIRST: a run the owner already finished needs no
+			// Reconcile the run FIRST: a run pi-subagents already finished needs no
 			// clock-out steer, and steering a finished run is what dead-ended
 			// retirement. A finished run retires as a plain transition (`retired`) —
 			// a dead run cannot write a handoff.
@@ -1604,7 +1604,7 @@ export default function (pi: ExtensionAPI): void {
 			// The RPC resume contract (pi-subagents/src/extension/rpc.ts:543) requires a
 			// non-empty `message`; `task` is not a resume parameter. The label names the
 			// resumed run from the worker record the roster already holds, so a resume
-			// carries the same envelope a hire does; the owner's resume normaliser does
+			// carries the same envelope a hire does; pi-subagents' resume normaliser does
 			// not forward it, so the row keeps the crew name only once it does.
 			const reply = await rpc(pi, "resume", {
 				id: w.asyncRunId,
@@ -1962,7 +1962,7 @@ export default function (pi: ExtensionAPI): void {
 
 	// Async completion: a failed/stopped crew run is made self-describing from the
 	// run's OWN record, so the roster and the foreman's notice carry the cause
-	// instead of a bare "failed". Subscribed on the same event the owner notifies
+	// instead of a bare "failed". Subscribed on the same event pi-subagents notifies
 	// on; runs that are not this session's crew are ignored.
 	const events = (
 		pi as unknown as { events?: { on: (e: string, cb: (p: unknown) => void) => void } }
@@ -1970,7 +1970,7 @@ export default function (pi: ExtensionAPI): void {
 	events?.on("subagent:async-complete", (payload) => {
 		void onAsyncComplete(payload);
 	});
-	// The retirement signal rides the same completion seam (design §6.2): the
+	// The retirement signal rides the same completion seam the run records do: the
 	// extension already lives in the foreman's own process, so this is a local
 	// append and needs no broker.
 	events?.on("subagent:async-complete", (payload) => {
@@ -1990,7 +1990,7 @@ export default function (pi: ExtensionAPI): void {
 	 * nothing — it records a REFUSAL naming whichever input the comparison needed and
 	 * could not measure.
 	 *
-	 * Delivery follows §6.2: appended without forcing a turn, so it rides the next
+	 * Delivery is appended without forcing a turn, so it rides the next
 	 * wake, EXCEPT for the two hard backstops, which force one because that worker is
 	 * about to be reset whatever the foreman decides.
 	 */
@@ -2035,7 +2035,7 @@ export default function (pi: ExtensionAPI): void {
 			const runId = (payload as { runId?: unknown } | null)?.runId;
 			if (typeof runId !== "string") return;
 			// In-process event, so this ctx is the right session identity; the payload's
-			// session field is the owner's session FILE path and matches no mode file.
+			// session field is pi-subagents' session FILE path and matches no mode file.
 			const session = crewCtx?.sessionManager?.getSessionId?.();
 			if (!session || !mode.isOn(session)) return;
 			const r = roster.load(session);
@@ -2214,7 +2214,7 @@ export default function (pi: ExtensionAPI): void {
 	}
 
 	/**
-	 * The completion payload the owner emits (pi-subagents `runs/background/result-watcher.ts`).
+	 * The completion payload pi-subagents emits (`runs/background/result-watcher.ts`).
 	 * The single-run shape puts the child record on `results[0].sessionFile` — the
 	 * top level has `{runId, agent, mode, state, success, results[]}`, and `results[]`
 	 * entries carry NO `runId`, so neither lookup may be assumed.
@@ -2258,7 +2258,7 @@ export default function (pi: ExtensionAPI): void {
 	/**
 	 * The completed child's own session record: `results[].runId` does not exist in
 	 * the real payload, so a single-child run is `results[0]`; a multi-child run
-	 * prefers the entry whose `runId` matches (the owner only adds it for result
+	 * prefers the entry whose `runId` matches (pi-subagents only adds it for result
 	 * children). Falls back to the run record's own `sessionFile`.
 	 */
 	function completionSessionFile(p: CompletionPayload, runId: string): string | null {
@@ -2299,7 +2299,7 @@ export default function (pi: ExtensionAPI): void {
 		}
 		if (parts.length === 0)
 			parts.push(
-				`the owner reported '${outcome}' but the run retained no cause (no record, no exit state)`,
+				`pi-subagents reported '${outcome}' but the run retained no cause (no record, no exit state)`,
 			);
 		return parts.join("; ");
 	}
@@ -2307,7 +2307,7 @@ export default function (pi: ExtensionAPI): void {
 	/**
 	 * Record a failed/stopped crew run's cause from its own record and surface it:
 	 * the worker carries a `failure` the roster reports, and the foreman gets a
-	 * notice carrying the cause the owner's notice drops. Never throws.
+	 * notice carrying the cause pi-subagents' notice drops. Never throws.
 	 */
 	async function onAsyncComplete(payload: unknown): Promise<void> {
 		try {
@@ -2316,7 +2316,7 @@ export default function (pi: ExtensionAPI): void {
 			const runId = typeof p.runId === "string" ? p.runId : undefined;
 			if (!runId) return;
 			// The event is in-process, so the extension ctx is the right session
-			// identity. `p.sessionId` is the PARENT SESSION FILE PATH in the owner's
+			// identity. `p.sessionId` is the PARENT SESSION FILE PATH in pi-subagents'
 			// world, which `mode.isOn` (a UUID key) can never match — no fallback.
 			const session = crewCtx?.sessionManager?.getSessionId?.();
 			if (!session || !mode.isOn(session)) return;
@@ -2350,8 +2350,8 @@ export default function (pi: ExtensionAPI): void {
 			w.lastActivityAt = Date.now();
 			roster.save(r);
 			const record = completionSessionFile(p, runId);
-			// Parent-facing: the same event the owner notices on, answered with the
-			// cause it drops. No triggerTurn — the owner already wakes the foreman on
+			// Parent-facing: the same event pi-subagents notices on, answered with the
+			// cause it drops. No triggerTurn — pi-subagents already wakes the foreman on
 			// a non-completed run, and calling prompt() from here would re-enter the
 			// agent ("already processing a prompt") and abort the session.
 			pi.sendMessage(
@@ -2415,10 +2415,10 @@ export default function (pi: ExtensionAPI): void {
 	 * steer refuse with the OLD terminal state and made retire skip the clock-out.
 	 *
 	 * The new id is taken from the reply's own fields (`details.asyncId` is the
-	 * revived run in the owner's receipt), then from an id the status snapshot
+	 * revived run in pi-subagents' receipt), then from an id the status snapshot
 	 * actually knows, then from the live row that newly appeared in the snapshot.
 	 * A handle is only adopted when the snapshot confirms the id (or when it came
-	 * from the owner's structured receipt); when nothing can be confirmed the
+	 * from pi-subagents' structured receipt); when nothing can be confirmed the
 	 * worker is flagged unverified rather than left pointed at a dead run.
 	 */
 	async function adoptResumedHandle(
@@ -2449,7 +2449,7 @@ export default function (pi: ExtensionAPI): void {
 						source: "reply",
 					};
 			}
-			// The owner documents `details.asyncId` as the revived run, so it is
+			// pi-subagents documents `details.asyncId` as the revived run, so it is
 			// adopted even if this snapshot has not caught up with it yet.
 			if (attempt === 2 && cands.structured.length) {
 				return { id: cands.structured[0], index: w.childIndex, source: "reply" };
@@ -2475,7 +2475,7 @@ export default function (pi: ExtensionAPI): void {
 	 * leaves behind.
 	 *
 	 * A detached crew dies with the machine: the process is gone, the run record
-	 * went with the temp root it lived in, and the owner answers `No async run
+	 * went with the temp root it lived in, and pi-subagents answers `No async run
 	 * found` to every steer. Nothing else settles such a worker: the reconcile above
 	 * needs a row and there is none, `retire` cannot deliver a clock-out, and
 	 * `io_status reclaim` moves only the guard's generation — while the hire check

@@ -1,7 +1,7 @@
 {
 	"name": "@tinoy/pi-fleet",
 	"version": "0.1.0",
-	"description": "The crew tool and its write coordination: a foreman's fleet of long-lived workers, and the per-worker claims, locks and version checks that guard one shared tree.",
+	"description": "A fleet of long-lived worker sessions driven by one coordinating session, and the write coordination that guards one shared tree: per-worker claims, locks and version checks.",
 	"license": "MIT",
 	"repository": {
 		"type": "git",

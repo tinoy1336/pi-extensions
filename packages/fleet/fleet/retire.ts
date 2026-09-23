@@ -48,7 +48,7 @@ const HOUR_MS = 60 * 60 * 1000;
 /**
  * The provider cache floor: idling longer than this voids a worker's context, so
  * a handoff written after it re-sends all of W at miss price — the cold surcharge
- * below prices exactly that. It is an OPERATOR-SET floor, not a vendor fact: no
+ * below prices exactly that. It is a CONFIGURED floor, not a vendor fact: no
  * authoritative idle TTL is published anywhere. Inside it, the model treats the
  * context as warm, and the failure mode of a true window SHORTER than the floor
  * is a re-read of W on the retire path — a bounded cost, paid rather than argued
@@ -116,23 +116,23 @@ export const LEDGER_RUNS_PER_ITEM = 1.5;
  *  all. Measured by the item ledger once it records requests per item. */
 export const MIN_ITEMS_SINCE_HIRE = 3;
 
-/** Design-set: a context that lost this fraction of its peak was just compacted.
+/** A context that lost this fraction of its peak was just compacted.
  *  Compaction has the same cost shape as a retirement with no working-set
  *  re-bootstrap, so it dominates wherever it is quality-equivalent and the
  *  retirement signal is suppressed. */
 export const COMPACTION_GUARD_FRACTION = 0.2;
 
-/** Design-set correctness backstop: at this fraction of the model's context
+/** Correctness backstop: at this fraction of the model's context
  *  limit a reset is forced at the next step boundary. No economics are involved
  *  — the cap exists because a context that cannot hold the next step is a
  *  correctness failure, not an expense. */
 export const CORRECTNESS_CAP_FRACTION = 0.75;
 
-/** Design-set deep-in-the-money backstop: at this much stale context a reset is
+/** Deep-in-the-money backstop: at this much stale context a reset is
  *  forced at the next step boundary regardless of K̂. */
 export const DEEP_IN_THE_MONEY_TOKENS = 250_000;
 
-/** Design-set budget alarm (operator-set). Its unit is cumulative spend, not
+/** Budget alarm, from configuration. Its unit is cumulative spend, not
  *  context size, so it fires on the volume of work done and lags the decision it
  *  was meant to inform: it ALARMS and never triggers a retirement. */
 export const BUDGET_ALARM_TOKENS = 900_000;

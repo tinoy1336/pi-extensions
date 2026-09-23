@@ -55,8 +55,8 @@ prices never touches the file.
 | --- | --- | --- | --- |
 | `tariff.json` | the rates this machine is billed at, so the footer and the retirement maths are about real money | every consumer refuses and prices nothing | not a package |
 
-`tariff.json` is operator-supplied data, by design: this package ships the shape and the
-refusal, never the numbers.
+`tariff.json` is your own data, by design: this package ships the shape and the refusal,
+never the numbers. Point `PI_TARIFF_CONFIG` at it to keep it anywhere on the machine.
 
 ## Dependencies
 

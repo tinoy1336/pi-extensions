@@ -6,9 +6,9 @@
  *
  * NO RATE IS IN THIS FILE, and none is compiled into it. The table is DATA, read
  * from the configured file (`PI_TARIFF_CONFIG`, else `tariff.json` in the agent
- * directory beside `models.json`). It is THIS MACHINE'S PRIVATE TABLE: the packages
- * that read it are publishable, so that file is never part of a published payload —
- * with `PI_TARIFF_CONFIG` it can live anywhere the pack does not reach. The file is
+ * directory beside `models.json`). The table is the machine's own, never part of
+ * this package: a consumer's published payload carries the shape and the refusal,
+ * with `PI_TARIFF_CONFIG` the file can live anywhere outside it. The file is
  * read once per process, by the first `loadTariff()` call, so an edit is live in the
  * NEXT session, never in the running one — and importing this module does no I/O at
  * all.
@@ -68,9 +68,8 @@ export interface TariffConfig {
 
 /**
  * Where the table is read from: `PI_TARIFF_CONFIG` when set, else `tariff.json` in
- * the agent directory (`$PI_CODING_AGENT_DIR`, default `~/.pi/agent`) — machine
- * private space, which is what keeps the operator's own rates out of every
- * published payload.
+ * the agent directory (`$PI_CODING_AGENT_DIR`, default `~/.pi/agent`) — outside every
+ * package, which is what keeps the configured rates out of a published payload.
  */
 export const TARIFF_CONFIG_PATH: string = (() => {
 	const override = process.env.PI_TARIFF_CONFIG?.trim();
@@ -84,10 +83,10 @@ export const TARIFF_CONFIG_PATH: string = (() => {
 
 /**
  * THE EXAMPLE TABLE — a synthetic 1 : 10 : 100 ladder (0.7 / 7 / 70 per unit),
- * deliberately not any vendor's rates and sharing no figure with this machine's
- * own table. It exists so the file's shape is documented in code and so the
- * refusal below can print the exact shape it wants; NO consumer prices from it,
- * and a machine with no configured table prices nothing at all.
+ * deliberately not any vendor's rates and sharing no figure with a real table. It
+ * exists so the file's shape is documented in code and so the refusal below can
+ * print the exact shape it wants; NO consumer prices from it, and a machine with no
+ * configured table prices nothing at all.
  */
 export const EXAMPLE_TARIFF: TariffConfig = {
 	cny: {
@@ -172,10 +171,9 @@ function parseTariff(text: string, path: string): TariffConfig | string {
 }
 
 /**
- * The refusal: the file to write and the shape to write in it, taken from
+ * `SHAPE_HINT` — the file to write and the shape to write in it, taken from
  * EXAMPLE_TARIFF so the text cannot drift from the shape the validator accepts.
- * The numbers printed are the synthetic ladder, never a rate this machine is
- * billed at.
+ * The numbers printed are the synthetic ladder, never a real rate.
  */
 const SHAPE_HINT = `write ${TARIFF_CONFIG_PATH} with this machine's own rates, per 1M tokens, in this shape: ${JSON.stringify(EXAMPLE_TARIFF)} — both currencies and both windows are required`;
 
@@ -249,7 +247,7 @@ export interface Ratios {
 	r: number;
 	/** (1 − r)/r — input-token equivalents one read-priced token is worth. */
 	mult: number;
-	/** output / cache-miss — the multiple the handoff term is scaled by. */
+	/** output / cache-miss — the multiple the context-transfer term is scaled by. */
 	outputPerInput: number;
 }
 

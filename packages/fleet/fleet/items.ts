@@ -32,7 +32,7 @@ export interface ItemClaims {
 	exclusive: string[];
 	/** True when the caller declared the `["none"]` sentinel here. The normalised list
 	 *  is empty either way, so without this the ledger cannot tell "declared nothing"
-	 *  from "said nothing at all" — and §7 requires an item to declare its claim. */
+	 *  from "said nothing at all" — and an item must declare its claim. */
 	exclusiveDeclared?: boolean;
 }
 

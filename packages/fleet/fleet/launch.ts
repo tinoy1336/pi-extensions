@@ -61,7 +61,7 @@ export function spawnParams(
 export type TransportFault = "ok" | "timeout" | "rejected";
 
 /**
- * A client-side deadline cannot tell "nobody is listening" from "the owner is
+ * A client-side deadline cannot tell "nobody is listening" from "pi-subagents is
  * listening but hung" — so it does not claim to. `timeout` says exactly that and
  * names both possibilities; only an ANSWERED request can be `rejected`.
  */
