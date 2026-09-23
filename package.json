@@ -26,6 +26,7 @@
 		"format": "biome format --write .",
 		"changelog": "git-cliff -o CHANGELOG.md",
 		"check:pack": "node scripts/check-pack.mjs",
+		"check:caveats": "node scripts/check-caveats.mjs",
 		"smoke": "bash scripts/smoke.sh",
 		"smoke:local": "bash scripts/smoke.sh --local",
 		"release:dry": "bash scripts/release-dry-run.sh",

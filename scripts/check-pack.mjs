@@ -16,11 +16,13 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 /** Every published package: name -> the exact files npm must upload. */
 const EXPECTED_FILES = {
 	"@tinoy/pi-ext-lib": [
+		"CONTRACT.md",
 		"LICENSE",
 		"README.md",
 		"package.json",
 		"src/hook-log.ts",
 		"src/index.ts",
+		"src/neighbour.ts",
 		"src/system-prompt.ts",
 		"src/tool-header.ts",
 	],
