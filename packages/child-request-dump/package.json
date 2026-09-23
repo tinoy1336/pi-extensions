@@ -1,0 +1,36 @@
+{
+	"name": "@tinoy/pi-child-request-dump",
+	"version": "0.1.0",
+	"description": "Structure-only JSONL record of each outbound provider request in a child session.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/child-request-dump"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/child-request-dump#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "child-request-dump.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"child-request-dump.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./child-request-dump.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*"
+	}
+}

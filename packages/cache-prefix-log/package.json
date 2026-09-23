@@ -1,0 +1,36 @@
+{
+	"name": "@tinoy/pi-cache-prefix-log",
+	"version": "0.1.0",
+	"description": "One JSONL row per cache-prefix change, so a real cache miss can be named from the log.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/cache-prefix-log"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/cache-prefix-log#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "cache-prefix-log.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"cache-prefix-log.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./cache-prefix-log.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*"
+	}
+}
