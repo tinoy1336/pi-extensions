@@ -67,6 +67,31 @@ and every one of them is run from the repository root so the workspace
 lockfile is inside the release commit (`npm version` rewrites the root
 `package-lock.json`; a lockfile left out of the commit makes the next `npm ci` fail).
 
+## The publishing credential
+
+Publishing authenticates with the `NPM_TOKEN` repository secret. It holds one granular
+access token scoped to `@tinoy`, with write access and the **2FA-bypass flag set**, taken
+from the `_authToken` line of `~/.npmrc` and piped straight into
+`gh secret set NPM_TOKEN --repo tinoy1336/pi-extensions` on stdin — the value is never
+echoed and never written to a file.
+
+That token class is why this route exists and why the trusted-publisher route is
+deferred: `POST /-/package/{package}/trust` refuses a bypass-2FA token with `403` and
+demands an interactive 2FA challenge, which a build runner cannot answer. The property
+that disqualifies the token there is the one CI needs here — a bypass-2FA granular token
+publishes without a one-time password.
+
+This is a bridge, not a destination: npm removes the ability to publish new versions
+directly with a granular access token in **January 2027**, so the trusted-publisher route
+in step 4 below has to be finished before then, and the token rotated on its own expiry
+schedule until it is.
+
+Provenance survives in token mode. `NPM_CONFIG_PROVENANCE=true` on the release step makes
+`npm publish` sign a provenance statement from the job's OIDC identity, which is what the
+job's `id-token: write` permission is for and why that permission stays on in token mode;
+the repository is public, which npm requires for an attestation. Under trusted publishing
+npm generates the same attestation automatically, without the flag.
+
 ## Guardrails
 
 - **Only after a green check.** The release trigger is CI's successful completion on
@@ -94,15 +119,20 @@ lockfile is inside the release commit (`npm version` rewrites the root
   appeared — remote ref and local ref — leaving a previous successful package's tag
   alone. It asks the registry first, so a step that failed after `npm publish`
   succeeded keeps its tag; the deletion itself is `scripts/withdraw-tag.sh`.
-- **Trusted publishing, no stored token.** The release job holds `id-token: write` and
-  publishes over npm's OIDC exchange, with provenance generated for every package it
-  publishes; no npm token exists in the repository or in secrets.
+- **OIDC first, the stored token as the fallback.** The release job passes the
+  `NPM_TOKEN` secret to `@semantic-release/npm`, which asks the registry for an OIDC token
+  first and, when that exchange does not succeed, writes `NPM_TOKEN` into the temporary
+  `.npmrc` it hands to `npm publish`. A package whose trusted publisher is wired keeps
+  using OIDC; a package with none publishes on the token instead of stopping at
+  `ENONPMTOKEN`. Both paths produce a provenance attestation — that is what
+  `NPM_CONFIG_PROVENANCE=true` and the job's `id-token: write` are for.
 
 ## One-time bootstrap
 
-npm's trusted publishing (OIDC) is configured **against an existing package**, so each
-package has to be published once by hand before CI can publish it at all. Do this once,
-in this order.
+A package can only be released by CI once it is on the registry **and** carries a
+baseline tag: semantic-release measures the next version from the last tag, so the
+`release.yml` guard refuses a package that has none rather than publishing it as `1.0.0`.
+Both halves are manual work, once per package. Do this in order.
 
 1. **Log in locally.**
 
@@ -136,7 +166,10 @@ in this order.
 
    A tag that already exists is reported by git and needs no action.
 
-4. **Wire the trusted publisher on npm, once per package.** On
+4. **(Deferred) Wire the trusted publisher on npm, once per package.** Nothing below is
+   needed while the `NPM_TOKEN` secret publishes: a package with no publisher entry
+   exchanges no OIDC token and publishes on the token instead. This becomes the required
+   operator step again when the token route is retired, which is why it is kept. On
    <https://www.npmjs.com/package/@tinoy/pi-ext-lib> → *Settings* → *Trusted Publisher*
    → *GitHub Actions*, and fill in:
 
@@ -160,14 +193,11 @@ in this order.
    environment, which is why the field above stays empty — setting an environment on the
    job without repeating the same name here would break the exchange.
 
-   **This registration is the one operator step standing between the repository and a
-   working release path, and no repository secret substitutes for it.** The workflow is
-   tokenless by design: it holds no npm credential and reads none, and the OIDC exchange
-   with the registry is the only credential its publish step ever has. A package with no
-   publisher entry therefore has nothing to authenticate with, which is why its release
-   stops at `verifyConditions` with `404 OIDC token exchange error - package not found`
-   followed by `ENONPMTOKEN No npm token specified` — the second line is the plugin
-   reporting that it had no token to fall back on, not a missing secret.
+   A package with no entry logs `OIDC token exchange with the npm registry failed: 404
+   OIDC token exchange error - package not found` and continues: `@semantic-release/npm`
+   falls through to the token, which is the credential the publish actually uses. Without
+   the secret in that fallback position the same log line is followed by `ENONPMTOKEN No
+   npm token specified`, and the release stops there.
 
    **`npm publish` is required, not optional.** The exchange matches the organization,
    repository, workflow filename and environment; it does not match the action. A connection
@@ -199,16 +229,12 @@ in this order.
    *Actions* → *Release*.
 
 If a release fails at `verifyConditions` with `ENONPMTOKEN No npm token specified`, the
-line above it is the cause: `OIDC token exchange with the npm registry failed: 404 OIDC
-token exchange error - package not found`. The registry answered 404 because the OIDC
-claims matched no trusted publisher for that exact package name — the package has no entry
-yet, or its entry names a different workflow file or environment. Step 4 (and, for a
-package that is not on the registry at all, steps 1 and 2 first) is the fix. The 404 is
-not evidence that the package is absent from the registry: a published package with no
-publisher entry answers the same thing.
-
-`EINVALIDNPMTOKEN` is the other shape of the same wall: something presented a token (an
-`NPM_TOKEN` variable, or an `_authToken` in `.npmrc`) and the registry refused it.
+`NPM_TOKEN` secret is missing or empty (the plugin logs it before it looks at the
+registry) — the OIDC line above it is then only an explanation of why it wanted a token.
+Its companion is `EINVALIDNPMTOKEN`: something presented a token (an `NPM_TOKEN`
+variable, or an `_authToken` in `.npmrc`) and the registry refused it, so the secret needs
+replacing. The 404 on OIDC is not evidence that the package is absent from the registry: a
+published package with no publisher entry answers the same thing.
 
 ## The live-turn secret
 

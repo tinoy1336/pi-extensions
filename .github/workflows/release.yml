@@ -1,6 +1,10 @@
 # Release automation: a merge to main may version, changelog, tag and publish with no
-# human step. See RELEASING.md for the bootstrap a trusted publisher needs first, and
-# for the rollback of a bad publish.
+# human step. Publishing authenticates with the NPM_TOKEN repository secret: a granular
+# access token is the one credential class a build runner can hold, because the
+# trusted-publisher endpoint demands an interactive 2FA challenge that CI cannot answer.
+# The job keeps `id-token: write` and still attempts the OIDC exchange first, so a package
+# whose trusted publisher is wired keeps using it. See RELEASING.md for the bootstrap, the
+# credential it needs, and the rollback of a bad publish.
 #
 # The trigger is the CI run's successful completion on main, so a release only ever
 # happens on a commit the check job has already passed. The checkout is pinned to the
@@ -69,8 +73,8 @@ jobs:
         if: github.event_name == 'workflow_run'
         run: git checkout -B main
 
-      # Node 24 for its npm: trusted publishing needs npm >= 11.5.1 and Node 22
-      # bundles npm 10.
+      # Node 24 for its npm: the OIDC exchange attempted below needs npm >= 11.5.1 and
+      # Node 22 bundles npm 10.
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -91,9 +95,18 @@ jobs:
       # 0.1.0. The first publish is the manual bootstrap in RELEASING.md. Packages run in
       # RELEASE_ORDER, one after the other, because a dependent's dependency has to be in the
       # registry by the time the dependent is published.
+      # Publishing auth: @semantic-release/npm asks the registry for an OIDC token first
+      # (npm trusted publishing) and, when that exchange does not succeed, writes
+      # `NPM_TOKEN` into the temporary .npmrc it hands to `npm publish` — so a package with
+      # no trusted publisher publishes on the token instead of stopping at ENONPMTOKEN.
+      # NPM_CONFIG_PROVENANCE keeps the attestation the OIDC path gets for free: with it,
+      # `npm publish` signs a provenance statement from the job's OIDC identity, which is
+      # why `id-token: write` stays on this job in token mode too.
       - name: Release the packages, in dependency order
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
         run: |
           set -euo pipefail
           want="${INPUT_PACKAGE:-both}"
@@ -123,14 +136,14 @@ jobs:
             # (semantic-release lib/get-next-version.js, FIRST_RELEASE) and prepares that
             # version into the manifest, so an untagged package is published with the wrong
             # major. The first publish is the manual bootstrap in RELEASING.md — which is
-            # what publishes the package by hand, pushes its `<pkg>-v0.1.0` tag and wires its
-            # npm trusted publisher — and CI must not stand in for it. An automatic run skips
-            # the package and releases the rest; an explicit dispatch that named it fails,
-            # because it asked for a release that cannot happen.
+            # what publishes the package by hand and pushes its `<pkg>-v0.1.0` tag — and CI
+            # must not stand in for it. An automatic run skips the package and releases the
+            # rest; an explicit dispatch that named it fails, because it asked for a release
+            # that cannot happen.
             baseline="$(git describe --tags --abbrev=0 --match "${pkg}-v*" 2>/dev/null || true)"
             if [ -z "${baseline}" ]; then
               if [ "${want}" != "both" ]; then
-                echo "::error::${pkg} has no baseline tag ${pkg}-v* — its first publish is the manual bootstrap in RELEASING.md: publish the package by hand, push ${pkg}-v0.1.0, then wire its npm trusted publisher" >&2
+                echo "::error::${pkg} has no baseline tag ${pkg}-v* — its first publish is the manual bootstrap in RELEASING.md: publish the package by hand, then push ${pkg}-v0.1.0" >&2
                 exit 2
               fi
               echo "::warning::${pkg} has no baseline tag ${pkg}-v* — skipping it; the package needs the manual bootstrap in RELEASING.md before CI can release it"
