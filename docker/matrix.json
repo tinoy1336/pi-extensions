@@ -148,7 +148,7 @@
 			"packages": ["@tinoy/pi-todo-parent"],
 			"absent": ["@juicesharp/rpiv-todo", "pi-subagents"],
 			"expectLoaded": 1,
-			"expectTools": { "@tinoy/pi-todo-parent": ["todo_parent"] },
+			"expectTools": { "@tinoy/pi-todo-parent": [] },
 			"expectLog": [
 				{
 					"source": "todo-parent",
@@ -156,7 +156,8 @@
 					"neighbour": "@juicesharp/rpiv-todo"
 				}
 			],
-			"notes": "load-fatal today; the case is the acceptance spec for the optional import"
+			"env": { "PI_SUBAGENT_CHILD": "" },
+			"notes": "load-fatal today; the case is the acceptance spec for the optional import. MEASURED: the tool is registered in a CHILD session (PI_SUBAGENT_CHILD=1) and the spawning session registers none — it runs the watcher — so the case pins the parent shape with an empty marker and expects no tool; the rpiv-todo absence line is emitted in both shapes, because the neighbour is resolved once at load."
 		},
 		{
 			"id": "A1-focus-gate",
@@ -340,10 +341,19 @@
 				"@tinoy/pi-no-subagent-fork"
 			],
 			"absent": ["pi-intercom", "pi-subagents"],
-			"expectLoaded": null,
-			"expectTools": {},
+			"expectLoaded": 8,
+			"expectTools": {
+				"@tinoy/pi-read-staleness": [],
+				"@tinoy/pi-orphan-repair": [],
+				"@tinoy/pi-cache-prefix-log": [],
+				"@tinoy/pi-child-request-dump": [],
+				"@tinoy/pi-desktop-notify": ["desktop_notify"],
+				"@tinoy/pi-probe": ["probe"],
+				"@tinoy/pi-intercom-broadcast": ["broadcast"],
+				"@tinoy/pi-no-subagent-fork": []
+			},
 			"expectLog": [],
-			"notes": "the generic set only; no line may name a machine-bound neighbour"
+			"notes": "the generic set only; no line may name a machine-bound neighbour. MEASURED from a local matrix run: 8 loaded, three tools registered (desktop_notify, probe, broadcast) and the four hook-only units register none"
 		},
 		{
 			"id": "A5-machine-bound",
