@@ -69,9 +69,11 @@ lockfile is inside the release commit (`npm version` rewrites the root
 
 ## The publishing credential
 
-Publishing authenticates with the `NPM_TOKEN` repository secret. It holds one granular
-access token scoped to `@tinoy`, with write access and the **2FA-bypass flag set**, taken
-from the `_authToken` line of `~/.npmrc` and piped straight into
+Publishing authenticates with the `NPM_TOKEN` repository secret whenever the package has
+no trusted publisher: the release job attempts the OIDC exchange first and falls back to
+the token only when that exchange does not succeed. The secret holds one granular access
+token scoped to `@tinoy`, with write access and the **2FA-bypass flag set**, taken from
+the `_authToken` line of `~/.npmrc` and piped straight into
 `gh secret set NPM_TOKEN --repo tinoy1336/pi-extensions` on stdin — the value is never
 echoed and never written to a file.
 
@@ -79,7 +81,8 @@ That token class is why this route exists and why the trusted-publisher route is
 deferred: `POST /-/package/{package}/trust` refuses a bypass-2FA token with `403` and
 demands an interactive 2FA challenge, which a build runner cannot answer. The property
 that disqualifies the token there is the one CI needs here — a bypass-2FA granular token
-publishes without a one-time password.
+publishes without a one-time password — so it is the credential a package with no
+trusted publisher reaches the registry with.
 
 This is a bridge, not a destination: npm removes the ability to publish new versions
 directly with a granular access token in **January 2027**, so the trusted-publisher route
