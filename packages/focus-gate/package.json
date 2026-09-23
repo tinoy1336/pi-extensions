@@ -1,0 +1,40 @@
+{
+	"name": "@tinoy/pi-focus-gate",
+	"version": "0.1.0",
+	"description": "Machine-global focus mode: while it is on, sessions work but cannot touch the desktop.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/focus-gate"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/focus-gate#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "focus-gate.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"focus-gate.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./focus-gate.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0",
+		"@tinoy/pi-focus-state": "^0.1.0"
+	}
+}

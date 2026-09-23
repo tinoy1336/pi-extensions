@@ -1,0 +1,40 @@
+{
+	"name": "@tinoy/pi-deepseek-cost",
+	"version": "0.1.0",
+	"description": "Price the session footer from the configured house tariff, per message timestamp.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/deepseek-cost"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/deepseek-cost#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "deepseek-cost.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"deepseek-cost.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./deepseek-cost.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0",
+		"@tinoy/pi-tariff": "^0.1.0"
+	}
+}

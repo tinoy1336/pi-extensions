@@ -1,0 +1,62 @@
+{
+	"name": "@tinoy/pi-fleet",
+	"version": "0.1.0",
+	"description": "The crew tool and its write coordination: a foreman's fleet of long-lived workers, and the per-worker claims, locks and version checks that guard one shared tree.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/fleet"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/fleet#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "fleet/index.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"fleet/adopt.ts",
+		"fleet/board.ts",
+		"fleet/index.ts",
+		"fleet/items.ts",
+		"fleet/launch.ts",
+		"fleet/mode.ts",
+		"fleet/predicates.ts",
+		"fleet/release.ts",
+		"fleet/retire.ts",
+		"fleet/roster.ts",
+		"fleet/section.ts",
+		"fleet/status.ts",
+		"io-guard/claims.ts",
+		"io-guard/identity.ts",
+		"io-guard/index.ts",
+		"io-guard/locks.ts",
+		"io-guard/pend.ts",
+		"io-guard/predicates.ts",
+		"io-guard/reap.ts",
+		"io-guard/versions.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./fleet/index.ts",
+			"./io-guard/index.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*",
+		"typebox": "*",
+		"@juicesharp/rpiv-todo": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0",
+		"@tinoy/pi-tariff": "^0.1.0"
+	}
+}

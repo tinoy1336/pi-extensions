@@ -1,0 +1,39 @@
+{
+	"name": "@tinoy/pi-cli-keys",
+	"version": "0.1.0",
+	"description": "Hydrate provider API keys into the session environment from a local cache.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/cli-keys"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/cli-keys#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "cli-keys.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"cli-keys.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./cli-keys.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0"
+	}
+}

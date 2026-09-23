@@ -1,0 +1,40 @@
+{
+	"name": "@tinoy/pi-sudo-approve",
+	"version": "0.1.0",
+	"description": "Run root commands with a user-approved password prompt; audit every batch.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/sudo-approve"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/sudo-approve#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "sudo-approve.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"sudo-approve.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./sudo-approve.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*",
+		"typebox": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0"
+	}
+}

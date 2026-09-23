@@ -1,0 +1,40 @@
+{
+	"name": "@tinoy/pi-drift-anchor",
+	"version": "0.1.0",
+	"description": "Detect reasoning-register drift and re-anchor it with a tail line.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/drift-anchor"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/drift-anchor#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "drift-anchor.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"drift-anchor.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./drift-anchor.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*",
+		"typebox": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0"
+	}
+}
