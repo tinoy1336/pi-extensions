@@ -1,0 +1,104 @@
+# Release automation: a merge to main may version, changelog, tag and publish with no
+# human step. See RELEASING.md for the bootstrap a trusted publisher needs first, and
+# for the rollback of a bad publish.
+#
+# The trigger is the CI run's successful completion on main, so a release only ever
+# happens on a commit the check job has already passed. The checkout is pinned to the
+# exact commit CI verified (and the branch name is put on it, because semantic-release
+# resolves its branch locally), so a main that moves on between the two workflows does
+# not release unchecked commits.
+name: Release
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Which package to release
+        type: choice
+        options: [both, ext-lib, canon]
+        default: both
+
+permissions:
+  contents: read
+
+# One release at a time: the two packages share the branch and the lockfile.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: write # push the release commit and tags, create the GitHub releases
+      issues: write # comment on released issues
+      pull-requests: write # comment on released pull requests
+      id-token: write # OIDC for npm trusted publishing and provenance
+    steps:
+      - name: Check out the commit CI verified
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
+          fetch-depth: 0 # semantic-release reads the full history and every tag
+
+      - name: Put the branch name on that commit
+        if: github.event_name == 'workflow_run'
+        run: git checkout -B main
+
+      # Node 24 for its npm: trusted publishing needs npm >= 11.5.1 and Node 22
+      # bundles npm 10.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Identify the release commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      # Each package is released on its own tag and its own commits. The gate refuses
+      # when nothing in the package changed since its tag, which is what keeps a
+      # canon-only push from publishing a new ext-lib.
+      - name: Release @tinoy/pi-ext-lib
+        id: ext_lib
+        if: github.event_name == 'workflow_run' || inputs.package == 'both' || inputs.package == 'ext-lib'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! bash scripts/release-relevant.sh ext-lib; then
+            exit 0
+          fi
+          git tag | sort > "$RUNNER_TEMP/tags-before-ext-lib.txt"
+          npx --no-install semantic-release --extends ./release/ext-lib.mjs
+
+      # semantic-release creates the tag before it runs the publish plugins, so a
+      # failed publish would otherwise leave the tag behind: the snapshot taken above
+      # is the set of tags that predate this step, and everything else is this step's.
+      - name: Withdraw the tag if the ext-lib release failed
+        if: steps.ext_lib.outcome == 'failure'
+        run: bash scripts/withdraw-tag.sh "$RUNNER_TEMP/tags-before-ext-lib.txt"
+
+      - name: Release @tinoy/pi-canon
+        id: canon
+        if: github.event_name == 'workflow_run' || inputs.package == 'both' || inputs.package == 'canon'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! bash scripts/release-relevant.sh canon; then
+            exit 0
+          fi
+          git tag | sort > "$RUNNER_TEMP/tags-before-canon.txt"
+          npx --no-install semantic-release --extends ./release/canon.mjs
+
+      - name: Withdraw the tag if the canon release failed
+        if: steps.canon.outcome == 'failure'
+        run: bash scripts/withdraw-tag.sh "$RUNNER_TEMP/tags-before-canon.txt"
