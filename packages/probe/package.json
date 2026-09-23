@@ -1,0 +1,40 @@
+{
+	"name": "@tinoy/pi-probe",
+	"version": "0.1.0",
+	"description": "One bounded status probe for a systemd unit, a process, or a hyprctl query.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/probe"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/probe#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "probe.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"probe.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./probe.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*",
+		"typebox": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0"
+	}
+}

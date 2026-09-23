@@ -1,0 +1,42 @@
+{
+	"name": "@tinoy/pi-desktop-notify",
+	"version": "0.1.0",
+	"description": "Send a desktop notification through the session notification daemon, and notify when a response settles.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/desktop-notify"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/desktop-notify#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "desktop-notify.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"desktop-notify.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./desktop-notify.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-ai": "*",
+		"@earendil-works/pi-coding-agent": "*",
+		"typebox": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0",
+		"@tinoy/pi-focus-state": "^0.1.0"
+	}
+}

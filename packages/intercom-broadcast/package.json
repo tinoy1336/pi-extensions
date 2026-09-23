@@ -1,0 +1,40 @@
+{
+	"name": "@tinoy/pi-intercom-broadcast",
+	"version": "0.1.0",
+	"description": "Send one message to every connected pi-intercom session.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
+		"directory": "packages/intercom-broadcast"
+	},
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/intercom-broadcast#readme",
+	"bugs": {
+		"url": "https://github.com/tinoy1336/pi-extensions/issues"
+	},
+	"type": "module",
+	"main": "intercom-broadcast.ts",
+	"keywords": [
+		"pi-package"
+	],
+	"files": [
+		"intercom-broadcast.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./intercom-broadcast.ts"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-ai": "*",
+		"@earendil-works/pi-coding-agent": "*"
+	},
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "^0.1.0"
+	}
+}
