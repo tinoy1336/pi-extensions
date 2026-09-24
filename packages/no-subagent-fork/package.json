@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-no-subagent-fork",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Rewrite a subagent spawn's `context: \"fork\"` to `\"fresh\"`.",
 	"license": "MIT",
 	"repository": {
