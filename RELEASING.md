@@ -279,6 +279,46 @@ Both halves are manual work, once per package. Do this in order.
      --file release.yml --repo tinoy1336/pi-extensions --allow-publish
    ```
 
+   Four more properties of this surface, each measured by reading it back rather than inferred
+   from what the form shows:
+
+   **An authentication URL is live for about five minutes.** The CLI polls the registry for the
+   approval, and roughly 300 s after the id is issued the registry has discarded it: the poll then
+   answers `404 Not Found - GET https://registry.npmjs.org/-/v1/done?authId=*** - not found` and
+   the call is lost, which is how a set of reads ends with every id expired and none approved.
+   Holding one id open while someone is found does not work — issue a fresh one as each expires and
+   keep rolling until one is approved. Tell the person directly as well: a popup in the
+   notification centre expires in fifteen seconds, and eight heads-ups left there produced no
+   approval at all.
+
+   **One approval covers the whole set, but the reads are one call per package.**
+   `npm trust list` is not a set-wide read: the package name is the positional argument, else the
+   `name` of the local `package.json`, so from a directory holding neither it stops without a
+   network call (`Package name must be specified either as an argument or in the package.json
+   file`). Verify with `npm trust list <package>`, once per package: twenty-five reads take about
+   seventy-five seconds, well inside one approved window.
+
+   **A credential cannot be made to skip the challenge.** A granular token with 2FA bypass enabled
+   is refused outright, with no challenge issued and no URL printed:
+
+   ```
+   npm error 403 403 Forbidden - POST https://registry.npmjs.org/-/package/<name>/trust - {"success":false,"error":"Granular access tokens that bypass two-factor authentication may not perform this action."}
+   ```
+
+   A token created with the bypass left unchecked is asked for a one-time password instead
+   (`npm error code EOTP`, plus the authentication URL), and a request with no credential answers
+   `401 Bearer token authorization is required`. The interactive approval is genuinely required:
+   there is no unattended route to this surface, and the credential that publishes releases is not
+   one that can wire the publisher.
+
+   **What a connection stores.** Read back, a connection holds the repository, the workflow file
+   *name* (`release.yml` — the name, never a path, matched case-sensitively against the workflow
+   that publishes), no environment, and the set of allowed actions. Every connection read back
+   carried `publish` and `stage publish` together, entries configured earlier included — a shape
+   that uniform across a whole set reads as what the form stores by default rather than the choice
+   made on each page, so a page that was ticked for `npm publish` alone is not evidence that the
+   stored grant is that narrow.
+
 5. **Let a release run.** Merge a `feat:` or `fix:` commit to `main` and watch
    *Actions* → *Release*.
 
