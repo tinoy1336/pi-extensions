@@ -281,13 +281,14 @@ export default function (pi: ExtensionAPI): void {
 			//
 			// Loader tools are the one exception, and the exception is the point. Another
 			// extension re-adds its loader at the start of every run (the `*_enable` tools),
-			// and pi renders one prompt bullet per selected tool into the system prompt.
-			// Removing a loader here shrinks the `tools` section the harness records in the
-			// transcript, while the payload filter above already keeps the tool itself off
-			// the wire — so reconciling it buys nothing, and a run that does not fire
-			// `before_agent_start` (a wake delivered to an idle session) then renders its
-			// prompt from that shrunken section and re-bills the whole conversation. Loaders
-			// stay selected; the filter, not this handler, is what keeps them uncallable.
+			// and pi renders one prompt bullet per selected tool. Removing a loader here
+			// leaves the active set without it while the `tools` section recorded in the
+			// transcript still has it, so the NEXT run's render disagrees with that record:
+			// a typed run regains the bullet (the owning extension pushes the loader back
+			// into the run's selection) and a wake, which fires no `before_agent_start`,
+			// sends it missing. Either direction moves the head of the system prompt, and a
+			// head that moves re-bills the whole conversation behind it. Loaders stay
+			// selected; the filter, not this handler, is what keeps them uncallable.
 			const allowedHere = (n: string): boolean =>
 				(mode.FOREMAN_TOOLS as readonly string[]).includes(n) || n.endsWith("_enable");
 			const strays = active.filter((n) => !allowedHere(n));
