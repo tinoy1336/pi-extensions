@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-read-staleness",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Elide a repeat full-file read: the body of an unchanged file's second read is replaced by a one-line stub.",
 	"license": "MIT",
 	"repository": {
