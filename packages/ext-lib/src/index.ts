@@ -9,6 +9,7 @@
  * each was already in the tree, so the copy is the one canonical file for any
  * package that depends on this one.
  */
+export { escapeRe, globOverlap } from "./glob.ts";
 export { HOOK_LOG_PATH, hookLog } from "./hook-log.ts";
 export { type NeighbourReport, optionalNeighbour } from "./neighbour.ts";
 export {

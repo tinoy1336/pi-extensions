@@ -1,10 +1,10 @@
 /**
  * Verification harness for child-prompt-freeze (offline, no provider).
  *
- * Drives the REAL child-prompt-freeze.ts (imported at run time from the source
+ * Drives the REAL child-prompt-freeze entry (imported at run time from the source
  * rig.ts selects), whose own `systemPromptSlot` import pulls the shared seam
- * package — no spliced copy of the slot code. cache-prefix-log.ts is the real
- * logger. No provider call, no session, no child process.
+ * package — no spliced copy of the slot code. The cache-prefix-log package is the
+ * real logger. No provider call, no session, no child process.
  *
  * Fixtures modelled on the real child: the "rewritten" prompt is what the prompt
  * path produces (boundary block + inherited project context), the "base" prompt

@@ -13,19 +13,19 @@
 		"url": "https://github.com/tinoy1336/pi-extensions/issues"
 	},
 	"type": "module",
-	"main": "pause.ts",
+	"main": "index.ts",
 	"keywords": [
 		"pi-package"
 	],
 	"files": [
-		"pause.ts",
+		"index.ts",
 		"pause-state.ts",
 		"README.md",
 		"LICENSE"
 	],
 	"pi": {
 		"extensions": [
-			"./pause.ts"
+			"./index.ts"
 		]
 	},
 	"engines": {

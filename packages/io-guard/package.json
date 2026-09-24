@@ -1,14 +1,14 @@
 {
-	"name": "@tinoy/pi-probe",
+	"name": "@tinoy/pi-io-guard",
 	"version": "0.1.0",
-	"description": "One bounded status probe for a systemd unit, a process, or a hyprctl query.",
+	"description": "Write coordination for one shared tree: per-worker path claims, locks, version checks and the io_status tool.",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
-		"directory": "packages/probe"
+		"directory": "packages/io-guard"
 	},
-	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/probe#readme",
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/io-guard#readme",
 	"bugs": {
 		"url": "https://github.com/tinoy1336/pi-extensions/issues"
 	},
@@ -18,7 +18,14 @@
 		"pi-package"
 	],
 	"files": [
+		"claims.ts",
+		"identity.ts",
 		"index.ts",
+		"locks.ts",
+		"pend.ts",
+		"predicates.ts",
+		"reap.ts",
+		"versions.ts",
 		"README.md",
 		"LICENSE"
 	],

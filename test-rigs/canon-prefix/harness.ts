@@ -7,7 +7,7 @@
  *     resolve-shimmed by rig.ts; every helper asserted here is the shipped text);
  *   - the shared seam package (`canonicalSystemPrompt`, `systemPromptSlot`,
  *     `PROMPT_APPEND_SEP`), which is where those three live now;
- *   - cache-prefix-log.ts, imported as-is.
+ *   - the cache-prefix-log package, imported as-is.
  *
  * The fixture block is DERIVED from the canon store at run time through the
  * real `before_agent_start` hook (rig.deriveBlock): there is no recorded block to

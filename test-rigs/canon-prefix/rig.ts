@@ -11,9 +11,9 @@
  *    rig exists to catch.
  *
  * Every path is derived from a directory the caller supplies, never from this
- * machine: `PI_CODING_AGENT_DIR` (agent dir + canon store), `PI_EXTENSIONS_DIR`
- * (`installed` mode), `RIG_SOURCE` (which copy) and `RIG_RUNS_DIR` (where run
- * artifacts go). Two seams make that possible without a running pi:
+ * machine: `PI_CODING_AGENT_DIR` (agent dir, canon store, and the npm tree the
+ * installed packages resolve from), `RIG_SOURCE` (which copy) and `RIG_RUNS_DIR`
+ * (where run artifacts go). Two seams make that possible without a running pi:
  *
  *  - `@earendil-works/pi-coding-agent` is bundled INSIDE the pi binary (the
  *    shipped package has no importable dist), so the specifier cannot resolve
@@ -45,12 +45,8 @@ export const RIG_DIR = dirname(fileURLToPath(import.meta.url));
  *  extension's own resolution; only `installed` mode reads anything under it. */
 const AGENT_DIR = process.env.PI_CODING_AGENT_DIR || join(homedir(), ".pi", "agent");
 
-/** Installed extensions (`installed` mode). Overridable only for a relocated
- *  install, never to point at a rig copy. */
-export const EXTENSIONS_DIR = process.env.PI_EXTENSIONS_DIR || join(AGENT_DIR, "extensions");
-
 /** The canon store the fixture block is rendered from. Derived from the agent dir
- *  by the SAME rule the module under test uses (canon.ts: `<agent dir>/canon/
+ *  by the SAME rule the module under test uses (the canon package: `<agent dir>/canon/
  *  canon.json`), so a scratch agent dir is all a runner has to supply — there is
  *  no rig-only store variable the extension would ignore. */
 export const STORE_PATH = join(AGENT_DIR, "canon", "canon.json");
@@ -98,9 +94,9 @@ function packageEntry(packageDir: string, name: string): string {
 }
 
 /**
- * The four modules under test, resolved for the selected source. `canon` and
- * `seam` are packages in BOTH sources; `freeze` and `logger` are packages in a
- * checkout but plain files in an install's extensions directory.
+ * The four modules under test, resolved for the selected source. All four are
+ * packages in both sources, and each entry is read from the package's own
+ * manifest.
  */
 const MODULES: Record<"canon" | "seam" | "freeze" | "logger", string> =
 	SOURCE === "repo"
@@ -113,8 +109,8 @@ const MODULES: Record<"canon" | "seam" | "freeze" | "logger", string> =
 		: {
 				canon: packageEntry(join(NPM_TREE, "pi-canon"), "canon"),
 				seam: packageEntry(join(NPM_TREE, "pi-ext-lib"), "ext-lib"),
-				freeze: join(EXTENSIONS_DIR, "child-prompt-freeze.ts"),
-				logger: join(EXTENSIONS_DIR, "cache-prefix-log.ts"),
+				freeze: packageEntry(join(NPM_TREE, "pi-child-prompt-freeze"), "child-prompt-freeze"),
+				logger: packageEntry(join(NPM_TREE, "pi-cache-prefix-log"), "cache-prefix-log"),
 			};
 
 /**
@@ -158,8 +154,8 @@ for (const [name, file] of Object.entries(MODULES)) {
 export type SessionShape = "parent" | "wrapper-child" | "async-child";
 
 /**
- * Every marker the extensions under test read to classify a session: canon.ts
- * and child-prompt-freeze.ts both treat PI_SUBAGENT (pi-subagent wrapper) or
+ * Every marker the extensions under test read to classify a session: the canon
+ * and child-prompt-freeze packages both treat PI_SUBAGENT (pi-subagent wrapper) or
  * PI_SUBAGENT_CHILD (pi-subagents async runner) as "child", and canon adds
  * PI_FOREMAN to a parent's audiences.
  */
@@ -218,7 +214,7 @@ export const CANON_ENTRY = MODULES.canon;
 /**
  * The shared library that OWNS the system-prompt seam. `canonicalSystemPrompt`,
  * `systemPromptSlot` and `PROMPT_APPEND_SEP` live there, not in canon: canon
- * imports them, and `child-prompt-freeze.ts` imports `systemPromptSlot` from the
+ * imports them, and the child-prompt-freeze package imports `systemPromptSlot` from the
  * same package. Consumers therefore take the seam from the package — the rig
  * does the same rather than looking for a re-export canon no longer has.
  */

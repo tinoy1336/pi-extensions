@@ -24,9 +24,9 @@ import { hostname } from "node:os";
 import { basename, join } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { argText, clip, type HeaderPart, hookLog, safeToolHeader } from "@tinoy/pi-ext-lib";
+import { ioRoot, readClaim, writeClaim } from "@tinoy/pi-io-guard/claims.ts";
+import { identityClaimLive } from "@tinoy/pi-io-guard/identity.ts";
 import { Type } from "typebox";
-import { ioRoot, readClaim, writeClaim } from "../io-guard/claims.ts";
-import { identityClaimLive } from "../io-guard/identity.ts";
 import * as adopt from "./adopt.ts";
 import * as board from "./board.ts";
 import * as items from "./items.ts";
@@ -886,7 +886,7 @@ export default function (pi: ExtensionAPI): void {
 				if (typeof args.name === "string") patch.worker = args.name.trim() || null;
 				// Half-patched, never rebuilt: supplying one half of the claims must not
 				// erase the other, which is what omission means everywhere else here.
-				const claims: { owns?: string[]; exclusive?: string[] } = {};
+				const claims: { owns?: string[]; exclusive?: string[]; exclusiveDeclared?: boolean } = {};
 				if (Array.isArray(args.owns)) {
 					const owns = normalizeOwns(args.owns as string[]);
 					if (!owns.ok) return refuse(action, owns.message);
@@ -1819,7 +1819,7 @@ export default function (pi: ExtensionAPI): void {
 		),
 		// Header only (display): the action, the worker it names, and the field
 		// that makes the action readable — scope, steer text, or review target.
-		renderCall(args, theme) {
+		renderCall(args: Record<string, unknown>, theme: Parameters<typeof safeToolHeader>[0]) {
 			return safeToolHeader(theme, "fleet", () => {
 				const action = argText(args, "action") ?? "action";
 				const worker = argText(args, "name");
@@ -2114,7 +2114,7 @@ export default function (pi: ExtensionAPI): void {
 				// avoid.
 				midStep: w.state === "live",
 				familyShift: queued.length > 0 && queued.every((it) => it.scope !== w.scope),
-				handoffCurrent: handoffIsCurrent(w.name, w.lastActivityAt),
+				handoffCurrent: handoffIsCurrent(w.name, w.lastActivityAt ?? undefined),
 				itemsSinceHire: doneItems.length,
 				// The one part of "non-handoff-able state" this side cannot see: whether the
 				// worker holds uncommitted work or a running subprocess. A live run is already

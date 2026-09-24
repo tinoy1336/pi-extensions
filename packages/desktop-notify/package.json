@@ -13,18 +13,18 @@
 		"url": "https://github.com/tinoy1336/pi-extensions/issues"
 	},
 	"type": "module",
-	"main": "desktop-notify.ts",
+	"main": "index.ts",
 	"keywords": [
 		"pi-package"
 	],
 	"files": [
-		"desktop-notify.ts",
+		"index.ts",
 		"README.md",
 		"LICENSE"
 	],
 	"pi": {
 		"extensions": [
-			"./desktop-notify.ts"
+			"./index.ts"
 		]
 	},
 	"engines": {

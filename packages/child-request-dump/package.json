@@ -13,18 +13,18 @@
 		"url": "https://github.com/tinoy1336/pi-extensions/issues"
 	},
 	"type": "module",
-	"main": "child-request-dump.ts",
+	"main": "index.ts",
 	"keywords": [
 		"pi-package"
 	],
 	"files": [
-		"child-request-dump.ts",
+		"index.ts",
 		"README.md",
 		"LICENSE"
 	],
 	"pi": {
 		"extensions": [
-			"./child-request-dump.ts"
+			"./index.ts"
 		]
 	},
 	"engines": {

@@ -51,7 +51,8 @@ entry and the shared library packages, which npm installs for you.
 | `@tinoy/pi-deepseek-cost` | the session footer priced from the house tariff | a tariff table with your own rates (`tariff.json`) | — |
 | `@tinoy/pi-cli-keys` | provider API keys hydrated into the session environment | a credential vault CLI and a local `cli-keys`-style command | — |
 | `@tinoy/pi-sudo-approve` | root commands run behind an approved prompt, with an audit log | `promptd` for the approval window, reached through a router named by `SUDO_APPROVE_ROUTE` or `TINSHELL_HOME` | — |
-| `@tinoy/pi-fleet` | a fleet of long-lived worker sessions and the write coordination around one shared tree: roster, per-worker claims, locks, version checks (two entries) | pi-subagents for the transports, and `@juicesharp/rpiv-todo` for the board | `@tinoy/pi-canon`, whose fleet discipline section reaches the system prompt |
+| `@tinoy/pi-fleet` | a fleet of long-lived worker sessions driven by one coordinating session: roster, board, hiring and retirement | pi-subagents for the transports, and `@juicesharp/rpiv-todo` for the board | `@tinoy/pi-canon`, whose fleet discipline section reaches the system prompt |
+| `@tinoy/pi-io-guard` | write coordination for one shared tree: per-worker claims, locks, version checks and the `io_status` tool | a writable store directory for the claim records, locks and version stamps | `@tinoy/pi-fleet`, which dispatches against those claims |
 
 **Install everything.** The full set above is the known-good set: matrix case `A2` installs
 all of it from the tarballs and loads it in one pi process, and the case fails unless every

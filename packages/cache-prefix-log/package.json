@@ -13,18 +13,18 @@
 		"url": "https://github.com/tinoy1336/pi-extensions/issues"
 	},
 	"type": "module",
-	"main": "cache-prefix-log.ts",
+	"main": "index.ts",
 	"keywords": [
 		"pi-package"
 	],
 	"files": [
-		"cache-prefix-log.ts",
+		"index.ts",
 		"README.md",
 		"LICENSE"
 	],
 	"pi": {
 		"extensions": [
-			"./cache-prefix-log.ts"
+			"./index.ts"
 		]
 	},
 	"engines": {

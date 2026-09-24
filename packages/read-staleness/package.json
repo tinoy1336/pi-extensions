@@ -13,18 +13,18 @@
 		"url": "https://github.com/tinoy1336/pi-extensions/issues"
 	},
 	"type": "module",
-	"main": "read-staleness.ts",
+	"main": "index.ts",
 	"keywords": [
 		"pi-package"
 	],
 	"files": [
-		"read-staleness.ts",
+		"index.ts",
 		"README.md",
 		"LICENSE"
 	],
 	"pi": {
 		"extensions": [
-			"./read-staleness.ts"
+			"./index.ts"
 		]
 	},
 	"engines": {

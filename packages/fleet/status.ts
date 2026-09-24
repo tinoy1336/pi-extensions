@@ -54,6 +54,8 @@ export interface RunRow {
 	startedAt?: number;
 	updatedAt?: number;
 	activity?: { lastActivityAt?: number };
+	/** Some rows carry the stamp flat instead of nesting it under `activity`. */
+	lastActivityAt?: number;
 	tokens?: { input?: number; output?: number; total?: number };
 	turns?: number;
 	agent?: string;
@@ -63,11 +65,7 @@ export interface RunRow {
 
 /** The row's last-activity stamp, wherever pi-subagents actually put it. */
 export function rowLastActivity(row: RunRow): number | null {
-	const v =
-		row.activity?.lastActivityAt ??
-		(row as { lastActivityAt?: number }).lastActivityAt ??
-		row.updatedAt ??
-		row.startedAt;
+	const v = row.activity?.lastActivityAt ?? row.lastActivityAt ?? row.updatedAt ?? row.startedAt;
 	return typeof v === "number" && Number.isFinite(v) ? v : null;
 }
 

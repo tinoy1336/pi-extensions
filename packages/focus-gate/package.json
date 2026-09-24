@@ -13,18 +13,18 @@
 		"url": "https://github.com/tinoy1336/pi-extensions/issues"
 	},
 	"type": "module",
-	"main": "focus-gate.ts",
+	"main": "index.ts",
 	"keywords": [
 		"pi-package"
 	],
 	"files": [
-		"focus-gate.ts",
+		"index.ts",
 		"README.md",
 		"LICENSE"
 	],
 	"pi": {
 		"extensions": [
-			"./focus-gate.ts"
+			"./index.ts"
 		]
 	},
 	"engines": {

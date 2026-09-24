@@ -1,7 +1,7 @@
 {
 	"name": "@tinoy/pi-fleet",
 	"version": "0.1.0",
-	"description": "A fleet of long-lived worker sessions driven by one coordinating session, and the write coordination that guards one shared tree: per-worker claims, locks and version checks.",
+	"description": "A fleet of long-lived worker sessions driven by one coordinating session: the roster, the board, the retirement economics and the foreman discipline.",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
@@ -13,38 +13,29 @@
 		"url": "https://github.com/tinoy1336/pi-extensions/issues"
 	},
 	"type": "module",
-	"main": "fleet/index.ts",
+	"main": "index.ts",
 	"keywords": [
 		"pi-package"
 	],
 	"files": [
-		"fleet/adopt.ts",
-		"fleet/board.ts",
-		"fleet/index.ts",
-		"fleet/items.ts",
-		"fleet/launch.ts",
-		"fleet/mode.ts",
-		"fleet/predicates.ts",
-		"fleet/release.ts",
-		"fleet/retire.ts",
-		"fleet/roster.ts",
-		"fleet/section.ts",
-		"fleet/status.ts",
-		"io-guard/claims.ts",
-		"io-guard/identity.ts",
-		"io-guard/index.ts",
-		"io-guard/locks.ts",
-		"io-guard/pend.ts",
-		"io-guard/predicates.ts",
-		"io-guard/reap.ts",
-		"io-guard/versions.ts",
+		"adopt.ts",
+		"board.ts",
+		"index.ts",
+		"items.ts",
+		"launch.ts",
+		"mode.ts",
+		"predicates.ts",
+		"release.ts",
+		"retire.ts",
+		"roster.ts",
+		"section.ts",
+		"status.ts",
 		"README.md",
 		"LICENSE"
 	],
 	"pi": {
 		"extensions": [
-			"./fleet/index.ts",
-			"./io-guard/index.ts"
+			"./index.ts"
 		]
 	},
 	"engines": {
@@ -57,6 +48,7 @@
 	},
 	"dependencies": {
 		"@tinoy/pi-ext-lib": "*",
+		"@tinoy/pi-io-guard": "*",
 		"@tinoy/pi-tariff": "*"
 	},
 	"peerDependenciesMeta": {

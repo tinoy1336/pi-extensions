@@ -224,7 +224,7 @@ const REANCHOR_IMMEDIATE_LINE =
 	"Caveman mode. Restart the register now: terse fragments in reasoning, clean prose to the user.";
 
 // Canon-attention rotation (R4): same semantics, three framings; "## Canon"
-// is the heading the canon.ts injection actually uses.
+// is the heading the canon injection actually uses.
 const CANON_LINES = [
 	"Canon block binds every turn — drift back to ## Canon before continuing.",
 	"Check ## Canon: those rules outrank habit — glance back before continuing.",
@@ -241,7 +241,7 @@ function callerCaps(pi: ExtensionAPI): AnchorCaps | undefined {
 	// cwd, sessionManager, model, … and the context event only `messages`), so
 	// `pi.getActiveTools()` is the ONE capability signal: it reflects THIS pi
 	// process. A child session runs its own process on a smaller menu — no
-	// ctx_* family, and build.ts is not loaded — so the same call reports that
+	// ctx_* family, and the build extension is not loaded — so the same call reports that
 	// menu there. Returns undefined when the API or the call is unavailable;
 	// callers then use wording that is true for every session shape.
 	try {

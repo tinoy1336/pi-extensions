@@ -10,7 +10,7 @@
  * request is written, so the last line of a run is the last request it built.
  *
  * Observation point. The row is built from the payload of this handler's turn.
- * Handlers run in extension order, and `orphan-repair.ts` rewrites
+ * Handlers run in extension order, and the orphan-repair extension rewrites
  * `payload.messages` later in that order, so a row here is the sequence pi's
  * converter produced, before any repair — which is the sequence that reaches the
  * provider when no repair is loaded.

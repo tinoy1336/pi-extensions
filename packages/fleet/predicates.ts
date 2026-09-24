@@ -3,6 +3,7 @@
  * review eligibility, timeout range, task serialization and every refusal string.
  * Unit-testable by construction; the I/O lives in status.ts / launch.ts / roster.ts.
  */
+import { escapeRe, globOverlap } from "@tinoy/pi-ext-lib";
 
 /**
  * A worker name: lowercase letters, digits, '-' — never an id shape. A name is an
@@ -31,20 +32,6 @@ export function isIdLike(s: string): boolean {
 		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s) ||
 		/^[0-9a-f]{12,}$/i.test(s)
 	);
-}
-
-/** Glob/path overlap: exact, directory prefix, or '*' anywhere in either side. */
-export function globOverlap(a: string, b: string): boolean {
-	const x = a.replace(/\/+$/, "");
-	const y = b.replace(/\/+$/, "");
-	if (x === y) return true;
-	if (x.includes("*")) return new RegExp(`^${x.split("*").map(escapeRe).join(".*")}$`).test(y);
-	if (y.includes("*")) return new RegExp(`^${y.split("*").map(escapeRe).join(".*")}$`).test(x);
-	return x.startsWith(`${y}/`) || y.startsWith(`${x}/`);
-}
-
-function escapeRe(s: string): string {
-	return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export interface Claim {

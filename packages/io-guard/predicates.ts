@@ -1,13 +1,13 @@
 /**
  * io-guard/predicates — the pure rules. No I/O, no process state.
  *
- * Scope semantics are IMPORTED from the fleet's own predicates rather than
- * reimplemented: one owner decides what "this path is inside that claim" means,
- * so the guard and the dispatcher can never disagree about a glob.
+ * Scope semantics come from the shared library rather than being reimplemented:
+ * one owner decides what "this path is inside that claim" means, so the guard and
+ * the dispatcher can never disagree about a glob.
  */
 import { homedir } from "node:os";
 import { isAbsolute, join, normalize, resolve } from "node:path";
-import { globOverlap } from "../fleet/predicates.ts";
+import { globOverlap } from "@tinoy/pi-ext-lib";
 
 /** The binding namespace the fleet dispatches under. A binding in any other
  *  namespace belongs to some other extension and identifies nothing. */

@@ -29,17 +29,21 @@
  * `openRowsFor` and `closeRetiredWorkerRows` touch the session manager.
  */
 
-import { optionalNeighbour } from "@tinoy/pi-ext-lib";
-import { globOverlap } from "./predicates.ts";
+import { globOverlap, optionalNeighbour } from "@tinoy/pi-ext-lib";
 
 /** The board's optional neighbour: its PURE reducer and its branch replay. */
 const RPIV = "@juicesharp/rpiv-todo";
-type RpivReplay = (input: { sessionManager: unknown }) => { tasks?: unknown };
+/** The board state the neighbour's own replay and reducer pass around. */
+interface RpivState {
+	tasks?: unknown;
+	nextId?: unknown;
+}
+type RpivReplay = (input: { sessionManager: unknown }) => RpivState;
 type RpivApply = (
 	state: unknown,
 	op: string,
 	patch: Record<string, unknown>,
-) => { op: { kind: string; message?: string }; state: unknown };
+) => { op: { kind: string; message?: string }; state: RpivState };
 interface RpivBoard {
 	replayFromBranch: RpivReplay;
 	applyTaskMutation: RpivApply;
@@ -183,7 +187,7 @@ export function openRowsFor(session: BoardSession, worker: string): OpenRow[] {
  * Two crew members cover the same scope when their declared slice is the same
  * one: the scope strings are identical, or a declared claim of one overlaps a
  * declared claim of the other under the SAME overlap rule the claim guards use
- * (`predicates.globOverlap`) — the replacement hired for a retired worker's heap
+ * (`globOverlap` in `@tinoy/pi-ext-lib`) — the replacement hired for a retired worker's heap
  * carries that worker's scope, and a scope declared as a path family is the same
  * slice whether or not the words match.
  *

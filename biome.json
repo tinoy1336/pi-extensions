@@ -29,7 +29,7 @@
 			"includes": [
 				"packages/ext-lib/src/hook-log.ts",
 				"packages/ext-lib/src/tool-header.ts",
-				"packages/canon/canon.ts"
+				"packages/canon/index.ts"
 			],
 			"formatter": {
 				"enabled": false
@@ -57,7 +57,7 @@
 			}
 		},
 		{
-			"includes": ["packages/canon/canon.ts"],
+			"includes": ["packages/canon/index.ts"],
 			"linter": {
 				"rules": {
 					"complexity": {

@@ -747,7 +747,7 @@ export default function (pi: ExtensionAPI) {
 		}
 	}
 
-	// ---------- intercom channel (mirrors intercom-broadcast.ts) ----------
+	// ---------- intercom channel (mirrors the intercom-broadcast package) ----------
 
 	const registration: CanonRegistration = {
 		namespace: NAMESPACE,

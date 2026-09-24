@@ -2,7 +2,7 @@
 	"meta": {
 		"source": "https://nerdfonts.com cheat-sheet data (upstream glyphnames.json)",
 		"upstream": "https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/glyphnames.json",
-		"note": "name -> codepoint hex string (single codepoint per glyph upstream). char = String.fromCodePoint(parseInt(code,16)); reverse index derived at runtime by nf.ts."
+		"note": "name -> codepoint hex string (single codepoint per glyph upstream). char = String.fromCodePoint(parseInt(code,16)); reverse index derived at runtime by the extension."
 	},
 	"glyphs": {
 		"cod-account": "eb99",

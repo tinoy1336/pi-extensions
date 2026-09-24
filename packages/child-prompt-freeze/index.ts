@@ -37,7 +37,7 @@
  * `subagents.defaultExtensions`.
  *
  * Observability. Every restore is one `hookLog("child-prompt", …)` line, and
- * cache-prefix-log.ts — also on the child extension list — records the same
+ * the cache-prefix-log extension — also on the child extension list — records the same
  * request's fingerprint with `origin` and `sysDeltaChars`, so a woken child that
  * loses the rewrite is visible instead of silent.
  */

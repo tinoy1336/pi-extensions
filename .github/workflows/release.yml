@@ -55,7 +55,7 @@ jobs:
       # libraries above — deepseek-cost and fleet read tariff, cli-keys and sudo-approve read
       # ext-lib alone — and they keep that order so a dependent is published after its
       # dependency whatever position the rest of the list takes.
-      RELEASE_ORDER: ext-lib focus-state tariff cache-prefix-log child-request-dump no-subagent-fork canon build child-prompt-freeze command-guard desktop-notify drift-anchor focus-gate image-read intercom-broadcast nf orphan-repair pause probe read-staleness status-metrics todo-parent deepseek-cost fleet cli-keys sudo-approve
+      RELEASE_ORDER: ext-lib focus-state tariff cache-prefix-log child-request-dump no-subagent-fork canon build child-prompt-freeze command-guard desktop-notify drift-anchor focus-gate image-read intercom-broadcast nf orphan-repair pause probe read-staleness status-metrics todo-parent deepseek-cost io-guard fleet cli-keys sudo-approve
       INPUT_PACKAGE: ${{ inputs.package }}
     permissions:
       contents: write # push the release commit and tags, create the GitHub releases

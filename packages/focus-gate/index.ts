@@ -7,7 +7,7 @@
  * input takeover. NOTIFICATIONS ARE NOT GATED — the user
  * still wants to hear when the agent needs their eyes or has finished every
  * deliverable; only the routine per-response auto-ping is suppressed (in
- * desktop-notify.ts). Blocked attempts are queued to a
+ * the desktop-notify extension). Blocked attempts are queued to a
  * JSONL ledger surfaced when focus is disabled. NO auto-resume/replay of
  * queued actions — the user decides (deferred items live in the agents'
  * own reports).

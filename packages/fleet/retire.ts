@@ -790,7 +790,7 @@ export function contextWindowOf(
 	return 0;
 }
 
-/** Where the house cache-prefix log lives, mirroring its owner in cache-prefix-log.ts. */
+/** Where the house cache-prefix log lives, mirroring its owner in the cache-prefix-log package. */
 export function prefixLogPath(): string {
 	if (process.env.PI_CACHE_PREFIX_LOG) return process.env.PI_CACHE_PREFIX_LOG;
 	const state = process.env.XDG_STATE_HOME ?? join(process.env.HOME ?? "/root", ".local", "state");

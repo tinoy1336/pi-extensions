@@ -4,7 +4,7 @@
  * pi bundles its TUI inside the agent and does not expose `@earendil-works/pi-tui`
  * to extensions, so a header cannot be a `Text`; it must be a duck-typed
  * component (`render(width)` + `invalidate()`), the shape
- * extensions/deepseek-cost.ts uses for its entry renderer.
+ * the deepseek-cost entry uses for its entry renderer.
  *
  * A header is ONE line: the tool name plus the few fields a reader needs to
  * follow the transcript. Free text is flattened and clipped before theming, so

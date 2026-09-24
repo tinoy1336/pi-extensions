@@ -17,7 +17,7 @@
  * destroyed.
  */
 import { hookLog } from "@tinoy/pi-ext-lib";
-import { readClaim, reclaimClaim } from "../io-guard/claims.ts";
+import { readClaim, reclaimClaim } from "@tinoy/pi-io-guard/claims.ts";
 import type { Worker } from "./roster.ts";
 
 /**

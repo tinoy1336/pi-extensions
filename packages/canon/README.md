@@ -21,7 +21,7 @@ pi install npm:@tinoy/pi-canon
 
 ## Exports
 
-`canon.ts` is the package entry, and it is also the module API:
+`index.ts` is the package entry, and it is also the module API:
 
 | Export | What it is |
 | --- | --- |

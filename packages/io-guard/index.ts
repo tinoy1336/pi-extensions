@@ -580,6 +580,7 @@ export default function (pi: ExtensionAPI): void {
 						return {
 							content: [{ type: "text" as const, text: "reclaim needs a worker name." }],
 							isError: true,
+							details: {},
 						};
 					const gen =
 						typeof params.generation === "number"
@@ -589,6 +590,7 @@ export default function (pi: ExtensionAPI): void {
 						return {
 							content: [{ type: "text" as const, text: `no claim record for '${worker}'.` }],
 							isError: true,
+							details: {},
 						};
 					const res = reclaimClaim(IO_ROOT, worker, gen);
 					return {
@@ -600,6 +602,7 @@ export default function (pi: ExtensionAPI): void {
 									: `reclaim refused: ${res.reason}. Re-run inspect to see the current generation.`,
 							},
 						],
+						details: {},
 					};
 				}
 				if (action === "reap") {
@@ -615,6 +618,7 @@ export default function (pi: ExtensionAPI): void {
 								text: `reaped state untouched for ${hours}h: ${r.spoolBodies} spool bodies, ${r.buildRoots} build roots, ${r.pendingEntries} parked proposals, ${r.scratchDirs} scratch dirs, ${(r.bytesFreed / 1048576).toFixed(1)} MB.`,
 							},
 						],
+						details: {},
 					};
 				}
 				const claimsDir = join(IO_ROOT, "claims");
@@ -672,7 +676,7 @@ export default function (pi: ExtensionAPI): void {
 					`parked writes (${pending.length || "none"}):`,
 					...pending.map((p) => `  ${p}`),
 				].join("\n");
-				return { content: [{ type: "text" as const, text }] };
+				return { content: [{ type: "text" as const, text }], details: {} };
 			},
 		});
 	}

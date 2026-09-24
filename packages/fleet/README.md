@@ -1,33 +1,32 @@
 # @tinoy/pi-fleet
 
-The fleet tool and its write coordination, as two entries in one package: a fleet of
-long-lived workers driven by one coordinating session (`fleet/index.ts`) and the
-per-worker claims, locks and version checks that guard one shared tree
-(`io-guard/index.ts`). They ship together because they import each other — `fleet`
-writes claims through `io-guard/claims`, and `io-guard/predicates` reads
-`fleet/predicates` — so splitting them would recreate that cycle across a package
-boundary, or invent a third package purely to break it.
+The fleet tool: long-lived worker sessions driven by one coordinating session — the
+roster, the board, hiring and retirement, steering, and the foreman discipline
+section.
 
 ```bash
 pi install npm:@tinoy/pi-fleet
 ```
 
+The write coordination those workers rely on — per-worker path claims, locks and
+version checks, and the `io_status` tool — ships separately as `@tinoy/pi-io-guard`,
+which this package depends on.
+
 ## What it needs at call time
 
 A writable store directory — `~/.local/pi/foreman/` under the home directory, holding
-the per-session roster, the per-worker claim records, the item ledger and the adoption
-sheets; pi-subagents for the transports; and `@juicesharp/rpiv-todo` for the board,
-whose reducer it applies rather than reimplementing; it is an OPTIONAL peer, reached
-through a guarded dynamic import, so the package loads without it and says so by name.
+the per-session roster, the item ledger and the adoption sheets — and pi-subagents for
+the transports. `@juicesharp/rpiv-todo` supplies the board, whose reducer the fleet
+applies rather than reimplementing; it is an OPTIONAL peer, reached through a guarded
+dynamic import, so the package loads without it and says so by name.
 
 The `fleet` tool is registered in every session and removes itself unless foreman mode
 is on, which a launcher signals with `PI_FOREMAN=1`. Without it the package is inert:
-nothing is launched, no store file is written, and `io_status` still answers for the
-claim records that are there.
+nothing is launched and no store file is written.
 
 ## Registers
 
-`fleet` (from the fleet entry) and `io_status` (from the io-guard entry).
+`fleet`.
 
 ## Works better with
 
@@ -38,8 +37,8 @@ claim records that are there.
 ## Dependencies
 
 pi-supplied imports (`@earendil-works/pi-coding-agent`, `typebox`) are peers with a `*`
-range. `@juicesharp/rpiv-todo` is an optional peer. Plain dependencies: `@tinoy/pi-ext-lib`,
-`@tinoy/pi-tariff`.
+range. `@juicesharp/rpiv-todo` is an optional peer. Plain dependencies:
+`@tinoy/pi-ext-lib`, `@tinoy/pi-io-guard`, `@tinoy/pi-tariff`.
 
 `@tinoy/pi-tariff` is what the retirement economics read: the cache-read ratios come
 from the configured price table, so a machine with no configured table gets the

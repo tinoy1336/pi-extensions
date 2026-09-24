@@ -70,7 +70,7 @@
  * (the pid must be the live one) — an `armed` line is written at every session
  * init, and any park/set/cleared line proves reach too:
  *
- *   python3 -c 'import json,os,sys;pid=sys.argv[1];p=os.path.expanduser("~/.local/share/pi-hooks/log.jsonl");hits=[json.loads(l) for l in open(p) if ("\"proc\":%s,"%pid) in l and "\"source\":\"pause\"" in l];print("pid",pid,"— no pause.ts evidence in",p) if not hits else [print(" ",h["ts"],h["kind"],h["detail"]) for h in hits[-4:]]' <pid>
+ *   python3 -c 'import json,os,sys;pid=sys.argv[1];p=os.path.expanduser("~/.local/share/pi-hooks/log.jsonl");hits=[json.loads(l) for l in open(p) if ("\"proc\":%s,"%pid) in l and "\"source\":\"pause\"" in l];print("pid",pid,"— no pause-hook evidence in",p) if not hits else [print(" ",h["ts"],h["kind"],h["detail"]) for h in hits[-4:]]' <pid>
  *
  * A line is proof of reach; silence is proof only for a process that started
  * after the `armed` line existed. Two authorities override it:

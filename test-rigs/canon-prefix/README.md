@@ -47,10 +47,10 @@ gitignored; `RIG_RUNS_DIR=<dir>` moves it (a read-only checkout needs that).
 - `repo` (default) — this checkout's `packages/*`, resolved through each
   package's own `package.json` entry (`main`, else `exports["."]`), so moving an
   entry is not a rig edit. This is the copy CI covers.
-- `installed` — a pi install's agent dir (`PI_CODING_AGENT_DIR`,
-  `PI_EXTENSIONS_DIR`): what a running pi actually loads rather than what the
-  tree holds. The two can disagree, because the installed extensions directory
-  holds copies — a stale copy there is the drift this rig exists to catch.
+- `installed` — a pi install's agent dir (`PI_CODING_AGENT_DIR`): what a running
+  pi actually loads rather than what the tree holds. The two can disagree,
+  because a stale copy of a package in the npm tree is the drift this rig exists
+  to catch.
 
 A module the selected source does not provide aborts the run (exit 2) naming the
 file, the source and both directories it looked in, so a missing install can
