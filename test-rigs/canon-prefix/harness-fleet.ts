@@ -99,10 +99,10 @@ const api = {
 	appendEntry(): void {},
 	getActiveTools: () => [...active],
 	setActiveTools(names: string[]): void {
-		// pi de-duplicates and keeps registration order; the fake must too, or a
-		// re-add of an already-selected tool would read as a new tool here.
+		// pi keeps exactly the order it is handed and does not de-duplicate, so the fake must
+		// not either: the stubs below guard their own adds the way the real extensions do.
 		active.length = 0;
-		for (const n of names) if (registry.has(n) && !active.includes(n)) active.push(n);
+		for (const n of names) if (registry.has(n)) active.push(n);
 	},
 	getAllTools: () => [...registry.values()].map((t) => ({ name: t.name })),
 	exec: async () => ({ stdout: "", stderr: "", code: 0 }),
@@ -126,14 +126,15 @@ fleet.default(api);
 // held, which is not the defect this arm exists to catch.
 handlers.before_agent_start ??= [];
 handlers.before_agent_start.push((event: any) => {
-	api.setActiveTools([...active, LOADER]);
+	if (!active.includes(LOADER)) api.setActiveTools([...active, LOADER]);
 	const names: string[] = event?.systemPromptOptions?.selectedTools ?? [];
 	if (!names.includes(LOADER)) names.push(LOADER);
 	return undefined;
 });
-// The pi-web-access shape: live set only, no selection edit.
+// The pi-web-access shape: live set only, no selection edit — and the same guard its real
+// handler uses before re-adding itself.
 handlers.before_agent_start.push(() => {
-	api.setActiveTools([...active, LOADER2]);
+	if (!active.includes(LOADER2)) api.setActiveTools([...active, LOADER2]);
 	return undefined;
 });
 

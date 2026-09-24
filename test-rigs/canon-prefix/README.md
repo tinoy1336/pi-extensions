@@ -105,8 +105,12 @@ the coupling of that exemption — a mutated run must be red). A mutated run mus
 non-zero.
 
 ```sh
-RIG_MUTATE=no-canon bash test-rigs/canon-prefix/run.sh   # exit 1
+RIG_MUTATE=stale-block bash test-rigs/canon-prefix/run.sh   # exit 1 (a harness failed)
+RIG_MUTATE=loader-name bash test-rigs/canon-prefix/run.sh   # exit 1 (the fleet arm)
 ```
+
+`harness-fleet.ts` rejects a mutation name it does not define with exit `2` rather than
+running unmuted, so a foreign name there reads as a precondition failure, not a pass.
 
 ## CI
 

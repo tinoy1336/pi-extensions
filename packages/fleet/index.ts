@@ -292,7 +292,8 @@ export default function (pi: ExtensionAPI): void {
 			// can re-bill the conversation behind it (measured: of six deltas in one
 			// session, two re-billed the prompt whole and four only the 3–18% behind the
 			// move). Loaders stay selected; the filter, not this handler, is what keeps them
-			// uncallable.
+			// uncallable. The prompt therefore advertises a tool the wire withholds, which is the
+			// deliberate trade: a stable head in exchange for a bullet the model cannot act on.
 			const allowedHere = (n: string): boolean =>
 				(mode.FOREMAN_TOOLS as readonly string[]).includes(n) || n.endsWith("_enable");
 			const strays = active.filter((n) => !allowedHere(n));
