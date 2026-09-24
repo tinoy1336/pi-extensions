@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-image-read",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Read an image with token-cost control: downscale or crop it, return it inline, and report the token estimate.",
 	"license": "MIT",
 	"repository": {
