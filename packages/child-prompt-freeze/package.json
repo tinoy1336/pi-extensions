@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-child-prompt-freeze",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Pin a child session's rewritten system prompt and restore it on any request that arrives without it.",
 	"license": "MIT",
 	"repository": {
