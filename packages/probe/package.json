@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-probe",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "One bounded status probe for a systemd unit, a process, or a hyprctl query.",
 	"license": "MIT",
 	"repository": {
