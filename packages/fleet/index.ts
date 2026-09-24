@@ -1945,6 +1945,18 @@ export default function (pi: ExtensionAPI): void {
 			const act = mode.activate(toolSet, session);
 			setForemanSection(act.ok);
 			appliedSet = act.ok ? act.applied : [];
+			// Loaders are ADMITTED with the set, not swept out of it. The extension that
+			// owns one re-adds it on the typed path, so a session whose first run happens
+			// not to carry it renders one prompt and its next run another — the same moved
+			// head the drift handler refuses to create. Admitting them here makes the set
+			// identical from the first request on; the payload filter still keeps them off
+			// the wire.
+			if (act.ok) {
+				const loaders = (toolSet.getAllTools?.() ?? [])
+					.map((t) => t.name)
+					.filter((n) => n.endsWith("_enable") && !act.applied.includes(n));
+				if (loaders.length > 0) toolSet.setActiveTools([...act.applied, ...loaders]);
+			}
 			if (act.ok && act.missing.length) {
 				ctx?.ui?.notify?.(
 					`foreman mode re-armed. Not registered at activation, so left out for now: ${act.missing.join(", ")}. A tool that registers later takes its place; one that never does stays absent.`,

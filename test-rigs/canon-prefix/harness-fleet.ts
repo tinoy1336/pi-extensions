@@ -88,8 +88,10 @@ const api = {
 	appendEntry(): void {},
 	getActiveTools: () => [...active],
 	setActiveTools(names: string[]): void {
+		// pi de-duplicates and keeps registration order; the fake must too, or a
+		// re-add of an already-selected tool would read as a new tool here.
 		active.length = 0;
-		active.push(...names.filter((n) => registry.has(n)));
+		for (const n of names) if (registry.has(n) && !active.includes(n)) active.push(n);
 	},
 	getAllTools: () => [...registry.values()].map((t) => ({ name: t.name })),
 	exec: async () => ({ stdout: "", stderr: "", code: 0 }),
@@ -132,9 +134,19 @@ const renderTools = (names: readonly string[]): string =>
 await emit("session_start", {});
 check(
 	"foreman activation applied the frozen set",
-	FOREMAN_TOOLS.every((n) => active.includes(n)) && active.length === FOREMAN_TOOLS.length,
-	`active=${active.length} of ${FOREMAN_TOOLS.length}`,
+	FOREMAN_TOOLS.every((n) => active.includes(n)),
+	`active=${active.length} of ${FOREMAN_TOOLS.length}${active.includes(LOADER) ? " + loader" : ""}`,
 );
+if (MUTATE !== "loader-name") {
+	// The owning extension adds its loader from `session_start` too, and a session whose
+	// first run does not carry it renders one prompt while the next renders another. The
+	// exempt name must therefore be active BEFORE any run starts — admitted by activation,
+	// not by the stub below.
+	check(
+		"the loader is active before the first run, without the owning extension's help",
+		active.includes(LOADER),
+	);
+}
 check(
 	"activation wrote its state under the scratch HOME, never the real store",
 	existsSync(runPath("home/.local/pi/foreman/roster")) &&
@@ -146,13 +158,14 @@ check(
 const baseSelected = [...active];
 const options = { selectedTools: [...baseSelected] };
 await emit("before_agent_start", { systemPrompt: "RIG-BASE", systemPromptOptions: options });
-const edited =
-	options.selectedTools.length !== baseSelected.length ||
-	options.selectedTools.some((n, i) => n !== baseSelected[i]);
-const typedSelection = edited ? options.selectedTools : [...active];
+const typedSelection = options.selectedTools;
 const typedSection = renderTools(typedSelection);
 check("typed run carries the loader bullet", typedSelection.includes(LOADER));
-check("typed run differs from the bare set by that one bullet", edited);
+check(
+	"the typed run's selection already equals the live set (nothing to re-add)",
+	typedSelection.join(",") === [...active].join(","),
+	`typed=${typedSelection.length} live=${active.length}`,
+);
 
 // ── 3. the run makes a tool call: the drift handler runs ────────────────────────
 await emit("tool_call", { toolName: FOREMAN_TOOLS[0], input: {} }, ctx);
