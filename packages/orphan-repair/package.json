@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-orphan-repair",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Drop an orphaned tool result from the outbound provider request.",
 	"license": "MIT",
 	"repository": {
