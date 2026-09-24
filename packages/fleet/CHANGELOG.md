@@ -1,3 +1,9 @@
+## [0.2.2](https://github.com/tinoy1336/pi-extensions/compare/fleet-v0.2.1...fleet-v0.2.2) (2026-09-24)
+
+### Bug Fixes
+
+* **fleet:** correct the loader exception's rationale ([6f42f3b](https://github.com/tinoy1336/pi-extensions/commit/6f42f3b2b6cb9ab3940833f7862ede7ec3619a87))
+
 ## [0.2.1](https://github.com/tinoy1336/pi-extensions/compare/fleet-v0.2.0...fleet-v0.2.1) (2026-09-24)
 
 ### Bug Fixes
