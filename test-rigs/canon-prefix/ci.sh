@@ -46,8 +46,8 @@ matching() {
 	grep -E "$1" <<<"${log_text}" || true
 }
 
-harness_exits="$(matching '^(harness|harness-hooks|harness-chain|freeze-harness): exit ')"
-failing_harnesses="$(matching '^(harness|harness-hooks|harness-chain|freeze-harness): exit [^0]')"
+harness_exits="$(matching '^(harness|harness-hooks|harness-chain|freeze-harness|harness-fleet): exit ')"
+failing_harnesses="$(matching '^(harness|harness-hooks|harness-chain|freeze-harness|harness-fleet): exit [^0]')"
 harness_failures="$(matching '^[[:space:]]+FAIL  ')"
 abort_lines="$(matching '^CANON RIG ABORT: |^CANON RIG PRECONDITION FAILURE: ')"
 verdict_line="$(matching '^(CANON RIG PASS|CANON RIG FAILURE): ')"

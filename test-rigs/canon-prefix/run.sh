@@ -16,7 +16,7 @@
 #      ran, so this must never be read as a passing suite
 set -uo pipefail
 
-HARNESSES=(harness harness-hooks harness-chain freeze-harness)
+HARNESSES=(harness harness-hooks harness-chain freeze-harness harness-fleet)
 RIG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STORE="${CANON_RIG_STORE:-${RIG_DIR}/fixtures/canon.json}"
 

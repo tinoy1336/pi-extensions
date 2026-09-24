@@ -98,19 +98,21 @@ function packageEntry(packageDir: string, name: string): string {
  * packages in both sources, and each entry is read from the package's own
  * manifest.
  */
-const MODULES: Record<"canon" | "seam" | "freeze" | "logger", string> =
+const MODULES: Record<"canon" | "seam" | "freeze" | "logger" | "fleet", string> =
 	SOURCE === "repo"
 		? {
 				canon: packageEntry(join(PACKAGES_DIR, "canon"), "canon"),
 				seam: packageEntry(join(PACKAGES_DIR, "ext-lib"), "ext-lib"),
 				freeze: packageEntry(join(PACKAGES_DIR, "child-prompt-freeze"), "child-prompt-freeze"),
 				logger: packageEntry(join(PACKAGES_DIR, "cache-prefix-log"), "cache-prefix-log"),
+				fleet: packageEntry(join(PACKAGES_DIR, "fleet"), "fleet"),
 			}
 		: {
 				canon: packageEntry(join(NPM_TREE, "pi-canon"), "canon"),
 				seam: packageEntry(join(NPM_TREE, "pi-ext-lib"), "ext-lib"),
 				freeze: packageEntry(join(NPM_TREE, "pi-child-prompt-freeze"), "child-prompt-freeze"),
 				logger: packageEntry(join(NPM_TREE, "pi-cache-prefix-log"), "cache-prefix-log"),
+				fleet: packageEntry(join(NPM_TREE, "pi-fleet"), "fleet"),
 			};
 
 /**
@@ -233,6 +235,21 @@ export async function loadFreeze(): Promise<any> {
 }
 export async function loadLogger(): Promise<any> {
 	return import(pathToFileURL(MODULES.logger).href);
+}
+
+/**
+ * The fleet package, whose foreman mode owns the tool-set invariant this rig
+ * checks. Its `fleet/` directory also holds `mode.ts`, the module that defines
+ * the foreman set; the harness imports it by path so the set under test is the
+ * one the extension itself reads, never a copy spelled in the harness.
+ */
+export const FLEET_ENTRY = MODULES.fleet;
+export const FLEET_MODE_ENTRY = join(dirname(MODULES.fleet), "mode.ts");
+export async function loadFleet(): Promise<any> {
+	return import(pathToFileURL(FLEET_ENTRY).href);
+}
+export async function loadFleetMode(): Promise<any> {
+	return import(pathToFileURL(FLEET_MODE_ENTRY).href);
 }
 
 export const RIG_SESSION = "01a0972c-c592-73c0";
