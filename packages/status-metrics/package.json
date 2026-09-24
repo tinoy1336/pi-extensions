@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-status-metrics",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Session counters in pi's footer: tool calls blocked, anchors injected, bytes kept out of context, actions queued by focus mode.",
 	"license": "MIT",
 	"repository": {
