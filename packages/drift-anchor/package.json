@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-drift-anchor",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Detect reasoning-register drift and re-anchor it with a tail line.",
 	"license": "MIT",
 	"repository": {
