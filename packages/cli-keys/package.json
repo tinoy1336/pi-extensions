@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-cli-keys",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Hydrate provider API keys into the session environment from a local cache.",
 	"license": "MIT",
 	"repository": {
