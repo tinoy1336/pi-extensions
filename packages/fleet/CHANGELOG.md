@@ -1,3 +1,9 @@
+## [0.2.1](https://github.com/tinoy1336/pi-extensions/compare/fleet-v0.2.0...fleet-v0.2.1) (2026-09-24)
+
+### Bug Fixes
+
+* **fleet:** keep loader tools selected so a wake cannot rewrite the prompt ([ae18529](https://github.com/tinoy1336/pi-extensions/commit/ae18529ad5ebf3fda6a50e0ff150651ae6822f56))
+
 ## [0.2.0](https://github.com/tinoy1336/pi-extensions/compare/fleet-v0.1.0...fleet-v0.2.0) (2026-09-24)
 
 ### Features
