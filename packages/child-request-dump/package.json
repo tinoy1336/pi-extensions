@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-child-request-dump",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Structure-only JSONL record of each outbound provider request in a child session.",
 	"license": "MIT",
 	"repository": {
