@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-intercom-broadcast",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Send one message to every connected pi-intercom session.",
 	"license": "MIT",
 	"repository": {
