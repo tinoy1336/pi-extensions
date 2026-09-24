@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-cache-prefix-log",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "One JSONL row per cache-prefix change, so a real cache miss can be named from the log.",
 	"license": "MIT",
 	"repository": {
