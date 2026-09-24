@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-fleet",
-	"version": "0.2.2",
+	"version": "0.2.3",
 	"description": "A fleet of long-lived worker sessions driven by one coordinating session: the roster, the board, the retirement economics and the foreman discipline.",
 	"license": "MIT",
 	"repository": {

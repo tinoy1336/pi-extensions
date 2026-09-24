@@ -1,3 +1,9 @@
+## [0.2.3](https://github.com/tinoy1336/pi-extensions/compare/fleet-v0.2.2...fleet-v0.2.3) (2026-09-24)
+
+### Bug Fixes
+
+* **fleet:** admit loader tools at activation ([f69ff8c](https://github.com/tinoy1336/pi-extensions/commit/f69ff8c544e4491c7b577b3b5881bd14792866e8))
+
 ## [0.2.2](https://github.com/tinoy1336/pi-extensions/compare/fleet-v0.2.1...fleet-v0.2.2) (2026-09-24)
 
 ### Bug Fixes
