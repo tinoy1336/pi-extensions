@@ -52,6 +52,11 @@ if (MUTATE !== "" && MUTATE !== "loader-name") {
 }
 const LOADER = MUTATE === "loader-name" ? "probe_tools" : "probe_enable";
 const LOADER_SNIPPET = `pi-subagents is installed. ${"x".repeat(200)}`;
+// The second loader is the OTHER shape a real one arrives in: pi-web-access never touches
+// the run's selection, it only re-adds itself to the live set in `before_agent_start`, and
+// pi then copies `getActiveToolNames()` into `selectedTools` because no handler edited it.
+const LOADER2 = "probe2_enable";
+const LOADER2_SNIPPET = `pi-web-access is configured. ${"y".repeat(120)}`;
 
 const mode = await loadFleetMode();
 const fleet = await loadFleet();
@@ -72,6 +77,7 @@ const register = (name: string, promptSnippet?: string): void => {
 };
 for (const name of FOREMAN_TOOLS) register(name, `Operate ${name}.`);
 register(LOADER, LOADER_SNIPPET);
+register(LOADER2, LOADER2_SNIPPET);
 // A non-loader stray: the sweep must still remove it. Without this the arm cannot tell
 // "the exemption works" from "the sweep stopped removing anything", which is the same
 // class of defect in the other direction — a stray left selected adds its own bullet.
@@ -125,6 +131,11 @@ handlers.before_agent_start.push((event: any) => {
 	if (!names.includes(LOADER)) names.push(LOADER);
 	return undefined;
 });
+// The pi-web-access shape: live set only, no selection edit.
+handlers.before_agent_start.push(() => {
+	api.setActiveTools([...active, LOADER2]);
+	return undefined;
+});
 
 const { check, count } = createChecker();
 
@@ -153,6 +164,11 @@ if (MUTATE !== "loader-name") {
 	);
 }
 check(
+	"a live-set-only loader is admitted too (the pi-web-access shape)",
+	active.includes(LOADER2),
+	`${LOADER2} present=${active.includes(LOADER2)}`,
+);
+check(
 	"activation wrote its state under the scratch HOME, never the real store",
 	existsSync(runPath("home/.local/pi/foreman/roster")) &&
 		readdirSync(runPath("home/.local/pi/foreman/roster")).some((f) => f.startsWith("mode-")),
@@ -163,7 +179,12 @@ check(
 const baseSelected = [...active];
 const options = { selectedTools: [...baseSelected] };
 await emit("before_agent_start", { systemPrompt: "RIG-BASE", systemPromptOptions: options });
-const typedSelection = options.selectedTools;
+// pi's own rule (agent-session.js): an explicit handler edit wins, otherwise the live set is
+// copied in. Modelling both is what lets one run cover both loader shapes.
+const edited =
+	options.selectedTools.length !== baseSelected.length ||
+	options.selectedTools.some((n, i) => n !== baseSelected[i]);
+const typedSelection = edited ? options.selectedTools : [...active];
 const typedSection = renderTools(typedSelection);
 check("typed run carries the loader bullet", typedSelection.includes(LOADER));
 check(
@@ -185,6 +206,11 @@ check(
 	"a tool call still removes a non-loader stray",
 	!active.includes(STRAY),
 	`stray present=${active.includes(STRAY)}`,
+);
+check(
+	"a tool call leaves the live-set-only loader selected too",
+	active.includes(LOADER2),
+	`${LOADER2} present=${active.includes(LOADER2)}`,
 );
 
 // ── 4. wake run: no before_agent_start, so the live set renders ─────────────────
@@ -214,8 +240,8 @@ const payload = {
 await emit("before_provider_request", { payload }, ctx);
 const wire = (payload.tools as { function: { name: string } }[]).map((t) => t.function.name);
 check(
-	"wire tools are the frozen set, loader excluded",
-	wire.length === FOREMAN_TOOLS.length && !wire.includes(LOADER),
+	"wire tools are the frozen set, loaders excluded",
+	wire.length === FOREMAN_TOOLS.length && !wire.includes(LOADER) && !wire.includes(LOADER2),
 	`wire=${wire.length}`,
 );
 
