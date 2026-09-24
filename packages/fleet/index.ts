@@ -284,9 +284,10 @@ export default function (pi: ExtensionAPI): void {
 			// renders one prompt bullet per selected tool at the head of the system prompt.
 			// Taking the loader out of the ACTIVE set here therefore makes the next run
 			// render something the typed path would not have: the typed run carries the
-			// bullet because its own selection (the owning extension pushes the loader into
-			// `systemPromptOptions.selectedTools`) is what renders, while a wake fires no
-			// `before_agent_start` and renders the set as it stands — one bullet fewer. The
+			// bullet because `before_agent_start` runs there and either pushes the loader
+			// into the run's `systemPromptOptions.selectedTools` (pi-subagents) or re-adds it
+			// to the live set that pi then copies into `selectedTools` (pi-web-access), while
+			// a wake runs neither. The
 			// transcript's `tools` section is what records that loss, and a head that moves
 			// can re-bill the conversation behind it (measured: of six deltas in one
 			// session, two re-billed the prompt whole and four only the 3–18% behind the
