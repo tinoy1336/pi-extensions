@@ -328,7 +328,7 @@
 				"@tinoy/pi-io-guard"
 			],
 			"absent": [],
-			"expectLoaded": 25,
+			"expectLoaded": 24,
 			"expectTools": {
 				"@tinoy/pi-canon": ["canon_add", "canon_category", "canon_edit", "canon_remove"],
 				"@tinoy/pi-read-staleness": [],
