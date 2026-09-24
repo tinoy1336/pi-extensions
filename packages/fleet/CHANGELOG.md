@@ -1,3 +1,9 @@
+## [0.2.4](https://github.com/tinoy1336/pi-extensions/compare/fleet-v0.2.3...fleet-v0.2.4) (2026-09-24)
+
+### Bug Fixes
+
+* **fleet:** exempt loader tools by name, not by suffix ([97080cf](https://github.com/tinoy1336/pi-extensions/commit/97080cf80282cdf270315ddc836bfe3e6db074c5))
+
 ## [0.2.3](https://github.com/tinoy1336/pi-extensions/compare/fleet-v0.2.2...fleet-v0.2.3) (2026-09-24)
 
 ### Bug Fixes
