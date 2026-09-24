@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-build",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Run a build, compile, lint or typecheck command with bounded output, and report the exit code, the error lines and the log path.",
 	"license": "MIT",
 	"repository": {
