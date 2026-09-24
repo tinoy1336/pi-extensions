@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-todo-parent",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Give a child session a todo tool whose mutations are applied to the spawning session's todo list, without waking its model.",
 	"license": "MIT",
 	"repository": {
