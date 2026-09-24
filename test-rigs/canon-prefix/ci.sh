@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ci.sh — run the canon-prefix rig in CI and say exactly which harness failed and why.
 #
-# The rig is four offline harnesses over the canon package's system-prompt seam
+# The rig is five offline harnesses over the canon package's system-prompt seam
 # (this directory), quiet and fast: no container, no provider, no pi install. A failure
 # here has two different meanings, and this script keeps them apart in the job log and in
 # the step summary:
@@ -13,7 +13,7 @@
 #                            no canon store, a missing harness. Never read as a defect in the
 #                            packages.
 #
-# Bounds: run.sh takes no bound of its own — the four harnesses are node scripts that exit on
+# Bounds: run.sh takes no bound of its own — the five harnesses are node scripts that exit on
 # their own — so the workflow job's timeout-minutes is the ceiling that catches a stall.
 #
 # The output is classified from ONE snapshot of the run's output, so the verdict cannot

@@ -18,10 +18,10 @@ a scratch agent prefix with that store and points `PI_CODING_AGENT_DIR` at it,
 so no harness reads or writes a real agent dir. An already-exported
 `PI_CODING_AGENT_DIR` is used as given instead — the shape `RIG_SOURCE=installed`
 needs, since that source reads a pi install out of the agent dir. Exit `0` = all
-four passed, `1` = a harness failed (named, with its `FAIL` lines), `2` = a
+five passed, `1` = a harness failed (named, with its `FAIL` lines), `2` = a
 precondition was unmet so the rig never judged anything.
 
-The four harnesses individually, from anywhere:
+The five harnesses individually, from anywhere:
 
 ```sh
 PI_CODING_AGENT_DIR=<prefix holding canon/canon.json> \
@@ -68,7 +68,7 @@ PI_CODING_AGENT_DIR=~/.pi/agent RIG_SOURCE=installed bash test-rigs/canon-prefix
 
 `installed` carries one runtime constraint: node refuses `--experimental-strip-types`
 for a file whose REAL path sits under a `node_modules` directory, so an agent
-prefix holding unpacked copies aborts by name (exit 2) instead of failing four
+prefix holding unpacked copies aborts by name (exit 2) instead of failing five
 times with the same npm stack trace. An agent prefix whose npm tree LINKS to the
 checkout — or to a published copy — resolves to the link target and runs.
 

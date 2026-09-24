@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# run.sh — run the four offline canon-prefix harnesses from any checkout.
+# run.sh — run the five offline canon-prefix harnesses from any checkout.
 #
 # The harnesses render their fixture block FROM a canon store, which the module under test
 # reads from `$PI_CODING_AGENT_DIR/canon/canon.json` (the extension's own rule — there is no
