@@ -19,10 +19,10 @@
  *
  * Both must render the same tools section.
  *
- * RIG_MUTATE=loader-name renames the stub loader to a name WITHOUT the `_enable`
- * suffix, which is exactly the coupling of this exemption: the loader is swept again
- * and the wake renders one bullet fewer. A default run must be green; a mutated run
- * must be red.
+ * RIG_MUTATE=loader-name renames the stub loader to `probe_enable` — a name that still ends
+ * in `_enable` but is NOT on the allow-list. The point is the coupling: the exemption is by
+ * name, not by pattern, so the renamed loader is swept and the wake renders one bullet
+ * fewer. A default run must be green; a mutated run must be red.
  */
 import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import {
@@ -50,12 +50,12 @@ if (MUTATE !== "" && MUTATE !== "loader-name") {
 	console.error(`\nRIG ABORT: unknown RIG_MUTATE ${JSON.stringify(MUTATE)} for harness-fleet.`);
 	process.exit(2);
 }
-const LOADER = MUTATE === "loader-name" ? "probe_tools" : "probe_enable";
+const LOADER = MUTATE === "loader-name" ? "probe_enable" : "subagents_enable";
 const LOADER_SNIPPET = `pi-subagents is installed. ${"x".repeat(200)}`;
 // The second loader is the OTHER shape a real one arrives in: pi-web-access never touches
 // the run's selection, it only re-adds itself to the live set in `before_agent_start`, and
 // pi then copies `getActiveToolNames()` into `selectedTools` because no handler edited it.
-const LOADER2 = "probe2_enable";
+const LOADER2 = "web_enable";
 const LOADER2_SNIPPET = `pi-web-access is configured. ${"y".repeat(120)}`;
 
 const mode = await loadFleetMode();
@@ -156,9 +156,9 @@ check(
 );
 if (MUTATE !== "loader-name") {
 	// The owning extension adds its loader from `session_start` too, and a session whose
-	// first run does not carry it renders one prompt while the next renders another. The
-	// exempt name must therefore be active BEFORE any run starts — admitted by activation,
-	// not by the stub below.
+	// first run does not carry it renders one prompt while the next renders another. A listed
+	// name must therefore be active BEFORE any run starts — admitted by activation, not by
+	// the stub below.
 	check(
 		"the loader is active before the first run, without the owning extension's help",
 		active.includes(LOADER),

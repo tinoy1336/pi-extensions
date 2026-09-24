@@ -221,6 +221,17 @@ export default function (pi: ExtensionAPI): void {
 	let appliedSet: string[] = [];
 
 	/**
+	 * The loader tools this package leaves alone. Each is owned by another extension
+	 * that re-adds it on the typed path, and pi renders one prompt bullet per selected
+	 * tool, so sweeping one away moves the head of the system prompt on the next run.
+	 *
+	 * Listed BY NAME, never by pattern: `_enable` is a naming convention, not a
+	 * contract, and a third-party tool that happens to match it must stay an ordinary
+	 * stray rather than inherit sweep immunity and a permanent prompt bullet.
+	 */
+	const LOADER_TOOLS: readonly string[] = ["subagents_enable", "web_enable"];
+
+	/**
 	 * THE FROZEN SET IS AN INVARIANT, NOT A STARTING STATE — enforced here, at the last
 	 * point before the payload is sent.
 	 *
@@ -280,7 +291,7 @@ export default function (pi: ExtensionAPI): void {
 			// re-create the missing-tool hole the payload filter exists to avoid.
 			//
 			// Loader tools are the one exception, and the exception is the point. Another
-			// extension re-adds its loader (a `*_enable` tool) on every typed run, and pi
+			// extension re-adds its loader (a name on LOADER_TOOLS) on every typed run, and pi
 			// renders one prompt bullet per selected tool at the head of the system prompt.
 			// Taking the loader out of the ACTIVE set here therefore makes the next run
 			// render something the typed path would not have: the typed run carries the
@@ -295,7 +306,7 @@ export default function (pi: ExtensionAPI): void {
 			// uncallable. The prompt therefore advertises a tool the wire withholds, which is the
 			// deliberate trade: a stable head in exchange for a bullet the model cannot act on.
 			const allowedHere = (n: string): boolean =>
-				(mode.FOREMAN_TOOLS as readonly string[]).includes(n) || n.endsWith("_enable");
+				(mode.FOREMAN_TOOLS as readonly string[]).includes(n) || LOADER_TOOLS.includes(n);
 			const strays = active.filter((n) => !allowedHere(n));
 			if (strays.length > 0 && mode.isOn(sid(ctx))) {
 				toolSet.setActiveTools(active.filter(allowedHere));
@@ -1959,7 +1970,7 @@ export default function (pi: ExtensionAPI): void {
 			if (act.ok) {
 				const loaders = (toolSet.getAllTools?.() ?? [])
 					.map((t) => t.name)
-					.filter((n) => n.endsWith("_enable") && !act.applied.includes(n));
+					.filter((n) => LOADER_TOOLS.includes(n) && !act.applied.includes(n));
 				if (loaders.length > 0) toolSet.setActiveTools([...act.applied, ...loaders]);
 			}
 			if (act.ok && act.missing.length) {

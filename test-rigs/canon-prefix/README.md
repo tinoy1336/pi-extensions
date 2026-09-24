@@ -100,8 +100,9 @@ and the store is read-only.
 Negative controls: every harness should be able to FAIL. Add `RIG_MUTATE=<name>`:
 `harness.ts` `no-append`, `harness-hooks.ts` `stale-block`,
 `freeze-harness.ts` `no-restore`, `harness-chain.ts` `no-canon`, `harness-fleet.ts`
-`loader-name` (renames the stub loader so the `*_enable` exemption misses it, which is
-the coupling of that exemption — a mutated run must be red). A mutated run must exit
+`loader-name` (renames the stub loader to a name that still ends in `_enable` but is not
+on the allow-list, so it is swept — the coupling of a name-based exemption — a mutated run
+must be red). A mutated run must exit
 non-zero.
 
 ```sh
