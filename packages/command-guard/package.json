@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-command-guard",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Block destructive shell commands before they run, and name the safe alternative in the block reason.",
 	"license": "MIT",
 	"repository": {
