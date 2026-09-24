@@ -62,10 +62,13 @@ const ENV_STRIP_EXACT = [
 	"PI_CACHE_RETENTION",
 ];
 
-/** The crew package: the ONE owner of the io store's location and of identity. */
-const FLEET_PACKAGE = "@tinoy/pi-fleet";
-const CLAIMS_MODULE = "@tinoy/pi-fleet/io-guard/claims.ts";
-const IDENTITY_MODULE = "@tinoy/pi-fleet/io-guard/identity.ts";
+/**
+ * The package that owns the io store's location and this process's identity:
+ * `ioRoot()` lives in `claims.ts`, `identityHolder()` in `identity.ts`.
+ */
+const IO_GUARD_PACKAGE = "@tinoy/pi-io-guard";
+const CLAIMS_MODULE = "@tinoy/pi-io-guard/claims.ts";
+const IDENTITY_MODULE = "@tinoy/pi-io-guard/identity.ts";
 
 export interface BuildRoots {
 	output: string;
@@ -99,22 +102,22 @@ let crewPromise: Promise<{ claims: CrewClaims; identity: CrewIdentity } | null> 
 
 function loadCrew(): Promise<{ claims: CrewClaims; identity: CrewIdentity } | null> {
 	crewPromise ??= optionalNeighbour(
-		FLEET_PACKAGE,
+		IO_GUARD_PACKAGE,
 		() => Promise.all([import(CLAIMS_MODULE), import(IDENTITY_MODULE)]),
 		{
 			source: "build",
 			effect:
 				"builds run in the shared session environment and log under /tmp instead of this worker's own output, cache and temp tree",
-			hint: `pi install npm:${FLEET_PACKAGE}`,
+			hint: `pi install npm:${IO_GUARD_PACKAGE}`,
 		},
 	).then((modules) => {
 		if (!modules) return null;
 		const [claims, identity] = modules as [CrewClaims, CrewIdentity];
 		if (typeof claims?.ioRoot !== "function" || typeof identity?.identityHolder !== "function") {
 			hookLog("build", "neighbour-absent", {
-				neighbour: FLEET_PACKAGE,
+				neighbour: IO_GUARD_PACKAGE,
 				effect: "the crew store is reachable but does not export ioRoot/identityHolder",
-				hint: `reinstall ${FLEET_PACKAGE}`,
+				hint: `reinstall ${IO_GUARD_PACKAGE}`,
 			});
 			return null;
 		}

@@ -150,7 +150,7 @@
 			"id": "A1-build",
 			"group": "A1",
 			"packages": ["@tinoy/pi-build"],
-			"absent": ["@tinoy/pi-fleet"],
+			"absent": ["@tinoy/pi-io-guard"],
 			"expectLoaded": 1,
 			"expectTools": {
 				"@tinoy/pi-build": ["build"]

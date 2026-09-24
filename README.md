@@ -43,7 +43,7 @@ entry and the shared library packages, which npm installs for you.
 | `@tinoy/pi-command-guard` | destructive shell commands are blocked with the safe alternative named | — | — |
 | `@tinoy/pi-status-metrics` | footer counters: calls blocked, bytes kept out of context, anchors, gated actions | — | `@tinoy/pi-command-guard` and `@tinoy/pi-read-staleness` feed two of its rows |
 | `@tinoy/pi-nf` | `nf`: glyph search, contact sheet, escape audit | `python3` with Pillow and a Nerd Font file for `sheet` (`search` and `audit` need nothing) | — |
-| `@tinoy/pi-build` | the bounded `build` tool for a compile, lint or typecheck command | a shell with the toolchain the command itself uses | `@tinoy/pi-fleet` for claim-guarded isolation |
+| `@tinoy/pi-build` | the bounded `build` tool for a compile, lint or typecheck command | a shell with the toolchain the command itself uses | `@tinoy/pi-io-guard` for claim-guarded isolation |
 | `@tinoy/pi-child-prompt-freeze` | a child session's rewritten system prompt is pinned and restored | a child session (inert in a parent) | — |
 | `@tinoy/pi-todo-parent` | the child session's todo tool, applied to the spawning session's list | `@juicesharp/rpiv-todo` in the spawning session, and the pi-subagents supervisor channel to carry the mutation | — |
 | `@tinoy/pi-focus-gate` | machine-global focus mode: a session works but cannot touch the desktop | Hyprland, AGS, `grim` and the `inject` wrapper for the actions it gates | — |

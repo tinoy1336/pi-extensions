@@ -32,11 +32,11 @@
 	},
 	"peerDependencies": {
 		"@earendil-works/pi-coding-agent": "*",
-		"@tinoy/pi-fleet": "*",
+		"@tinoy/pi-io-guard": "*",
 		"typebox": "*"
 	},
 	"peerDependenciesMeta": {
-		"@tinoy/pi-fleet": {
+		"@tinoy/pi-io-guard": {
 			"optional": true
 		}
 	},
