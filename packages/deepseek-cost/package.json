@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-deepseek-cost",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Price the session footer from the configured house tariff, per message timestamp.",
 	"license": "MIT",
 	"repository": {
