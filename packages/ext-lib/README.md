@@ -20,6 +20,8 @@ An extension package depends on it through npm:
 | --- | --- | --- |
 | `hookLog(source, kind, detail?)` | `hook-log.ts` | the one diagnostics envelope: `{ts, proc, sid, source, kind, detail}` per line, JSONL in `~/.local/share/pi-hooks/log.jsonl`. Fail-open — a logging failure never breaks the call that emitted it |
 | `HOOK_LOG_PATH` | `hook-log.ts` | that file's path |
+| `globOverlap(a, b)` | `glob.ts` | do two path patterns address the same tree: exact match, either side a directory prefix of the other, or a `*` wildcard anywhere in either side |
+| `escapeRe(s)` | `glob.ts` | escape every RegExp metacharacter in `s`, so it can be embedded in a pattern |
 | `clip(text, max?)` | `tool-header.ts` | flatten whitespace and clip to `max` characters with an ellipsis |
 | `argText(args, key)` / `argNumber(args, key)` | `tool-header.ts` | a non-empty trimmed string argument / a finite numeric argument, else `undefined` |
 | `renderToolHeader(theme, name, parts?)` | `tool-header.ts` | the duck-typed one-line header component (`render(width)` + `invalidate()`) a tool's `renderCall` returns |
