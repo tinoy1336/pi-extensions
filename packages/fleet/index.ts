@@ -280,15 +280,18 @@ export default function (pi: ExtensionAPI): void {
 			// re-create the missing-tool hole the payload filter exists to avoid.
 			//
 			// Loader tools are the one exception, and the exception is the point. Another
-			// extension re-adds its loader at the start of every run (the `*_enable` tools),
-			// and pi renders one prompt bullet per selected tool. Removing a loader here
-			// leaves the active set without it while the `tools` section recorded in the
-			// transcript still has it, so the NEXT run's render disagrees with that record:
-			// a typed run regains the bullet (the owning extension pushes the loader back
-			// into the run's selection) and a wake, which fires no `before_agent_start`,
-			// sends it missing. Either direction moves the head of the system prompt, and a
-			// head that moves re-bills the whole conversation behind it. Loaders stay
-			// selected; the filter, not this handler, is what keeps them uncallable.
+			// extension re-adds its loader (a `*_enable` tool) on every typed run, and pi
+			// renders one prompt bullet per selected tool at the head of the system prompt.
+			// Taking the loader out of the ACTIVE set here therefore makes the next run
+			// render something the typed path would not have: the typed run carries the
+			// bullet because its own selection (the owning extension pushes the loader into
+			// `systemPromptOptions.selectedTools`) is what renders, while a wake fires no
+			// `before_agent_start` and renders the set as it stands — one bullet fewer. The
+			// transcript's `tools` section is what records that loss, and a head that moves
+			// can re-bill the conversation behind it (measured: of six deltas in one
+			// session, two re-billed the prompt whole and four only the 3–18% behind the
+			// move). Loaders stay selected; the filter, not this handler, is what keeps them
+			// uncallable.
 			const allowedHere = (n: string): boolean =>
 				(mode.FOREMAN_TOOLS as readonly string[]).includes(n) || n.endsWith("_enable");
 			const strays = active.filter((n) => !allowedHere(n));
