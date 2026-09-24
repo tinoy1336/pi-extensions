@@ -256,13 +256,12 @@
 			"group": "A1",
 			"packages": ["@tinoy/pi-fleet"],
 			"absent": ["@juicesharp/rpiv-todo", "pi-subagents"],
-			"expectLoaded": 2,
+			"expectLoaded": 1,
 			"expectTools": {
-				"@tinoy/pi-fleet[fleet]": ["fleet"],
-				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+				"@tinoy/pi-fleet": ["fleet"]
 			},
 			"expectLog": [],
-			"notes": "one package, two entries; canon's section handoff must report canon absent only when a section is actually offered",
+			"notes": "one entry per package, so this case loads the fleet entry alone; canon's section handoff must report canon absent only when a section is actually offered",
 			"env": {
 				"PI_SUBAGENT_CHILD": "",
 				"PI_SUBAGENT": ""
@@ -271,14 +270,14 @@
 		{
 			"id": "A1-io-guard",
 			"group": "A1",
-			"packages": ["@tinoy/pi-fleet"],
+			"packages": ["@tinoy/pi-io-guard"],
 			"absent": [],
-			"expectLoaded": 2,
+			"expectLoaded": 1,
 			"expectTools": {
-				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+				"@tinoy/pi-io-guard": ["io_status"]
 			},
 			"expectLog": [],
-			"notes": "pi-fleet declares both entries, so installing the package loads the fleet entry and the io-guard entry; the tool sets of both are asserted (measured 2 loaded)",
+			"notes": "the claim guard as its own package: installing pi-io-guard alone loads one extension and registers the io_status tool",
 			"env": {
 				"PI_SUBAGENT_CHILD": "",
 				"PI_SUBAGENT": ""
@@ -325,10 +324,11 @@
 				"@tinoy/pi-deepseek-cost",
 				"@tinoy/pi-cli-keys",
 				"@tinoy/pi-sudo-approve",
-				"@tinoy/pi-fleet"
+				"@tinoy/pi-fleet",
+				"@tinoy/pi-io-guard"
 			],
 			"absent": [],
-			"expectLoaded": 24,
+			"expectLoaded": 25,
 			"expectTools": {
 				"@tinoy/pi-canon": ["canon_add", "canon_category", "canon_edit", "canon_remove"],
 				"@tinoy/pi-read-staleness": [],
@@ -352,8 +352,8 @@
 				"@tinoy/pi-deepseek-cost": [],
 				"@tinoy/pi-cli-keys": [],
 				"@tinoy/pi-sudo-approve": ["sudo_approve"],
-				"@tinoy/pi-fleet[fleet]": ["fleet"],
-				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+				"@tinoy/pi-fleet": ["fleet"],
+				"@tinoy/pi-io-guard": ["io_status"]
 			},
 			"expectLog": [
 				{
@@ -361,7 +361,7 @@
 					"neighbour": "@juicesharp/rpiv-todo"
 				}
 			],
-			"notes": "the known-good full set; loaded and tool expectations come from the A1 rows once every package exists — measured: all 23 entries load with 0 errors, every tool set matches, and the one neighbour-absent line is todo-parent naming @juicesharp/rpiv-todo, which the harness cannot install from a registry"
+			"notes": "the known-good full set; loaded and tool expectations come from the A1 rows once every package exists — measured: all 24 entries load with 0 errors, every tool set matches, and the one neighbour-absent line is todo-parent naming @juicesharp/rpiv-todo, which the harness cannot install from a registry"
 		},
 		{
 			"id": "A2-present",
@@ -462,18 +462,17 @@
 				"@tinoy/pi-fleet"
 			],
 			"absent": [],
-			"expectLoaded": 7,
+			"expectLoaded": 6,
 			"expectTools": {
 				"@tinoy/pi-focus-gate": [],
 				"@tinoy/pi-drift-anchor": ["set_anchor"],
 				"@tinoy/pi-deepseek-cost": [],
 				"@tinoy/pi-cli-keys": [],
 				"@tinoy/pi-sudo-approve": ["sudo_approve"],
-				"@tinoy/pi-fleet[fleet]": ["fleet"],
-				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+				"@tinoy/pi-fleet": ["fleet"]
 			},
 			"expectLog": [],
-			"notes": "every machine-bound package together in a container with no desktop, vault or crew: every refusal belongs at call time — measured: all 7 entries load with 0 errors"
+			"notes": "every machine-bound package together in a container with no desktop, vault or crew: every refusal belongs at call time — measured: all 6 entries load with 0 errors"
 		},
 		{
 			"id": "A6-fleet-without-rpiv",
@@ -485,10 +484,9 @@
 				"@tinoy/pi-drift-anchor",
 				"@tinoy/pi-todo-parent"
 			],
-			"expectLoaded": 2,
+			"expectLoaded": 1,
 			"expectTools": {
-				"@tinoy/pi-fleet[fleet]": ["fleet"],
-				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+				"@tinoy/pi-fleet": ["fleet"]
 			},
 			"expectLog": [],
 			"notes": "the case that fails today: the crew package must load with rpiv-todo absent",
@@ -531,10 +529,9 @@
 			"group": "M9",
 			"packages": ["@tinoy/pi-fleet"],
 			"absent": ["@tinoy/pi-canon", "@tinoy/pi-drift-anchor", "@tinoy/pi-todo-parent"],
-			"expectLoaded": 2,
+			"expectLoaded": 1,
 			"expectTools": {
-				"@tinoy/pi-fleet[fleet]": ["fleet"],
-				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+				"@tinoy/pi-fleet": ["fleet"]
 			},
 			"expectLog": [],
 			"env": {
@@ -627,11 +624,10 @@
 			"group": "P1",
 			"packages": ["@tinoy/pi-no-subagent-fork", "@tinoy/pi-fleet"],
 			"absent": ["@juicesharp/rpiv-todo", "pi-subagents"],
-			"expectLoaded": 3,
+			"expectLoaded": 2,
 			"expectTools": {
 				"@tinoy/pi-no-subagent-fork": [],
-				"@tinoy/pi-fleet[fleet]": ["fleet"],
-				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+				"@tinoy/pi-fleet": ["fleet"]
 			},
 			"expectLog": [],
 			"notes": "both rewrite subagent calls; ordering matters, so the case runs in both load orders"
@@ -641,11 +637,10 @@
 			"group": "P1",
 			"packages": ["@tinoy/pi-image-read", "@tinoy/pi-fleet"],
 			"absent": [],
-			"expectLoaded": 3,
+			"expectLoaded": 2,
 			"expectTools": {
 				"@tinoy/pi-image-read": ["image_read"],
-				"@tinoy/pi-fleet[fleet]": ["fleet"],
-				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+				"@tinoy/pi-fleet": ["fleet"]
 			},
 			"expectLog": [],
 			"notes": "both touch the active tool set; the case runs in both load orders"
@@ -669,11 +664,10 @@
 			"group": "P1",
 			"packages": ["@tinoy/pi-deepseek-cost", "@tinoy/pi-fleet"],
 			"absent": ["@juicesharp/rpiv-todo"],
-			"expectLoaded": 3,
+			"expectLoaded": 2,
 			"expectTools": {
 				"@tinoy/pi-deepseek-cost": [],
-				"@tinoy/pi-fleet[fleet]": ["fleet"],
-				"@tinoy/pi-fleet[io-guard]": ["io_status"]
+				"@tinoy/pi-fleet": ["fleet"]
 			},
 			"expectLog": [],
 			"notes": "both read the tariff package"
