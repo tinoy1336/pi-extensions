@@ -72,6 +72,11 @@ const register = (name: string, promptSnippet?: string): void => {
 };
 for (const name of FOREMAN_TOOLS) register(name, `Operate ${name}.`);
 register(LOADER, LOADER_SNIPPET);
+// A non-loader stray: the sweep must still remove it. Without this the arm cannot tell
+// "the exemption works" from "the sweep stopped removing anything", which is the same
+// class of defect in the other direction — a stray left selected adds its own bullet.
+const STRAY = "ctx_probe";
+register(STRAY, `Operate ${STRAY}.`);
 
 const api = {
 	on(ev: string, h: (event: any, ctx: any) => unknown): void {
@@ -168,11 +173,18 @@ check(
 );
 
 // ── 3. the run makes a tool call: the drift handler runs ────────────────────────
+api.setActiveTools([...active, STRAY]);
+check("the stray is present before the sweep", active.includes(STRAY));
 await emit("tool_call", { toolName: FOREMAN_TOOLS[0], input: {} }, ctx);
 check(
 	"a tool call leaves the loader selected",
 	active.includes(LOADER),
 	`loader present=${active.includes(LOADER)}`,
+);
+check(
+	"a tool call still removes a non-loader stray",
+	!active.includes(STRAY),
+	`stray present=${active.includes(STRAY)}`,
 );
 
 // ── 4. wake run: no before_agent_start, so the live set renders ─────────────────
