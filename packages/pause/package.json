@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-pause",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Park pi's agent loop until a deadline or an explicit resume: /pause, /unpause and a footer row.",
 	"license": "MIT",
 	"repository": {
