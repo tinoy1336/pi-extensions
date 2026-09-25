@@ -1,3 +1,9 @@
+## [0.2.2](https://github.com/tinoy1336/pi-extensions/compare/deepseek-cost-v0.2.1...deepseek-cost-v0.2.2) (2026-09-25)
+
+### Bug Fixes
+
+* **fleet:** require a landing bullet, or no text at all ([04b1209](https://github.com/tinoy1336/pi-extensions/commit/04b120915734eba58e756fa4a39a7ed671b8a197))
+
 ## [0.2.1](https://github.com/tinoy1336/pi-extensions/compare/deepseek-cost-v0.2.0...deepseek-cost-v0.2.1) (2026-09-25)
 
 ### Bug Fixes
