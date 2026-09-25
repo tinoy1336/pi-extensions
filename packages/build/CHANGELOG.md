@@ -1,3 +1,13 @@
+## [0.2.1](https://github.com/tinoy1336/pi-extensions/compare/build-v0.2.0...build-v0.2.1) (2026-09-25)
+
+### Bug Fixes
+
+* **build:** reach the crew store through the io-guard package ([12ee61c](https://github.com/tinoy1336/pi-extensions/commit/12ee61c58b384a04ea5f50111332b9df1cb6371c))
+* **fleet:** admit loader tools at activation ([f69ff8c](https://github.com/tinoy1336/pi-extensions/commit/f69ff8c544e4491c7b577b3b5881bd14792866e8))
+* **fleet:** correct the loader exception's rationale ([6f42f3b](https://github.com/tinoy1336/pi-extensions/commit/6f42f3b2b6cb9ab3940833f7862ede7ec3619a87))
+* **fleet:** exempt loader tools by name, not by suffix ([97080cf](https://github.com/tinoy1336/pi-extensions/commit/97080cf80282cdf270315ddc836bfe3e6db074c5))
+* **fleet:** keep loader tools selected so a wake cannot rewrite the prompt ([ae18529](https://github.com/tinoy1336/pi-extensions/commit/ae18529ad5ebf3fda6a50e0ff150651ae6822f56))
+
 ## [0.2.0](https://github.com/tinoy1336/pi-extensions/compare/build-v0.1.0...build-v0.2.0) (2026-09-24)
 
 ### Features
