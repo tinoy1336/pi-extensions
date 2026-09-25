@@ -67,6 +67,31 @@ jobs:
       - name: Run the canon-prefix rig
         run: bash test-rigs/canon-prefix/ci.sh
 
+  # The deepseek-cost footer rig: one node script that drives the package's own exported
+  # label helpers (`remainingLabel`, `windowAt`, `windowLabel`) with injected instants, so
+  # it checks the string the footer shows without a provider, a pi install or an agent dir.
+  # It pins the one string this package contributes to a status line, which is exactly the
+  # kind of surface a workspace gate does not read: `npm run typecheck` and `biome` pass
+  # while the label's shape drifts. `npm ci` provides the imports the module under test
+  # resolves through — the `@tinoy/*` workspace links and @earendil-works/pi-ai.
+  cost-rig:
+    name: cost-rig
+    runs-on: ubuntu-latest
+    needs: check
+    # The rig bounds itself (`COST_RIG_TIMEOUT`, 120 s, and it exits on its own); this is
+    # the ceiling that catches a stall. A failed check names the actual and the expected
+    # label, and a missing module under test exits 2 as a precondition, never as a defect.
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run the deepseek-cost label rig
+        run: bash packages/deepseek-cost/rig/run.sh
+
   # The subset matrix: every case installs its own tarballs in a clean container and is
   # judged on the five clauses (load errors, entries loaded, tool sets, declared absences,
   # registration failures). This is the container path's first real execution: locally only

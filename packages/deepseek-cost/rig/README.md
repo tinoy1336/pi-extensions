@@ -51,5 +51,5 @@ fails here rather than reaching the footer.
 
 The harness is the checkout's gate, not a published file: `package.json` ships
 `index.ts`, `README.md` and `LICENSE` only, so `rig/` travels with the repository and
-never with the package. `.github/workflows/ci.yml` does not run it yet — until a job
-calls `run.sh`, the gate is what a release or a working tree runs by hand.
+never with the package. `.github/workflows/ci.yml` runs it in the `cost-rig` job, which
+calls `run.sh` after `npm ci`; a working tree can run the same script by hand.
