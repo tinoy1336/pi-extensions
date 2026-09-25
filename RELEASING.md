@@ -113,10 +113,24 @@ gh workflow run first-publish.yml --repo tinoy1336/pi-extensions -f package=sudo
 gh run watch --repo tinoy1336/pi-extensions
 ```
 
-It exists because the hand route is not always available: npm rate-limits publishes per
-*source*, so an account that has just published a batch of packages from one machine can be
-refused from that machine (`E429 … rate limited exceeded`) while a build runner publishing
-the same account's packages is not.
+It exists because the hand route is not always available: npm rate-limits publishes, and an
+account that has just published a batch of packages can be refused on the next one
+(`E429 … rate limited exceeded`). The limit follows the ACCOUNT, not the source it publishes
+from: measured, a dispatch from a GitHub runner for this account was refused with the same
+`429 Too Many Requests - PUT … Could not publish, as user undefined: rate limited exceeded`
+that a publish from a working machine had received minutes earlier, so a runner is not a way
+around the window.
+
+**A first publish can also be refused for AUTHORIZATION, and that refusal reads as a 404.**
+Measured: the same dispatch answered `npm error 404 Not Found - PUT
+https://registry.npmjs.org/@tinoy%2fpi-io-guard - Not found` for a name the registry holds no
+version of, while `release.yml` had published a new version of an existing package with the
+same repository token minutes earlier. The registry answers `404`, not `403`, for a name the
+credential may not create, so the message does not separate "this name is free" from "this
+token cannot create it". Neither of the other routes is a way around it: `npm stage publish`
+requires the package to exist already (`staged publishing`), and a trusted publisher is
+configured from a package's settings page, which a package with no published version does not
+have.
 
 What it refuses to do, and why each refusal is there:
 
@@ -204,10 +218,13 @@ Both halves are manual work, once per package. Do this in order.
    `EPUBLISHCONFLICT`; that is the expected answer for the packages published before
    this loop ran, and it is what "already bootstrapped" looks like.
 
-   A hand publish can be refused with `E429 … rate limited exceeded`: that limit is
-   bound to the source the publish comes from, so the same package goes out from CI
-   through the dispatch in *The first publish* above instead, which publishes the same
-   `package.json` version. Either route leaves the tag below as the remaining step.
+   A hand publish can be refused with `E429 … rate limited exceeded`. That limit is
+   bound to the account, not to the machine the publish comes from (*The first
+   publish* above), so the dispatch there is refused for the same reason while the
+   window is open and waiting it out is what clears it — measured: a
+   publish batch was refused with `E429` at 05:00 UTC and a release publish for the
+   same account succeeded at 05:11 UTC. Either route leaves the tag below as the
+   remaining step.
 
 3. **Push a baseline tag for every package**, on the commit whose `package.json`
    carries version `0.1.0`. semantic-release measures from the last tag: with no tag its
