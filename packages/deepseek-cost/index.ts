@@ -99,7 +99,7 @@ export function windowAt(at: Date = new Date()): Window {
  * is the next peak boundary, inside valley it is the START of the next peak
  * window — weekend-aware, so a Friday-evening valley legitimately reads in days.
  * Rounded DOWN at every magnitude (a remainder never overstates), and rendered
- * as a fixed 3-character field beside the glyph so the footer never jitters.
+ * as a field of at least 3 characters beside the glyph.
  */
 const BJT_OFFSET_MS = 8 * 3_600_000;
 
@@ -139,16 +139,34 @@ export function windowEndAt(at: Date = new Date()): Date {
 	return new Date(now);
 }
 
-/** The remaining time, floored: "2d" | "5h" | "47m" | "9s". */
+/**
+ * The remaining time, floored, as the TWO LARGEST NON-ZERO units:
+ * "1d 3h" | "11h 5m" | "53m 4s" | "38s". A second unit of zero is dropped, so a
+ * whole day reads "2d" and a whole hour "5h"; seconds stand alone under a minute.
+ * Never three units, never a zero-padded one. Each unit is floored, so a
+ * remainder is never overstated; the widest label is "59m 59s" (7 cells).
+ */
 export function remainingLabel(at: Date = new Date()): string {
 	const s = Math.floor(Math.max(0, windowEndAt(at).getTime() - at.getTime()) / 1000);
-	if (s >= 86_400) return `${Math.floor(s / 86_400)}d`;
-	if (s >= 3_600) return `${Math.floor(s / 3_600)}h`;
-	if (s >= 60) return `${Math.floor(s / 60)}m`;
-	return `${s}s`;
+	const units: [size: number, suffix: string][] = [
+		[86_400, "d"],
+		[3_600, "h"],
+		[60, "m"],
+		[1, "s"],
+	];
+	const parts: string[] = [];
+	let rest = s;
+	for (const [size, suffix] of units) {
+		const value = Math.floor(rest / size);
+		rest -= value * size;
+		if (value > 0) parts.push(`${value}${suffix}`);
+		if (parts.length === 2) break;
+	}
+	return parts.length > 0 ? parts.join(" ") : "0s";
 }
 
-/** The footer field: the glyph (1 cell) + a right-aligned 3-char remainder. */
+/** The footer field: the glyph (1 cell) + the remainder, right-aligned to at
+ *  least 3 cells — the label itself stays at most 7 ("59m 59s"). */
 export function windowLabel(w: Window, at: Date = new Date()): string {
 	return `${WINDOW_GLYPH[w]} ${remainingLabel(at).padStart(3)}`;
 }
