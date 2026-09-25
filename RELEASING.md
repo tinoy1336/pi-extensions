@@ -142,11 +142,17 @@ The hand route is the bootstrap in *One-time bootstrap* below: `npm login` once,
 2FA challenge, then the baseline tag pushed on the commit whose manifest carries the
 version that was just published.
 
-`.github/workflows/first-publish.yml` is a dispatch that publishes the version already in
-one package's manifest, creating no tag and pushing no commit, and it shares the `release`
-concurrency group with `release.yml`. It is not a route to a new name: it publishes with
-the repository's `NPM_TOKEN`, and its own pre-check refuses to run against a name the
-registry already holds.
+**No dispatch stands in for that hand publish.** A dispatch-only workflow that published
+one package's manifest version was removed: the only credential a runner can hold is the
+repository's `NPM_TOKEN`, which is the class the registry refuses a create to — the same
+credential publishes new versions of existing packages happily and is answered `404 Not
+Found - PUT https://registry.npmjs.org/<name> - Not found` for a create, so every run of
+that workflow ended at the authorization step. No other class can be substituted there:
+legacy access tokens are no longer supported, a trusted publisher is configured from a
+package settings page that a name with no version does not have, and a stage-only token
+cannot publish a version directly at all. The first version of a new package is therefore
+the hand bootstrap below, once per package, and every version after it goes through
+`release.yml` — the only publish route CI runs.
 
 A publish can be refused with `E429 … rate limited exceeded`, and an account that has just
 published a batch of packages can be refused on the next one. The limit follows the ACCOUNT,
