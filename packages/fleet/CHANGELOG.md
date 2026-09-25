@@ -1,3 +1,11 @@
+## [0.2.5](https://github.com/tinoy1336/pi-extensions/compare/fleet-v0.2.4...fleet-v0.2.5) (2026-09-25)
+
+### Bug Fixes
+
+* **build:** reach the crew store through the io-guard package ([12ee61c](https://github.com/tinoy1336/pi-extensions/commit/12ee61c58b384a04ea5f50111332b9df1cb6371c))
+* **deepseek-cost:** show two units in the window countdown ([eb8b6ef](https://github.com/tinoy1336/pi-extensions/commit/eb8b6efd452190c2d03749bdd9e110f3926162e1))
+* **fleet:** require a landing bullet, or no text at all ([04b1209](https://github.com/tinoy1336/pi-extensions/commit/04b120915734eba58e756fa4a39a7ed671b8a197))
+
 ## [0.2.4](https://github.com/tinoy1336/pi-extensions/compare/fleet-v0.2.3...fleet-v0.2.4) (2026-09-24)
 
 ### Bug Fixes
