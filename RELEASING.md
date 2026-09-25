@@ -3,8 +3,9 @@
 Every package is published to npm by CI: a merge to `main` versions, changelogs, tags
 and publishes with no human step, once the one-time bootstrap below is done.
 
-The table is in dependency order — the order `.github/workflows/release.yml` releases
-them in (`RELEASE_ORDER`). A package sits after every package it imports.
+The table is in dependency order: a package sits after every package it imports. The
+release itself runs in `RELEASE_ORDER` (`.github/workflows/release.yml`), which holds the
+same rule — every key sits after the packages it imports.
 
 | Package | Tag | Depends on | Changelog |
 | --- | --- | --- | --- |
@@ -22,10 +23,11 @@ them in (`RELEASE_ORDER`). A package sits after every package it imports.
 | `@tinoy/pi-deepseek-cost` | `deepseek-cost-vX.Y.Z` | `@tinoy/pi-ext-lib`, `@tinoy/pi-tariff` | `packages/deepseek-cost/CHANGELOG.md` |
 | `@tinoy/pi-desktop-notify` | `desktop-notify-vX.Y.Z` | `@tinoy/pi-ext-lib`, `@tinoy/pi-focus-state` | `packages/desktop-notify/CHANGELOG.md` |
 | `@tinoy/pi-drift-anchor` | `drift-anchor-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/drift-anchor/CHANGELOG.md` |
-| `@tinoy/pi-fleet` | `fleet-vX.Y.Z` | `@tinoy/pi-ext-lib`, `@tinoy/pi-tariff` | `packages/fleet/CHANGELOG.md` |
+| `@tinoy/pi-fleet` | `fleet-vX.Y.Z` | `@tinoy/pi-ext-lib`, `@tinoy/pi-io-guard`, `@tinoy/pi-tariff` | `packages/fleet/CHANGELOG.md` |
 | `@tinoy/pi-focus-gate` | `focus-gate-vX.Y.Z` | `@tinoy/pi-ext-lib`, `@tinoy/pi-focus-state` | `packages/focus-gate/CHANGELOG.md` |
 | `@tinoy/pi-image-read` | `image-read-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/image-read/CHANGELOG.md` |
 | `@tinoy/pi-intercom-broadcast` | `intercom-broadcast-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/intercom-broadcast/CHANGELOG.md` |
+| `@tinoy/pi-io-guard` | `io-guard-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/io-guard/CHANGELOG.md` |
 | `@tinoy/pi-nf` | `nf-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/nf/CHANGELOG.md` |
 | `@tinoy/pi-orphan-repair` | `orphan-repair-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/orphan-repair/CHANGELOG.md` |
 | `@tinoy/pi-pause` | `pause-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/pause/CHANGELOG.md` |
@@ -87,7 +89,9 @@ trusted publisher reaches the registry with.
 This is a bridge, not a destination: npm removes the ability to publish new versions
 directly with a granular access token in **January 2027**, so the trusted-publisher route
 in step 4 below has to be finished before then, and the token rotated on its own expiry
-schedule until it is.
+schedule until it is. The automation path npm points to instead is a **stage only** granular
+token: automation uploads a version with `npm stage publish`, and a maintainer with 2FA
+promotes it from the staging area, so each release carries one interactive approval.
 
 Provenance survives in token mode. `NPM_CONFIG_PROVENANCE=true` on the release step makes
 `npm publish` sign a provenance statement from the job's OIDC identity, which is what the
@@ -100,58 +104,76 @@ npm generates the same attestation automatically, without the flag.
 A package's first version is the one publish semantic-release cannot compute: it measures
 the next version from the last tag, so with no tag it prepares `1.0.0` for a manifest
 carrying `0.1.0`. That is why the release job refuses a package with no `<key>-v*` tag
-instead of releasing it. The first publish is therefore a deliberate, named act, done once
-per package, and never a side effect of a merge.
+instead of releasing it. **CI cannot create a package name, so the first version of every
+new package is a hand publish** — a deliberate, named act, done once per package, and never
+a side effect of a merge.
 
-`.github/workflows/first-publish.yml` is the route for exactly that act. It is a manual
-dispatch, one package key from `RELEASE_ORDER` as its only input, and it publishes **the
-version already in that package's `package.json`**, with public access and a provenance
-attestation, then reads the version back from the registry:
+The routes a build runner has cannot close that gap. A stage-only granular token —
+**Read and write (stage only)**, the class automation is meant to move to — cannot publish a
+version directly at all: the registry refuses the request with `E_STAGE_REQUIRED` and points
+at `npm stage publish`. Staging does not replace it here, because the package a version is
+staged for must **already exist** on the registry, and a brand-new package cannot be staged. A
+trusted publisher is configured from a package's own settings page, which a name with no
+version does not have. What npm documents for a brand-new name is an interactive
+`npm publish` that answers a 2FA challenge, and a runner cannot answer one. Measured: a
+dispatch publishing a brand-new name with the repository token is refused with `404 Not
+Found - PUT https://registry.npmjs.org/<name> - Not found` — the registry masks the
+authorization decision as a `404`, so that message does not separate "this name is free"
+from "this credential cannot create it", and a packument `404` answers the same for both.
 
-```bash
-gh workflow run first-publish.yml --repo tinoy1336/pi-extensions -f package=sudo-approve
-gh run watch --repo tinoy1336/pi-extensions
-```
+The class of credential decides whether a create is possible at all. The long-lived granular
+token in `~/.npmrc` — the one the release job's secret is taken from — authenticates and
+publishes new versions of existing packages, and is refused for a create with `404 Not found,
+or you do not have permission to access it`; the same credential was publishing new versions
+of other packages at that moment and the refusal was not the limiter's `429`, so a create
+refused this way is a dead end rather than a symptom of the quota. A web-login session
+credential does get past that authorization, but a login lives about five minutes, so
+the login and the uploads have to happen in one uninterrupted run, and the login belongs in
+a scratch npm config rather than `~/.npmrc` — a token in that file takes over the request,
+which puts the create back on the credential that cannot perform it. The rules are the
+registry's own: <https://docs.npmjs.com/staged-publishing/> (a package must already exist to
+be staged), <https://docs.npmjs.com/about-access-tokens#about-stage-only-tokens>
+(`E_STAGE_REQUIRED`), and
+<https://docs.npmjs.com/requiring-2fa-for-package-publishing-and-settings-modification> for
+the interactive publish a create needs.
 
-It exists because the hand route is not always available: npm rate-limits publishes, and an
-account that has just published a batch of packages can be refused on the next one
-(`E429 … rate limited exceeded`). The limit follows the ACCOUNT, not the source it publishes
-from: measured, a dispatch from a GitHub runner for this account was refused with the same
-`429 Too Many Requests - PUT … Could not publish, as user undefined: rate limited exceeded`
-that a publish from a working machine had received minutes earlier, so a runner is not a way
-around the window.
+The hand route is the bootstrap in *One-time bootstrap* below: `npm login` once, then
+`npm publish --access public` in each package directory, dependencies first, answering the
+2FA challenge, then the baseline tag pushed on the commit whose manifest carries the
+version that was just published.
 
-**A first publish can also be refused for AUTHORIZATION, and that refusal reads as a 404.**
-Measured: the same dispatch answered `npm error 404 Not Found - PUT
-https://registry.npmjs.org/@tinoy%2fpi-io-guard - Not found` for a name the registry holds no
-version of, while `release.yml` had published a new version of an existing package with the
-same repository token minutes earlier. The registry answers `404`, not `403`, for a name the
-credential may not create, so the message does not separate "this name is free" from "this
-token cannot create it". Neither of the other routes is a way around it: `npm stage publish`
-requires the package to exist already (`staged publishing`), and a trusted publisher is
-configured from a package's settings page, which a package with no published version does not
-have.
+`.github/workflows/first-publish.yml` is a dispatch that publishes the version already in
+one package's manifest, creating no tag and pushing no commit, and it shares the `release`
+concurrency group with `release.yml`. It is not a route to a new name: it publishes with
+the repository's `NPM_TOKEN`, and its own pre-check refuses to run against a name the
+registry already holds.
 
-What it refuses to do, and why each refusal is there:
+A publish can be refused with `E429 … rate limited exceeded`, and an account that has just
+published a batch of packages can be refused on the next one. The limit follows the ACCOUNT,
+not the source it publishes from: measured, a dispatch from a GitHub runner for this account
+was refused with the same `429 Too Many Requests - PUT … Could not publish, as user
+undefined: rate limited exceeded` that a publish from a working machine had received minutes
+earlier, so a runner is not a way around the window. It also outlives the run that met it:
+measured, an attempt about eight and a half hours after a refusal was refused the same way,
+so treat the limit as a long-lived quota rather than a cooldown of minutes. Two consequences
+follow: stop at the first refusal instead of spending the rest of the quota on the next
+package, and bound one attempt to a single request with `--fetch-retries=0`, because npm
+retries the `PUT` inside one `npm publish` invocation and every attempt counts against the
+same quota.
 
-- **A second version of anything.** Before it presents a credential it asks the registry
-  whether the name exists at all. `404` is the only answer that lets the run continue; a
-  `200` naming the versions already published stops it; any other answer stops it too,
-  because a check that cannot tell "absent" from "unreachable" must not publish. The
-  version published is the manifest's, and there is no input for a version or a dist-tag,
-  so the path cannot mint a version, re-publish one, or move `latest` onto an older
-  release.
-- **A set of packages.** The input names one package. `both` — the release dispatch's word
-  for every package — is rejected, and so is any value that is not a package key in this
-  repository.
-- **A push.** The workflow has one trigger, `workflow_dispatch`, and its job holds
-  `contents: read` and `id-token: write` only: no merge to `main` can start it, it creates
-  no tag, and it pushes no commit. The baseline tag is the other half of the bootstrap and
-  is pushed separately, on the commit whose manifest carries the version that was just
-  published.
+## Verifying a publish
 
-It shares the `release` concurrency group with `release.yml`, so a first publish and a
-release never work the registry account at the same time.
+A publish is proven by the artifact, not by the packument. The registry's read path lags its
+write path: `npm view` can answer `404` for a version that is already live — measured, for
+about fifteen minutes after a successful publish — so a packument `404` on its own is not
+evidence that a publish failed, and a second attempt sent on that reading is a duplicate
+write against the account's publish limiter.
+
+The authoritative check hashes what the registry serves at the tarball URL
+(`https://registry.npmjs.org/<name>/-/<basename>-<version>.tgz`, with the scope left out of
+the file name) and matches its `sha1` and `sha512` against the digests the publish printed
+for the same version — `npm publish` writes `shasum` and `integrity` into its tarball
+details. Identical digests mean that exact tarball is on the registry and the publish landed.
 
 ## Guardrails
 
@@ -170,9 +192,9 @@ release never work the registry account at the same time.
   package in a warning annotation and skips it while releasing the rest, and an explicit
   dispatch that named that package fails (`::error::`, exit 2) instead of reporting success
   for a release that could not happen. The way past it is *The first publish* above — the
-  dispatch publishes the version the manifest already carries, and the `<key>-v0.1.0` tag
-  is pushed on that commit — never a hand-made tag, which is why the guard exists rather
-  than a test.
+  version the manifest carries is published by hand, and the `<key>-v<version>` tag is pushed
+  on the commit whose manifest carries it — never a hand-made tag, which is why the guard
+  exists rather than a test.
 - **A failed publish leaves no tag.** semantic-release creates and pushes the tag
   *before* it runs the publish plugins (`Create the tag before calling the publish
   plugins as some require the tag to exists`, `semantic-release/lib/index.js`), so the
@@ -180,7 +202,8 @@ release never work the registry account at the same time.
   before each package's release step, and on that step's failure
   `.github/scripts/withdraw-tag-if-unpublished.sh` removes exactly the tags that
   appeared — remote ref and local ref — leaving a previous successful package's tag
-  alone. It asks the registry first, so a step that failed after `npm publish`
+  alone. It asks the registry first (an `npm view`, a read that can lag its write path — see
+  *Verifying a publish*), so a step that failed after `npm publish`
   succeeded keeps its tag; the deletion itself is `scripts/withdraw-tag.sh`.
 - **OIDC first, the stored token as the fallback.** The release job passes the
   `NPM_TOKEN` secret to `@semantic-release/npm`, which asks the registry for an OIDC token
@@ -197,33 +220,40 @@ baseline tag: semantic-release measures the next version from the last tag, so t
 `release.yml` guard refuses a package that has none rather than publishing it as `1.0.0`.
 Both halves are manual work, once per package. Do this in order.
 
-1. **Log in locally.**
+1. **Log in locally, into a scratch npm config.** A session credential lives about five
+   minutes, so the login and every publish that needs it belong to one uninterrupted run:
+   log in, publish, do not stop in between. `npm_config_userconfig` names the config file
+   the login is written to and read from, so a scratch file keeps the login out of
+   `~/.npmrc`, whose `_authToken` the release job's secret is taken from and which would
+   otherwise take over the request.
 
    ```bash
+   export npm_config_userconfig="$(mktemp -d)/npmrc"
    npm login
    ```
 
 2. **Publish every package by hand, in dependency order** — `ext-lib`, `focus-state`
    and `tariff` first, then the rest. The first publish of a scoped package needs
-   `--access public`. Dependency order holds here too: a package published before its
-   dependency is not installable until that dependency is up.
+   `--access public`. Each publish is the interactive route — it answers the account's 2FA
+   challenge, so this loop cannot run unattended. Stop at the first refusal: the publish
+   quota is long-lived and every attempt spends against it, so a refusal on one package is
+   not a reason to try the next. Dependency order holds here too: a package
+   published before its dependency is not installable until that dependency is up.
 
    ```bash
    for k in ext-lib focus-state tariff $(ls packages | grep -vE '^(ext-lib|focus-state|tariff)$'); do
-     (cd "packages/$k" && npm publish --access public)
+     (cd "packages/$k" && npm publish --access public --fetch-retries=0) || break
    done
    ```
 
    A package that is already on the registry at that version answers
-   `EPUBLISHCONFLICT`; that is the expected answer for the packages published before
-   this loop ran, and it is what "already bootstrapped" looks like.
+   `EPUBLISHCONFLICT`; that is what "already bootstrapped" looks like, and it is the answer
+   to expect whenever the loop runs again over a set that is partly published.
 
    A hand publish can be refused with `E429 … rate limited exceeded`. That limit is
    bound to the account, not to the machine the publish comes from (*The first
-   publish* above), so the dispatch there is refused for the same reason while the
-   window is open and waiting it out is what clears it — measured: a
-   publish batch was refused with `E429` at 05:00 UTC and a release publish for the
-   same account succeeded at 05:11 UTC. Either route leaves the tag below as the
+   publish* above), and it outlives the run that met it, so a refusal is not cleared by
+   resending the publish a few minutes later. Either route leaves the tag below as the
    remaining step.
 
 3. **Push a baseline tag for every package**, on the commit whose `package.json`
@@ -239,8 +269,8 @@ Both halves are manual work, once per package. Do this in order.
 
 4. **(Deferred) Wire the trusted publisher on npm, once per package.** Nothing below is
    needed while the `NPM_TOKEN` secret publishes: a package with no publisher entry
-   exchanges no OIDC token and publishes on the token instead. This becomes the required
-   operator step again when the token route is retired, which is why it is kept. On
+   exchanges no OIDC token and publishes on the token instead. This becomes required
+   again when the token route is retired, which is why it is kept. On
    <https://www.npmjs.com/package/@tinoy/pi-ext-lib> → *Settings* → *Trusted Publisher*
    → *GitHub Actions*, and fill in:
 
@@ -283,8 +313,8 @@ Both halves are manual work, once per package. Do this in order.
    provenance statement logged moments earlier is the tell that it is not one. A newly created
    connection permits `npm stage publish` only — direct publishing is a separate opt-in — so a
    package added here arrives one tick away from that failure. It is a default, not a quirk:
-   the same tick is owed per package — the two on the registry now, and each of the other 24 as
-   it is first published, in the dependency order of the table above.
+   the same tick is owed once per package: every connection created for a package here needs
+   `npm publish` allowed before that package's first release can use OIDC.
 
    An existing connection cannot be edited to add the action: delete it and create it again
    with `npm publish` ticked, or from the CLI (`npm trust` asks for 2FA):
@@ -304,16 +334,15 @@ Both halves are manual work, once per package. Do this in order.
    answers `404 Not Found - GET https://registry.npmjs.org/-/v1/done?authId=*** - not found` and
    the call is lost, which is how a set of reads ends with every id expired and none approved.
    Holding one id open while someone is found does not work — issue a fresh one as each expires and
-   keep rolling until one is approved. Tell the person directly as well: a popup in the
-   notification centre expires in fifteen seconds, and eight heads-ups left there produced no
-   approval at all.
+   keep rolling until one is approved. A popup in the notification centre expires in fifteen
+   seconds, so the approval request needs a direct message as well.
 
    **One approval covers the whole set, but the reads are one call per package.**
    `npm trust list` is not a set-wide read: the package name is the positional argument, else the
    `name` of the local `package.json`, so from a directory holding neither it stops without a
    network call (`Package name must be specified either as an argument or in the package.json
-   file`). Verify with `npm trust list <package>`, once per package: twenty-five reads take about
-   seventy-five seconds, well inside one approved window.
+   file`). Verify with `npm trust list <package>`, once per package: a read takes about three
+   seconds, so the whole set fits inside one approved window.
 
    **A credential cannot be made to skip the challenge.** A granular token with 2FA bypass enabled
    is refused outright, with no challenge issued and no URL printed:
