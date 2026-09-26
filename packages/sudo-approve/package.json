@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-sudo-approve",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Run root commands with a user-approved password prompt; audit every batch.",
 	"license": "MIT",
 	"repository": {
