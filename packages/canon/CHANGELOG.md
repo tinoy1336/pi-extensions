@@ -1,3 +1,9 @@
+## [0.6.0](https://github.com/tinoy1336/pi-extensions/compare/canon-v0.5.0...canon-v0.6.0) (2026-09-26)
+
+### Features
+
+* **fleet:** require a caller-supplied name at hire ([3995674](https://github.com/tinoy1336/pi-extensions/commit/3995674425b0245907a2ecd963e6e61c320c117d))
+
 ## [0.5.0](https://github.com/tinoy1336/pi-extensions/compare/canon-v0.4.0...canon-v0.5.0) (2026-09-26)
 
 ### Features
