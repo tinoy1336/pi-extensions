@@ -1,3 +1,9 @@
+## [0.6.1](https://github.com/tinoy1336/pi-extensions/compare/canon-v0.6.0...canon-v0.6.1) (2026-09-26)
+
+### Bug Fixes
+
+* **canon:** record a notice withheld on a scope mismatch ([f4ba802](https://github.com/tinoy1336/pi-extensions/commit/f4ba802c33a6f59a491ebd811c70bfd2fcff5413))
+
 ## [0.6.0](https://github.com/tinoy1336/pi-extensions/compare/canon-v0.5.0...canon-v0.6.0) (2026-09-26)
 
 ### Features
