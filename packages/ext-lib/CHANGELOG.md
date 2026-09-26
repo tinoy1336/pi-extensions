@@ -1,3 +1,9 @@
+## [0.4.0](https://github.com/tinoy1336/pi-extensions/compare/ext-lib-v0.3.1...ext-lib-v0.4.0) (2026-09-26)
+
+### Features
+
+* **ext-lib:** add the session transport module ([6452db3](https://github.com/tinoy1336/pi-extensions/commit/6452db3b79f5b446e4c389fec3cb7d75db199b3f))
+
 ## [0.3.1](https://github.com/tinoy1336/pi-extensions/compare/ext-lib-v0.3.0...ext-lib-v0.3.1) (2026-09-24)
 
 ### Bug Fixes
