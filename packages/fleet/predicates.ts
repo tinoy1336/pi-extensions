@@ -18,12 +18,11 @@ export function isNameLike(s: string): boolean {
 
 /**
  * The refusal for a caller-supplied name that is not an id and still cannot be a
- * name. The shape is refused, never silently replaced with a pool name, and the
- * message carries the rule itself so the caller does not have to find the predicate
- * to learn it.
+ * name. The shape is refused, never silently replaced, and the message carries the
+ * rule itself so the caller does not have to find the predicate to learn it.
  */
 export function notANameMessage(name: string): string {
-	return `fleet addresses workers by NAME: a name is lowercase letters, digits and '-' (at most 32 characters, starting with a letter) — ${JSON.stringify(name)} is not one, and a name is also the handoff filename, so it has to be a filename component. Omit name to take the next unused pool name, or give the worker a name of its own.`;
+	return `fleet addresses workers by NAME: a name is lowercase letters, digits and '-' (at most 32 characters, starting with a letter) — ${JSON.stringify(name)} is not one, and a name is also the handoff filename, so it has to be a filename component. Give the worker a name of its own: the caller supplies every name, and there is no default pool.`;
 }
 
 /** A raw id the model must never pass: uuid, or a 12+ char hex/dash run. */

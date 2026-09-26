@@ -533,6 +533,16 @@ export default function (pi: ExtensionAPI): void {
 
 		// ── hire ──
 		if (action === "hire") {
+			// The name is the CALLER's, and this is the first thing hire checks, so a
+			// name-less hire leaves nothing behind — no roster entry, no claim, no spawn. It
+			// is refused here rather than by a `required` in the parameter schema because one
+			// flat object serves all nine actions; see the note above that schema. There is no
+			// default pool to fall back on, by design.
+			if (!name)
+				return refuse(
+					action,
+					"hire needs name — the CALLER supplies it: this tool has no default name pool and never picks a name. Pass a person's first name (alice, bob), not a label for the work, because that name is how the worker is addressed by every later steer, claim, review and board row.",
+				);
 			const scope = typeof args.scope === "string" ? args.scope.trim() : "";
 			if (!scope)
 				return refuse(
@@ -545,24 +555,25 @@ export default function (pi: ExtensionAPI): void {
 			if (timeoutErr) return refuse(action, timeoutErr);
 			const artErr = artifactsOk(args.artifacts);
 			if (artErr) return refuse(action, artErr);
-			// The caller's name is honoured or refused, never silently replaced: an id is not
-			// a worker name anywhere else in the tool, so it is not one here either.
-			if (name && isIdLike(name)) {
+			// hire already refused a missing name, so these shape checks are unconditional:
+			// an id is not a worker name anywhere else in the tool, and neither is a slash, a
+			// space or an extension.
+			if (isIdLike(name)) {
 				return refuse(
 					action,
-					"fleet addresses workers by NAME. That is an async run id — omit name to take the next unused pool name, or give the worker a name of its own.",
+					"fleet addresses workers by NAME. That is an async run id, not a name — pass the name the worker is to be hired under (a person's first name, alice, bob): there is no default pool to take one from.",
 				);
 			}
 			// A name is not only an identifier the crew's layers key on — it is also the
 			// worker's handoff filename component (`<handoff dir>/<name>.md`), so the shape
 			// is refused where a name is ACCEPTED, before a roster entry or a claim exists
 			// for it. An id is not a name, and neither is a slash, a space or an extension.
-			if (name && !isNameLike(name)) return refuse(action, notANameMessage(name));
+			if (!isNameLike(name)) return refuse(action, notANameMessage(name));
 			// ONE name addresses ONE worker. The crew is what reviews, steering, claims and
 			// the board all key on, and `roster.find` answers with whichever entry sits
 			// first, so a second entry under a name in use leaves the other addressable
 			// only by accident.
-			const existing = name ? roster.find(r, name) : undefined;
+			const existing = roster.find(r, name);
 			if (existing) {
 				// A retired/handed-off record KEEPS its name, so "retire it and hire again"
 				// would refuse a second time: only a different name reaches a fresh worker.
@@ -574,11 +585,11 @@ export default function (pi: ExtensionAPI): void {
 					action,
 					`'${existing.name}' is already in this crew (${existing.state}, hired for '${existing.scope}') — one name addresses one worker. ` +
 						(stillAssignable
-							? `Assign ${existing.name} if the work belongs to its scope, or hire under a different name (omit name to take the next unused pool name).`
-							: `Its record keeps the name, so hire under a different one: omit name to take the next unused pool name.`),
+							? `Assign ${existing.name} if the work belongs to its scope, or hire under a different name — the caller chooses it.`
+							: `Its record keeps the name, so hire under a different one the caller chooses.`),
 				);
 			}
-			const workerName = name ? name : roster.nextName(r);
+			const workerName: string = name;
 			// V6: validate the CALLER's task shape first — prepending the protocol
 			// line must never make an invalid shape valid.
 			const callerTask = serializeTask(args.task);
@@ -1721,13 +1732,18 @@ export default function (pi: ExtensionAPI): void {
 		name: "fleet",
 		label: "Fleet",
 		description:
-			"Manage the named crew (foreman mode only). Replaces `subagent`: hire/assign/steer/retire/review/roster by WORKER NAME — the tool owns name→run-id, measures idle time, decides warm reuse itself, and enforces one-writer and non-author review rules. `handoff` publishes the crew for a successor session and `adopt` takes a published crew over. ONE crew action per assistant turn: a second fleet call in the same turn is refused.",
+			"Manage the named crew (foreman mode only). Replaces `subagent`: hire/assign/steer/retire/review/roster by WORKER NAME — the tool owns name→run-id, measures idle time, decides warm reuse itself, and enforces one-writer and non-author review rules. hire REQUIRES a name and the CALLING MODEL supplies it: there is no default name pool, and a name is a person's first name (alice, bob), never a label for the work. assign/steer/retire address the name a worker already has, so nothing here renames a worker. `handoff` publishes the crew for a successor session and `adopt` takes a published crew over. ONE crew action per assistant turn: a second fleet call in the same turn is refused.",
 		promptSnippet:
 			"Manage the named crew: hire, assign, steer, retire, review, roster, items, handoff, adopt (foreman mode).",
 		promptGuidelines: [
 			"Use fleet for every crew action; fleet reviews never spawn a fresh worker and fleet decides warm reuse itself.",
 			"A crew crosses sessions only through fleet handoff (publish) then fleet adopt (take over) — adopt refuses while the predecessor session is alive.",
 		],
+		// ONE flat object serves all nine actions, so it declares no `required` name: a
+		// required field here would also reject the five legitimate name-less calls —
+		// roster, items, handoff, adopt, and review, whose reviewer the tool resolves when
+		// none is named. hire's own requirement is the first check in its branch, where a
+		// name-less call is refused before a roster entry, a claim or a spawn can exist.
 		parameters: Type.Object(
 			{
 				action: Type.Union(
@@ -1740,7 +1756,7 @@ export default function (pi: ExtensionAPI): void {
 				name: Type.Optional(
 					Type.String({
 						description:
-							"Worker name. hire: optional (next unused pool name) — name every worker a person's first name (alice, bob), never a scope word or task label. roster/assign/steer/retire: required, exact match. review: OPTIONAL — when omitted the tool resolves the reviewer itself (warmest eligible non-author); when given it must be that worker or the call refuses. Name-shaped only: an async run id is refused.",
+							"Worker name. hire: REQUIRED — the CALLING MODEL supplies it; there is no default name pool, and a name-less hire is refused before any roster entry or spawn. Name every worker a person's first name (alice, bob), never a scope word, a task label, or a word for the work itself. roster/assign/steer/retire: required, exact match, addressing the name the worker already has (nothing renames an existing worker). review: OPTIONAL — when omitted the tool resolves the reviewer itself (warmest eligible non-author); when given it must be that worker or the call refuses. Name-shaped only: an async run id is refused.",
 					}),
 				),
 				scope: Type.Optional(

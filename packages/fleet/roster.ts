@@ -79,36 +79,14 @@ export interface Worker {
 }
 
 export interface Roster {
-	version: 2;
+	/** 2 carried a pool of default worker names; 3 does not, because the caller
+	 *  supplies every name at hire. A 2 record still loads — the loader drops the
+	 *  two fields that reader would look for. */
+	version: 3;
 	sessionId: string;
 	startedAt: number;
 	crew: Worker[];
-	namePool: string[];
-	nextName: string;
 }
-
-const NAMES = [
-	"alice",
-	"bob",
-	"carol",
-	"dave",
-	"erin",
-	"frank",
-	"grace",
-	"hank",
-	"iris",
-	"jack",
-	"kate",
-	"liam",
-	"mia",
-	"noah",
-	"nora",
-	"omar",
-	"pia",
-	"quinn",
-	"rosa",
-	"sam",
-];
 
 function path(sessionId: string): string {
 	return join(ROSTER_DIR, `${sessionId}.json`);
@@ -116,12 +94,10 @@ function path(sessionId: string): string {
 
 export function fresh(sessionId: string): Roster {
 	return {
-		version: 2,
+		version: 3,
 		sessionId,
 		startedAt: Date.now(),
 		crew: [],
-		namePool: [...NAMES],
-		nextName: NAMES[0],
 	};
 }
 
@@ -129,6 +105,11 @@ export function load(sessionId: string): Roster {
 	try {
 		const raw = JSON.parse(readFileSync(path(sessionId), "utf8")) as Roster;
 		if (raw?.sessionId !== sessionId) return fresh(sessionId); // foreign/stale: absent for reads
+		// A record written before the name pool was removed still carries its two fields.
+		// They are dropped on every read, so no later edit can find a pooled name in a
+		// saved record and treat it as a fallback that exists.
+		delete (raw as Roster & { namePool?: unknown; nextName?: unknown }).namePool;
+		delete (raw as Roster & { namePool?: unknown; nextName?: unknown }).nextName;
 		raw.crew = Array.isArray(raw.crew) ? raw.crew : [];
 		for (const w of raw.crew) {
 			if (typeof w.handleUnverified !== "boolean") w.handleUnverified = false;
@@ -156,15 +137,6 @@ export function save(r: Roster): void {
 	} catch {
 		/* a failed roster write must never break a launch; the caller logs it */
 	}
-}
-
-export function nextName(r: Roster): string {
-	for (const n of r.namePool) {
-		if (!r.crew.some((w) => w.name === n)) return n;
-	}
-	let i = 1;
-	while (r.crew.some((w) => w.name === `worker-${i}`)) i++;
-	return `worker-${i}`;
 }
 
 export function find(r: Roster, name: string): Worker | undefined {
