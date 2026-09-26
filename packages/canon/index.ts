@@ -764,7 +764,25 @@ export default function (pi: ExtensionAPI) {
 			const payload = event.payload as Partial<CanonNotice> | null;
 			if (!payload || payload.type !== "canon" || !payload.scope || !payload.id)
 				return;
-			if (!matches(payload.scope, currentModel(), audiences)) return;
+			if (!matches(payload.scope, currentModel(), audiences)) {
+				// Withholding is otherwise unattributable: nothing is delivered and nothing is
+				// sent back, so a scope mismatch leaves no trace on either side. The decision is
+				// unchanged here — only the record of it is added.
+				hookLog("canon", "notice-withheld", {
+					namespace: NAMESPACE,
+					id: payload.id,
+					op: payload.op,
+					entryModel: payload.scope.model,
+					entryAudience: payload.scope.audience,
+					sessionModel: currentModel(),
+					sessionAudience: sessionLabel(audiences),
+					mismatch:
+						payload.scope.audience !== "all" && !audiences.has(payload.scope.audience)
+							? "audience"
+							: "model",
+				});
+				return;
+			}
 			const sender = payload.sender?.trim() || event.fromSessionId.slice(0, 8);
 			const verb =
 				payload.op === "remove" || payload.op === "category_remove"
