@@ -1,3 +1,15 @@
+## [0.3.0](https://github.com/tinoy1336/pi-extensions/compare/fleet-v0.2.5...fleet-v0.3.0) (2026-09-26)
+
+### Features
+
+* **canon:** name each category's id in the rendered heading ([ae77cc5](https://github.com/tinoy1336/pi-extensions/commit/ae77cc5018f7e22c7058797b7501350623eb1721))
+* **ext-lib:** add the session transport module ([6452db3](https://github.com/tinoy1336/pi-extensions/commit/6452db3b79f5b446e4c389fec3cb7d75db199b3f))
+* **ipc:** add the ipc session transport and retire the broadcast tool ([cbeeaa0](https://github.com/tinoy1336/pi-extensions/commit/cbeeaa0b149c50215b082a5ad2301aca17d72f20))
+
+### Bug Fixes
+
+* **release:** scope the package's release analysis to its own commits ([b6f4fcc](https://github.com/tinoy1336/pi-extensions/commit/b6f4fcc567b9a3e5f118c3c5252e05b8f70cd916))
+
 ## [0.2.5](https://github.com/tinoy1336/pi-extensions/compare/fleet-v0.2.4...fleet-v0.2.5) (2026-09-25)
 
 ### Bug Fixes
