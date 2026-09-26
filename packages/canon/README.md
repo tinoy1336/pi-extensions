@@ -16,6 +16,7 @@ pi install npm:@tinoy/pi-canon
 - **Tools** — `canon_add`, `canon_remove`, `canon_edit`, `canon_category`.
 - **Commands** — `/canon` (list, add, remove, edit, category management) and `/canon-dump`.
 - **Injection** — the block is appended at `before_agent_start` and re-normalized on every provider request, so a run started by an injected message carries the same bytes as an interactive prompt.
+- **Category headings** — a category sub-heading inside a scope group prints the store id after the word `category` (`#### Behavioural Preferences [category 1cg5lr]`), which is the same id a `canon_add` refusal lists; the word keeps it from reading as an entry handle, which the block renders as `[1i15c2]`. Uncategorized entries carry no id, and a scope group holding a single category stays flat with no sub-heading.
 - **Peer notices** — entry changes are broadcast over the pi-intercom bus (namespace `canon`); receivers match the entry scope against their own model and audience.
 - **Tail sections** — another extension contributes prompt text through the `canon:section` event; its ids are published on `canon:sections`.
 

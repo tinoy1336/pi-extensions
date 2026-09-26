@@ -31,11 +31,13 @@
  *
  * Store: ~/.pi/agent/canon/canon.json — { entries: [{id, text, model, audience, reason?, category?}], categories: [{id, title, description?}] }
  * Categories are un-ordered; entries reference them by id. They render as sub-headings
- * inside scope groups (store insertion order), with uncategorized entries last.
+ * inside scope groups (store insertion order), with uncategorized entries last, and
+ * each heading carries the store's own id after the word `category`
+ * (`#### Behavioural Preferences [category 1cg5lr]`) — the word keeps the category id
+ * from reading as an entry handle, which the block renders as `[1i15c2]`.
  * canon_add REQUIRES a category and canon_edit can only CHANGE one: every refusal
- * lists the valid ids with their titles, so a retry costs no lookup call. The
- * injected block renders titles only, so the refusal is also the only place an id
- * reaches the model. The store validator counts entries that are uncategorized or
+ * lists the valid ids with their titles, so a retry costs no lookup call. The store
+ * validator counts entries that are uncategorized or
  * carry a category id the store no longer holds (both render as Uncategorized) and
  * reports the count to the hook log once per distinct state.
  * Both the injected block and /canon-dump group entries under scope headers (model ×
@@ -339,7 +341,8 @@ function scopeGroups(entries: CanonEntry[]): ScopeGroup[] {
 	);
 }
 
-/** Render the injected block: header, scope groups, category sub-headings inside. */
+/** Render the injected block: header, scope groups, category sub-headings inside, each
+ *  naming its store category id. */
 function render(
 	store: Store,
 	model: string,
@@ -367,7 +370,7 @@ function render(
 		// only show category sub-headings when a scope group actually splits
 		const showCatHeadings = orderedCats.length + (uncat.length ? 1 : 0) >= 2;
 		for (const c of orderedCats) {
-			if (showCatHeadings) block += `\n\n#### ${c.title}`;
+			if (showCatHeadings) block += `\n\n#### ${c.title} [category ${c.id}]`;
 			block += `\n${buckets
 				.get(c.id)!
 				.map((e) => `[${e.id}] ${e.text}`)
@@ -417,11 +420,11 @@ function renderDump(
 /**
  * Resolve a category reference to its id.
  *
- * The injected canon block shows category TITLES as sub-headings (`#### System
- * Knowledge`) and never shows an id, so a model naturally passes the title back to
- * canon_add — refusing that costs a call and teaches nothing. An exact id wins; a
- * title matches case-insensitively; anything else fails with a short reason that
- * the caller turns into a refusal.
+ * The block prints each heading as its title followed by the store id
+ * (`#### <title> [category <id>]`), and a model that copies the heading copies the
+ * title most of the time, so both forms are accepted: an exact id wins, a title
+ * matches case-insensitively, and anything else fails with a short reason that the
+ * caller turns into a refusal.
  */
 function lookupCategory(
 	store: Store,
@@ -447,10 +450,8 @@ function lookupCategory(
 
 /**
  * The refusal for every rejected category value: what failed, then every valid id
- * with its title so a retry needs no lookup call of its own, then the one
- * instruction that answers it. Terse by construction — it lands in a model's
- * context, and the listing is the only place a category id is ever shown (the
- * injected block renders titles).
+ * with its title, then the one instruction that answers it. Terse by construction —
+ * it lands in a model's context.
  */
 function categoryRefusal(
 	store: Store,
@@ -1243,7 +1244,7 @@ export default function (pi: ExtensionAPI) {
 		name: "canon_category",
 		label: "Manage canon categories",
 		description:
-			"Manage canon categories: op add (title, description?) creates one; op edit (id, title?, description?) updates it; op remove (id) deletes it and detaches its entries to Uncategorized; op list shows all. Categories are un-ordered and render as sub-headings inside scope groups in store insertion order.",
+			"Manage canon categories: op add (title, description?) creates one; op edit (id, title?, description?) updates it; op remove (id) deletes it and detaches its entries to Uncategorized; op list shows all. Categories are un-ordered and render as sub-headings inside scope groups in store insertion order, each heading naming the category id (`#### Tools [category u3q9pr]`).",
 		promptSnippet: "Manage canon categories (add/edit/remove/list)",
 		parameters: Type.Object({
 			op: Type.String({ description: "add | edit | remove | list" }),
