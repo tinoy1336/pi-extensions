@@ -50,8 +50,12 @@ and releases each package with semantic-release, driven by Conventional Commits:
    unchecked commit;
 2. **gate the package** — `scripts/release-relevant.sh <pkg>` refuses when no commit
    since that package's own tag touched `packages/<pkg>`;
-3. **analyze, version, changelog, publish** — `@semantic-release/commit-analyzer` and
-   `@semantic-release/release-notes-generator` (Conventional Commits), then
+3. **analyze, version, changelog, publish** — a release config declares
+   `release/scoped-commits.mjs` in place of `@semantic-release/commit-analyzer` and
+   `@semantic-release/release-notes-generator`: those two plugins read every commit since the
+   tag and neither takes a path filter, so the scoped plugin hands both of them the commits
+   that touched the package's own directory, which is the same filter the gate above uses.
+   The analysis runs on Conventional Commits, then
    `@semantic-release/changelog`, `@semantic-release/npm` (publish),
    `@semantic-release/git` (the release commit, pushed with `[skip ci]`),
    `@semantic-release/github` (the GitHub release);
@@ -190,6 +194,15 @@ details. Identical digests mean that exact tarball is on the registry and the pu
   version, a tag or the registry. The per-package path gate goes further: a
   `feat(canon)` push never starts the `ext-lib` release at all, so a package cannot be
   published for commits that never touched it.
+- **A release is measured against the package's own commits.** The gate above and the scoped
+  analysis in step 3 ask the same git question — `git rev-list <last-tag>..HEAD --
+  packages/<pkg>` — so the version and the changelog of a package describe that package. A
+  `docs(ext-lib)` commit beside a `fix(fleet)` one opens the gate and then releases nothing:
+  the only commit the analysis sees is the docs one, and a `docs:` commit is not
+  release-worthy. Without the scope the same history would cut a patch version for
+  `ext-lib` from the `fleet` fix and write that fix into `packages/ext-lib/CHANGELOG.md`.
+  `release/scoped-commits.probe.mjs` builds exactly those cases in scratch repositories and
+  checks both halves.
 - **No baseline tag, no release.** A package with no `<key>-v*` tag is refused before
   semantic-release runs. semantic-release measures the next version from the last tag, so
   with none it computes a first release of `1.0.0` and prepares that version into the

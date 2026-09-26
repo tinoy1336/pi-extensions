@@ -7,6 +7,10 @@
 # empty version bump. The gate answers "did anything change in this package since its
 # last release tag", which is the question the release job needs before it starts.
 #
+# The release configs narrow the analysis with the same filter
+# (release/scoped-commits.mjs), so the version and the changelog are measured from the
+# package's own commits too; this script only decides whether the release job starts.
+#
 # Exit 0 = release this package, exit 1 = skip it.
 set -euo pipefail
 

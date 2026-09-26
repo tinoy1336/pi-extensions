@@ -14,8 +14,13 @@ export default {
 	// biome-ignore lint/suspicious/noTemplateCurlyInString: semantic-release fills this placeholder itself
 	tagFormat: "ext-lib-v${version}",
 	plugins: [
-		["@semantic-release/commit-analyzer", { preset: "conventionalcommits" }],
-		["@semantic-release/release-notes-generator", { preset: "conventionalcommits" }],
+		// The stock commit-analyzer and release-notes-generator read every commit since the tag;
+		// this one reads only the commits that touched the library (release/scoped-commits.mjs).
+		{
+			path: "./release/scoped-commits.mjs",
+			dir: "packages/ext-lib",
+			preset: "conventionalcommits",
+		},
 		["@semantic-release/changelog", { changelogFile: "packages/ext-lib/CHANGELOG.md" }],
 		["@semantic-release/npm", { pkgRoot: "packages/ext-lib" }],
 		[
