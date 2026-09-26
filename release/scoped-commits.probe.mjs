@@ -3,21 +3,28 @@
  * (`release/scoped-commits.mjs`) and the path gate it has to agree with
  * (`scripts/release-relevant.sh`).
  *
- * Run: `node release/scoped-commits.probe.mjs` from the repository root.
+ * Run: `node release/scoped-commits.probe.mjs [package]` from the repository root, where
+ * `package` is a key from RELEASE_ORDER (default `ext-lib`) — the cases run against that
+ * package's directory and tag prefix.
  *
- * Every case builds its own scratch git repository with a real `ext-lib-v*` tag and real
+ * Every case builds its own scratch git repository with a real `<package>-v*` tag and real
  * commits, so the scope is exercised against git's own output rather than a fixture list, and
  * the gate script is the one the release job calls. Each case reports what the gate decides,
  * which commits reach the analysis, and what the stock (unscoped) plugin would have answered
  * for the same history — the contrast is the property under test.
  *
- * Cases: another package's commit alone (gate skips), the library's own fix (gate opens, patch),
- * a docs-only library change beside another package's fix (gate opens, no release — the
- * documented rule for docs commits — while the unscoped plugin answered "patch"), and a library
- * fix beside another package's fix (the changelog carries the library's entry only).
+ * Cases: another package's commit alone (gate skips), the package's own fix (gate opens, patch),
+ * a docs-only package change beside another package's fix (gate opens, no release — the
+ * documented rule for docs commits — while the unscoped plugin answered "patch"), and a package
+ * fix beside another package's fix (the changelog carries the package's entry only).
+ *
+ * The last section reads every release config in `release/` and asserts it declares the scoped
+ * plugin for its own directory, so a config that kept the stock steps (which read every commit
+ * since the package's tag) fails here rather than in a release run. It reads the configs, not
+ * the package directory, so it runs whatever package the argument names.
  */
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,7 +36,7 @@ const gate = join(root, "scripts", "release-relevant.sh");
 const { default: scopedPlugin, scopedCommits } = await import("./scoped-commits.mjs");
 const { analyzeCommits: stockAnalyzeCommits } = await import("@semantic-release/commit-analyzer");
 
-const PKG = "ext-lib";
+const PKG = process.argv[2] ?? "ext-lib";
 const PKG_DIR = `packages/${PKG}`;
 
 const quiet = () => {};
@@ -66,7 +73,7 @@ function scratchRepo(prefix) {
 	git(dir, "config", "user.email", "probe@example.invalid");
 	git(dir, "config", "user.name", "probe");
 	commit(dir, "chore: seed the scratch repository", {
-		[`${PKG_DIR}/package.json`]: '{ "name": "@tinoy/pi-ext-lib", "version": "0.1.0" }\n',
+		[`${PKG_DIR}/package.json`]: `{ "name": "@tinoy/pi-${PKG}", "version": "0.1.0" }\n`,
 		"packages/fleet/index.ts": "// seed\n",
 	});
 	git(dir, "tag", `${PKG}-v0.1.0`);
@@ -148,7 +155,7 @@ console.log("case 1 — a commit touching only another package");
 
 	const decision = gateDecision(dir);
 	check(
-		"the gate skips the library",
+		"the gate skips the package",
 		decision.status === 1,
 		`exit ${decision.status}: ${decision.output}`,
 	);
@@ -157,30 +164,30 @@ console.log("case 1 — a commit touching only another package");
 	const scoped = await scopedVersion(context);
 	const stock = await stockVersion(context);
 	check(
-		"no commit reaches the library's analysis",
+		"no commit reaches the package's analysis",
 		scopedHashes(context).length === 0,
 		`${context.commits.length} commit(s) in range, ${scopedHashes(context).length} scoped`,
 	);
 	check("the scoped analysis answers no release", scoped === null, `release type: ${scoped}`);
 	check(
-		"the stock plugin would have versioned the library from that commit",
+		"the stock plugin would have versioned the package from that commit",
 		stock === "patch",
 		`stock release type: ${stock}`,
 	);
 }
 
-// ---- case 2: the library's own fix -------------------------------------------------
+// ---- case 2: the package's own fix -------------------------------------------------
 
-console.log("case 2 — a fix touching the library");
+console.log("case 2 — a fix touching the package");
 {
-	const { dir, last } = newScratch("library-fix");
-	const sha = commit(dir, "fix(ext-lib): refuse a malformed record by name", {
-		[`${PKG_DIR}/src/glob.ts`]: "// library change\n",
+	const { dir, last } = newScratch("package-fix");
+	const sha = commit(dir, `fix(${PKG}): refuse a malformed record by name`, {
+		[`${PKG_DIR}/src/glob.ts`]: "// package change\n",
 	});
 
 	const decision = gateDecision(dir);
 	check(
-		"the gate releases the library",
+		"the gate releases the package",
 		decision.status === 0,
 		`exit ${decision.status}: ${decision.output}`,
 	);
@@ -188,7 +195,7 @@ console.log("case 2 — a fix touching the library");
 	const context = semanticReleaseContext(dir, last);
 	const scoped = await scopedVersion(context);
 	const hashes = scopedHashes(context);
-	check("the library's own fix is a patch", scoped === "patch", `release type: ${scoped}`);
+	check("the package's own fix is a patch", scoped === "patch", `release type: ${scoped}`);
 	check(
 		"that commit is the analysed set",
 		hashes.length === 1 && hashes[0] === sha,
@@ -196,12 +203,12 @@ console.log("case 2 — a fix touching the library");
 	);
 }
 
-// ---- case 3: a docs-only library change beside another package's fix ---------------
+// ---- case 3: a docs-only package change beside another package's fix ---------------
 
-console.log("case 3 — a docs-only library commit beside another package's fix");
+console.log("case 3 — a docs-only package commit beside another package's fix");
 {
 	const { dir, last } = newScratch("docs-only");
-	const docsSha = commit(dir, "docs(ext-lib): describe the refusal in the API table", {
+	const docsSha = commit(dir, `docs(${PKG}): describe the refusal in the API table`, {
 		[`${PKG_DIR}/README.md`]: "# Shared helpers\n",
 	});
 	const fleetSha = commit(dir, "fix(fleet): keep loader tools selected", {
@@ -210,7 +217,7 @@ console.log("case 3 — a docs-only library commit beside another package's fix"
 
 	const decision = gateDecision(dir);
 	check(
-		"the gate opens on the docs commit that touched the library",
+		"the gate opens on the docs commit that touched the package",
 		decision.status === 0,
 		`exit ${decision.status}: ${decision.output}`,
 	);
@@ -230,7 +237,7 @@ console.log("case 3 — a docs-only library commit beside another package's fix"
 		`scoped release type: ${scoped}`,
 	);
 	check(
-		"the stock plugin would have released the library on the other package's fix",
+		"the stock plugin would have released the package on the other package's fix",
 		stock === "patch",
 		`stock release type: ${stock}`,
 	);
@@ -238,35 +245,35 @@ console.log("case 3 — a docs-only library commit beside another package's fix"
 
 // ---- case 4: both changed ----------------------------------------------------------
 
-console.log("case 4 — the library and another package both changed");
+console.log("case 4 — the package and another package both changed");
 {
 	const { dir, last } = newScratch("both-changed");
-	// The notes writer renders a scoped type as "* **ext-lib:** <description>", so the checks
+	// The notes writer renders a scoped type as "* **<package>:** <description>", so the checks
 	// read the description and the scope rather than the raw commit subject.
-	const libSummary = "refuse a malformed record by name";
+	const pkgSummary = "refuse a malformed record by name";
 	const fleetSummary = "keep loader tools selected";
-	commit(dir, `fix(ext-lib): ${libSummary}`, { [`${PKG_DIR}/src/glob.ts`]: "// library change\n" });
+	commit(dir, `fix(${PKG}): ${pkgSummary}`, { [`${PKG_DIR}/src/glob.ts`]: "// package change\n" });
 	commit(dir, `fix(fleet): ${fleetSummary}`, { "packages/fleet/index.ts": "// fleet change\n" });
 
 	const context = semanticReleaseContext(dir, last);
 	const scoped = await scopedVersion(context);
 	check(
-		"the library's own fix still releases a patch",
+		"the package's own fix still releases a patch",
 		scoped === "patch",
 		`release type: ${scoped}`,
 	);
 
 	const hashes = scopedHashes(context);
 	check(
-		"only the library's commit reaches the analysis",
-		hashes.length === 1 && subjectOf(dir, hashes[0]).includes(libSummary),
+		"only the package's commit reaches the analysis",
+		hashes.length === 1 && subjectOf(dir, hashes[0]).includes(pkgSummary),
 		`scoped ${hashes.map((hash) => hash.slice(0, 8)).join(", ") || "none"}`,
 	);
 
 	const notes = await scopedNotes(context);
 	check(
-		"the changelog carries the library's entry",
-		notes.includes(libSummary) && notes.includes("ext-lib"),
+		"the changelog carries the package's entry",
+		notes.includes(pkgSummary) && notes.includes(PKG),
 		JSON.stringify(notes),
 	);
 	check(
@@ -274,6 +281,43 @@ console.log("case 4 — the library and another package both changed");
 		!notes.includes(fleetSummary) && !notes.includes("fleet"),
 		JSON.stringify(notes),
 	);
+}
+
+// ---- every release config is scoped to its own package ----------------------------
+
+console.log("configs — every release config declares the scoped plugin");
+{
+	const configNames = readdirSync(here)
+		.filter(
+			(name) =>
+				name.endsWith(".mjs") && name !== "scoped-commits.mjs" && !name.endsWith(".probe.mjs"),
+		)
+		.sort();
+	check(
+		"the release configs were found",
+		configNames.length > 0,
+		`${configNames.length} config(s)`,
+	);
+	for (const name of configNames) {
+		const key = name.slice(0, -4);
+		const { default: config } = await import(`./${name}`);
+		const plugins = config?.plugins ?? [];
+		const specs = plugins.map((plugin) => (Array.isArray(plugin) ? plugin[0] : plugin?.path));
+		const first = plugins[0];
+		check(
+			`${key}: the first plugin scopes the analysis to packages/${key}`,
+			first?.path === "./release/scoped-commits.mjs" &&
+				first?.dir === `packages/${key}` &&
+				first?.preset === "conventionalcommits",
+			JSON.stringify(first),
+		);
+		check(
+			`${key}: no stock commit-analyzer or notes generator remains`,
+			!specs.includes("@semantic-release/commit-analyzer") &&
+				!specs.includes("@semantic-release/release-notes-generator"),
+			specs.filter((spec) => typeof spec === "string").join(", "),
+		);
+	}
 }
 
 // ---- hygiene ----------------------------------------------------------------------

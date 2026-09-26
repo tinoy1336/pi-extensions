@@ -8,8 +8,14 @@ export default {
 	branches: ["main"],
 	tagFormat: "focus-gate-v${version}",
 	plugins: [
-		["@semantic-release/commit-analyzer", { preset: "conventionalcommits" }],
-		["@semantic-release/release-notes-generator", { preset: "conventionalcommits" }],
+		// Both stock steps read every commit since the package's own tag and take no
+		// path filter; the scoped plugin hands them this package's own commits instead
+		// (release/scoped-commits.mjs).
+		{
+			path: "./release/scoped-commits.mjs",
+			dir: "packages/focus-gate",
+			preset: "conventionalcommits",
+		},
 		["@semantic-release/changelog", { changelogFile: "packages/focus-gate/CHANGELOG.md" }],
 		["@semantic-release/npm", { pkgRoot: "packages/focus-gate" }],
 		[
