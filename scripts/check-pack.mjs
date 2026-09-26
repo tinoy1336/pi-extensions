@@ -23,6 +23,7 @@ const EXPECTED_FILES = {
 		"src/glob.ts",
 		"src/hook-log.ts",
 		"src/index.ts",
+		"src/ipc.ts",
 		"src/neighbour.ts",
 		"src/system-prompt.ts",
 		"src/tool-header.ts",

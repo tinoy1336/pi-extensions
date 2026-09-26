@@ -11,6 +11,34 @@
  */
 export { escapeRe, globOverlap } from "./glob.ts";
 export { HOOK_LOG_PATH, hookLog } from "./hook-log.ts";
+export {
+	deliver,
+	drain,
+	ensureRoot,
+	IPC_AUDIENCES,
+	IPC_CHANNEL_METHODS,
+	IPC_ENVELOPE_VERSION,
+	IPC_KINDS,
+	IPC_NAMESPACE_PATTERN,
+	IPC_REGISTER_EVENT,
+	IPC_REGISTRY_READY_EVENT,
+	IPC_TEXT_CAP,
+	type IpcAudience,
+	type IpcDone,
+	type IpcDrainRefusal,
+	type IpcEnvelope,
+	type IpcKind,
+	type IpcPresence,
+	type IpcRefusal,
+	ipcRoot,
+	parseEnvelope,
+	parsePresence,
+	peersWithNamespace,
+	processStartTicks,
+	readPeers,
+	sweepStale,
+	writePresence,
+} from "./ipc.ts";
 export { type NeighbourReport, optionalNeighbour } from "./neighbour.ts";
 export {
 	canonicalSystemPrompt,
