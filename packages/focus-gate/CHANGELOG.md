@@ -1,3 +1,9 @@
+## [0.4.0](https://github.com/tinoy1336/pi-extensions/compare/focus-gate-v0.3.0...focus-gate-v0.4.0) (2026-09-26)
+
+### Features
+
+* **fleet:** require a caller-supplied name at hire ([3995674](https://github.com/tinoy1336/pi-extensions/commit/3995674425b0245907a2ecd963e6e61c320c117d))
+
 ## [0.3.0](https://github.com/tinoy1336/pi-extensions/compare/focus-gate-v0.2.0...focus-gate-v0.3.0) (2026-09-26)
 
 ### Features
