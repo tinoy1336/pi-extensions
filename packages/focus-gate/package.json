@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-focus-gate",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"description": "Machine-global focus mode: while it is on, sessions work but cannot touch the desktop.",
 	"license": "MIT",
 	"repository": {
