@@ -26,8 +26,8 @@ same rule — every key sits after the packages it imports.
 | `@tinoy/pi-fleet` | `fleet-vX.Y.Z` | `@tinoy/pi-ext-lib`, `@tinoy/pi-io-guard`, `@tinoy/pi-tariff` | `packages/fleet/CHANGELOG.md` |
 | `@tinoy/pi-focus-gate` | `focus-gate-vX.Y.Z` | `@tinoy/pi-ext-lib`, `@tinoy/pi-focus-state` | `packages/focus-gate/CHANGELOG.md` |
 | `@tinoy/pi-image-read` | `image-read-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/image-read/CHANGELOG.md` |
-| `@tinoy/pi-intercom-broadcast` | `intercom-broadcast-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/intercom-broadcast/CHANGELOG.md` |
 | `@tinoy/pi-io-guard` | `io-guard-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/io-guard/CHANGELOG.md` |
+| `@tinoy/pi-ipc` | `ipc-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/ipc/CHANGELOG.md` |
 | `@tinoy/pi-nf` | `nf-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/nf/CHANGELOG.md` |
 | `@tinoy/pi-orphan-repair` | `orphan-repair-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/orphan-repair/CHANGELOG.md` |
 | `@tinoy/pi-pause` | `pause-vX.Y.Z` | `@tinoy/pi-ext-lib` | `packages/pause/CHANGELOG.md` |

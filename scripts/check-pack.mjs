@@ -35,7 +35,7 @@ const EXPECTED_FILES = {
 	"@tinoy/pi-child-prompt-freeze": ["LICENSE", "README.md", "index.ts", "package.json"],
 	"@tinoy/pi-child-request-dump": ["LICENSE", "README.md", "index.ts", "package.json"],
 	"@tinoy/pi-desktop-notify": ["LICENSE", "README.md", "index.ts", "package.json"],
-	"@tinoy/pi-intercom-broadcast": ["LICENSE", "README.md", "index.ts", "package.json"],
+	"@tinoy/pi-ipc": ["LICENSE", "README.md", "index.ts", "package.json", "poller.ts"],
 	"@tinoy/pi-no-subagent-fork": ["LICENSE", "README.md", "index.ts", "package.json"],
 	"@tinoy/pi-orphan-repair": ["LICENSE", "README.md", "index.ts", "package.json"],
 	"@tinoy/pi-pause": ["LICENSE", "README.md", "index.ts", "package.json", "pause-state.ts"],

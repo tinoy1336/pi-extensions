@@ -27,9 +27,9 @@
  *    (`watchFocusState` in lib/focus-state.ts): the moment it moves, that
  *    session re-syncs its own footer from it and ALERTS itself with the toggle
  *    notice, which WAKES an idle session — the flip is known when it happens,
- *    not at the next prompt. The pi-intercom "focus" broadcast stays as the
+ *    not at the next prompt. The `ipc` "focus" broadcast stays as the
  *    cross-process notice path, and the per-turn `context` re-sync stays the
- *    fallback — the watcher does not depend on the broker being up.
+ *    fallback — the watcher does not depend on the transport being up.
  *  - GATE (hard layer): tool_call blocks the bash content deny-list while
  *    focus is on. Notifications are deliberately absent from it: a
  *    desktop_notify call is never what makes focus mode useful.
@@ -55,7 +55,7 @@
  *    `deliverAs: "followUp"` (a streaming session takes it on the agent's
  *    follow-up queue, never the steering queue the user's own typing
  *    occupies). Both directions alert, and both roads (the state-file watch
- *    and the intercom channel) announce through ONE `<mode>|<since>` key, so
+ *    and the `ipc` channel) announce through ONE `<mode>|<since>` key, so
  *    one toggle is one notice per session however it arrived. Cost, accepted:
  *    one turn per open session per toggle.
  *  - RELEASE: /focus off clears the footer, stops the injection, no-ops the
@@ -91,7 +91,7 @@ import {
 // footer's counter.
 const MODES: FocusMode[] = ["off", "on"];
 
-// ── Cross-session channel (pi-intercom) ─────────────────────────────────────
+// ── Cross-session channel (the ipc transport) ───────────────────────────────
 const NAMESPACE = "focus";
 
 interface FocusNotice {
@@ -102,8 +102,8 @@ interface FocusNotice {
 }
 
 interface FocusChannel {
-	// pi-intercom 0.12.1's publish is SYNCHRONOUS: it ships the frame and returns
-	// void, throwing "Intercom is not connected" when the broker client is down.
+	// The channel's publish may throw SYNCHRONOUSLY: it ships the frame and
+	// returns void, so there is no promise to catch when the transport is down.
 	// A void return has no .catch, so the result must be guarded, never chained
 	// blindly.
 	publish(payload: unknown, options?: { audience?: "owner" | "capable" }): void;
@@ -397,7 +397,7 @@ export default function (pi: ExtensionAPI): void {
 	// the toggling session only, so a peer window kept a stale indicator and
 	// learned nothing until it was prompted. Every session process now watches
 	// the file itself (one watcher per process, closed at shutdown) and re-syncs
-	// both from it, with no dependency on the intercom broker; the per-turn
+	// both from it, with no dependency on the transport; the per-turn
 	// `context` re-sync stays the fallback when a watch cannot start.
 	let lastUi: ExtensionUIContext | undefined;
 	let seenMode: FocusMode | null = null;
@@ -443,7 +443,7 @@ export default function (pi: ExtensionAPI): void {
 
 	/**
 	 * The ONE announce path, whatever carried the news — the state-file watcher,
-	 * the intercom channel or this session's own `/focus`. The key IS the flip
+	 * the `ipc` channel or this session's own `/focus`. The key IS the flip
 	 * (`<mode>|<since>`), so the two roads that can both observe one toggle cost
 	 * one notice, and a watch that fires twice costs none.
 	 */
@@ -542,7 +542,7 @@ export default function (pi: ExtensionAPI): void {
 		pi.events.emit("intercom:extension-register", registration);
 	}
 
-	// pi-intercom may load after this extension, which would drop the first
+	// The registrar may load after this extension, which would drop the first
 	// registration. Re-emit once its registry reports ready; the first successful
 	// registration wins (a duplicate namespace is rejected, not thrown).
 	pi.events.on("intercom:extension-registry-ready", () => {
@@ -699,7 +699,7 @@ export default function (pi: ExtensionAPI): void {
 				// Footer: the ON glyph, or a clear when the mode is off.
 				syncFooter(ctx.ui, next);
 
-				// Every other live session is told over the intercom bus. The file is what
+				// Every other live session is told over the `ipc` bus. The file is what
 				// actually gates them; this is what makes the toggle visible there.
 				broadcastToggle(next, written.since);
 

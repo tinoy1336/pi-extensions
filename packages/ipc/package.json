@@ -1,14 +1,14 @@
 {
-	"name": "@tinoy/pi-intercom-broadcast",
-	"version": "0.2.0",
-	"description": "Send one message to every connected pi-intercom session.",
+	"name": "@tinoy/pi-ipc",
+	"version": "0.1.0",
+	"description": "Talk to other pi sessions on this machine: list peers, send, ask and wait, or broadcast.",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/tinoy1336/pi-extensions.git",
-		"directory": "packages/intercom-broadcast"
+		"directory": "packages/ipc"
 	},
-	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/intercom-broadcast#readme",
+	"homepage": "https://github.com/tinoy1336/pi-extensions/tree/main/packages/ipc#readme",
 	"bugs": {
 		"url": "https://github.com/tinoy1336/pi-extensions/issues"
 	},
@@ -19,6 +19,7 @@
 	],
 	"files": [
 		"index.ts",
+		"poller.ts",
 		"README.md",
 		"LICENSE"
 	],
@@ -31,8 +32,8 @@
 		"node": ">=22"
 	},
 	"peerDependencies": {
-		"@earendil-works/pi-ai": "*",
-		"@earendil-works/pi-coding-agent": "*"
+		"@earendil-works/pi-coding-agent": "*",
+		"typebox": "*"
 	},
 	"dependencies": {
 		"@tinoy/pi-ext-lib": "*"

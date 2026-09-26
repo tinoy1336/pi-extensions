@@ -53,7 +53,7 @@ const ERR_RE = /(error|warning|fail|fatal|exception|✗|✖|cannot find|not foun
 const ERR_LINE_CAP = 30;
 const TAIL_CAP = 15;
 /** Variables a build's own children must not inherit. */
-const ENV_STRIP_PREFIXES = ["PI_SUBAGENT", "PI_SUBAGENTS", "PI_SESSION", "PI_INTERCOM"];
+const ENV_STRIP_PREFIXES = ["PI_SUBAGENT", "PI_SUBAGENTS", "PI_SESSION"];
 const ENV_STRIP_EXACT = [
 	"PI_MODEL",
 	"PI_PROVIDER",

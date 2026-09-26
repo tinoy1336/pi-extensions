@@ -28,6 +28,7 @@ entry and the shared library packages, which npm installs for you.
 | --- | --- | --- | --- |
 | `@tinoy/pi-ext-lib` | shared helpers: the hook-log envelope, the TUI tool-header builder, the system-prompt block seam | — | — |
 | `@tinoy/pi-canon` | durable system-prompt rules: the canon store, its tools, `/canon`, and the tail-section registry other extensions contribute through | — | — |
+| `@tinoy/pi-ipc` | the `ipc` tool: list the peer sessions, send to one, ask one and wait for its answer, or broadcast | a writable `$XDG_RUNTIME_DIR`, which a login session provides | `@tinoy/pi-canon` and `@tinoy/pi-focus-gate`, which reach their peers over its bus |
 | `@tinoy/pi-focus-state` | the focus-mode state contract: the state file, the per-session ledgers, their paths | — | `@tinoy/pi-focus-gate`, which toggles the mode the file carries |
 | `@tinoy/pi-tariff` | the house price table's shape, validation and refusal | a tariff table with your own rates (`tariff.json`) — no rate ships | — |
 | `@tinoy/pi-read-staleness` | the body of a repeat full-file read is replaced by a one-line stub | — | — |
@@ -37,7 +38,6 @@ entry and the shared library packages, which npm installs for you.
 | `@tinoy/pi-child-request-dump` | a structure-only JSONL record of each child session's request | — | — |
 | `@tinoy/pi-desktop-notify` | the `desktop_notify` tool and the settled-response ping | a desktop notification daemon (`notify-send`) | — |
 | `@tinoy/pi-probe` | one bounded status probe for a unit, a process or a hyprctl query | systemd `--user` with `journalctl` and `pgrep`; `hyprctl` for the opt-in branch | — |
-| `@tinoy/pi-intercom-broadcast` | the `broadcast` tool | the pi-intercom broker for `broadcast` | — |
 | `@tinoy/pi-no-subagent-fork` | a spawn's `context: "fork"` is rewritten to `"fresh"` | — | — |
 | `@tinoy/pi-image-read` | `image_read`: downscale or crop an image, report the token estimate | ImageMagick (`magick`) | — |
 | `@tinoy/pi-command-guard` | destructive shell commands are blocked with the safe alternative named | — | — |

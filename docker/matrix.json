@@ -75,16 +75,28 @@
 			"notes": "systemd/pgrep at call time; hyprctl optional"
 		},
 		{
-			"id": "A1-intercom-broadcast",
+			"id": "A1-ipc",
 			"group": "A1",
-			"packages": ["@tinoy/pi-intercom-broadcast"],
-			"absent": ["pi-intercom"],
+			"packages": ["@tinoy/pi-ipc"],
+			"absent": [],
 			"expectLoaded": 1,
 			"expectTools": {
-				"@tinoy/pi-intercom-broadcast": ["broadcast"]
+				"@tinoy/pi-ipc": ["ipc"]
 			},
 			"expectLog": [],
-			"notes": "the refusal is answered at call time, so no absence line at load"
+			"notes": "the transport alone: one entry, the `ipc` tool, and no absence line. Every refusal this package answers belongs at call time, so an absent runtime directory, an empty session list or a missing peer costs the one action and never the load"
+		},
+		{
+			"id": "A1-ipc-without-neighbours",
+			"group": "A1",
+			"packages": ["@tinoy/pi-ipc"],
+			"absent": ["@tinoy/pi-canon", "@tinoy/pi-focus-gate"],
+			"expectLoaded": 1,
+			"expectTools": {
+				"@tinoy/pi-ipc": ["ipc"]
+			},
+			"expectLog": [],
+			"notes": "the two names in the package's Works better with table are absent, and the install set is therefore the same one A1-ipc uses. What this case settles is the declaration: a caveat is documentation, never a dependency, so neither absent name may produce an absence line (clause 5 fails on any undeclared one) and neither may stop the entry from loading"
 		},
 		{
 			"id": "A1-no-subagent-fork",
@@ -310,7 +322,7 @@
 				"@tinoy/pi-child-request-dump",
 				"@tinoy/pi-desktop-notify",
 				"@tinoy/pi-probe",
-				"@tinoy/pi-intercom-broadcast",
+				"@tinoy/pi-ipc",
 				"@tinoy/pi-no-subagent-fork",
 				"@tinoy/pi-image-read",
 				"@tinoy/pi-command-guard",
@@ -338,7 +350,7 @@
 				"@tinoy/pi-child-request-dump": [],
 				"@tinoy/pi-desktop-notify": ["desktop_notify"],
 				"@tinoy/pi-probe": ["probe"],
-				"@tinoy/pi-intercom-broadcast": ["broadcast"],
+				"@tinoy/pi-ipc": ["ipc"],
 				"@tinoy/pi-no-subagent-fork": [],
 				"@tinoy/pi-image-read": ["image_read"],
 				"@tinoy/pi-command-guard": [],
@@ -432,10 +444,10 @@
 				"@tinoy/pi-child-request-dump",
 				"@tinoy/pi-desktop-notify",
 				"@tinoy/pi-probe",
-				"@tinoy/pi-intercom-broadcast",
+				"@tinoy/pi-ipc",
 				"@tinoy/pi-no-subagent-fork"
 			],
-			"absent": ["pi-intercom", "pi-subagents"],
+			"absent": ["pi-subagents"],
 			"expectLoaded": 8,
 			"expectTools": {
 				"@tinoy/pi-read-staleness": [],
@@ -444,11 +456,11 @@
 				"@tinoy/pi-child-request-dump": [],
 				"@tinoy/pi-desktop-notify": ["desktop_notify"],
 				"@tinoy/pi-probe": ["probe"],
-				"@tinoy/pi-intercom-broadcast": ["broadcast"],
+				"@tinoy/pi-ipc": ["ipc"],
 				"@tinoy/pi-no-subagent-fork": []
 			},
 			"expectLog": [],
-			"notes": "the generic set only; no line may name a machine-bound neighbour. MEASURED from a local matrix run: 8 loaded, three tools registered (desktop_notify, probe, broadcast) and the four hook-only units register none"
+			"notes": "the generic set only; no line may name a machine-bound neighbour. MEASURED from a local matrix run: 8 loaded, three tools registered (desktop_notify, probe, ipc) and the four hook-only units register none"
 		},
 		{
 			"id": "A5-machine-bound",
@@ -510,19 +522,6 @@
 				"PI_SUBAGENT_CHILD": "1"
 			},
 			"notes": "the with-neighbour variant: the child shape registers the tool, and no absence line may name the neighbour the case installed. The without-neighbour half is A1-todo-parent."
-		},
-		{
-			"id": "A8-intercom-broadcast-with-intercom",
-			"group": "A8",
-			"packages": ["@tinoy/pi-intercom-broadcast"],
-			"requiresInstall": ["pi-intercom@0.13.0"],
-			"absent": [],
-			"expectLoaded": 1,
-			"expectTools": {
-				"@tinoy/pi-intercom-broadcast": ["broadcast"]
-			},
-			"expectLog": [],
-			"notes": "the with-neighbour variant: pi-intercom's own entry stays out of the loaded set (the case passes no entry for it), so the evidence is that the subject loads with the neighbour present and emits no absence line. The neighbour is reached over pi-intercom's event bus rather than by import, so the tool's own answer is not exercised here; the without-neighbour half is A1-intercom-broadcast."
 		},
 		{
 			"id": "M9-foreman-tool-set",

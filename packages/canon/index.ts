@@ -14,7 +14,7 @@
  * changes via canon notices (and the user's /canon-dump).
  * Edited at runtime via canon_add / canon_remove / canon_edit (plus
  * the /canon and /canon-dump commands). Changes are broadcast to peer sessions
- * over the pi-intercom extension bus (namespace "canon"); each receiver matches
+ * over the `ipc` transport's extension bus (namespace "canon"); each receiver matches
  * the entry scope against its own model + audience before showing a notice.
  *
  * Replaces APPEND_SYSTEM.md (global/parent) and FLASH.md (global/subagent).
@@ -714,8 +714,8 @@ export default function (pi: ExtensionAPI) {
 
 	// Best-effort peer notice: the store write has already landed when this runs,
 	// so EVERY failure mode of the channel call is swallowed here and logged:
-	//   - pi-intercom 0.12.1's channel.publish is SYNCHRONOUS and throws
-	//     "Intercom is not connected" when the broker client is down;
+	//   - the channel's publish may throw SYNCHRONOUSLY when the transport is
+	//     down, and returns void, so there is no promise to catch;
 	//   - it returns void, so .catch must only ever be reached through the
 	//     optional call (chaining it directly was the TypeError that escaped);
 	//   - a promise-returning build rejects instead of throwing — the guarded
@@ -748,7 +748,7 @@ export default function (pi: ExtensionAPI) {
 		}
 	}
 
-	// ---------- intercom channel (mirrors the intercom-broadcast package) ----------
+	// ---------- the bus channel (mirrors the ipc package's registration) ----------
 
 	const registration: CanonRegistration = {
 		namespace: NAMESPACE,
@@ -793,7 +793,7 @@ export default function (pi: ExtensionAPI) {
 		pi.events.emit("intercom:extension-register", registration);
 	}
 
-	// pi-intercom may load after this extension; re-emit once its registry is
+	// The registrar may load after this extension; re-emit once the registry is
 	// reported ready. First successful registration wins (duplicate namespace
 	// is rejected, not thrown).
 	pi.events.on("intercom:extension-registry-ready", () => {

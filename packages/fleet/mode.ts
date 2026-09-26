@@ -47,7 +47,7 @@ export const FOREMAN_TOOLS: readonly string[] = [
 	"canon_remove",
 	"canon_edit",
 	"subagent_supervisor",
-	"intercom",
+	"ipc",
 ];
 
 export interface ToolSetApi {
