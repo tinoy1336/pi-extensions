@@ -1,3 +1,10 @@
+> [!WARNING]
+> **Do not install anything here yet.**
+>
+> This is a fast-moving prototype: the interfaces change without notice, and nothing here
+> is stable. Every package in this project is headed for a stable 1.0, but that is still
+> some way off. Install one only if you intend to follow the code and expect breakage.
+
 # @tinoy/pi-status-metrics
 
 Session counters in pi's footer: tool calls blocked, anchors injected, bytes kept out of context, actions queued by focus mode.

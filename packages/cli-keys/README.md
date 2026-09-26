@@ -1,3 +1,10 @@
+> [!WARNING]
+> **Do not install anything here yet.**
+>
+> This is a fast-moving prototype: the interfaces change without notice, and nothing here
+> is stable. Every package in this project is headed for a stable 1.0, but that is still
+> some way off. Install one only if you intend to follow the code and expect breakage.
+
 # @tinoy/pi-cli-keys
 
 Hydrate provider API keys into the session environment from a local cache.
