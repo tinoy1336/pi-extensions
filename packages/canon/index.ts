@@ -610,6 +610,23 @@ export default function (pi: ExtensionAPI) {
 		pi.events.emit("canon:sections", { ids: registeredSectionIds() });
 	});
 
+	// A notice steered into a live run lands at the next tool boundary, before the next
+	// LLM call; the passive queue drains only when a new turn starts, so a notice emitted
+	// mid-run would otherwise wait for the operator's next prompt. The passive route keeps
+	// the no-wake guarantee where it is needed — an idle session — and steer is used only
+	// while a run is in flight, where it cannot wake anything. A steer queued as the run
+	// settles can carry it one more LLM call; that is the price of a notice landing with the
+	// trajectory rather than after it.
+	let runInFlight = false;
+
+	pi.on("agent_start", () => {
+		runInFlight = true;
+	});
+
+	pi.on("agent_settled", () => {
+		runInFlight = false;
+	});
+
 	// keep the cached model fresh for notification filtering
 	pi.on("before_agent_start", async (event, ctx) => {
 		hookFiredSinceLastRequest = true;
@@ -797,9 +814,10 @@ export default function (pi: ExtensionAPI) {
 					display: true,
 					details: { fromSessionId: event.fromSessionId, canonId: payload.id },
 				},
-				// PASSIVE (user 2026-09-01): "steer" wakes idle sessions like a
-				// prompt; "nextTurn" queues for the next user turn, no wake-up.
-				{ deliverAs: "nextTurn" },
+				// An idle session takes the passive queue, because steer would wake it like a
+				// prompt; a run already in flight takes steer, which lands at the next tool
+				// boundary instead of waiting for a turn that has not started.
+				{ deliverAs: runInFlight ? "steer" : "nextTurn" },
 			);
 		},
 		onReady(readyChannel: CanonChannel): void {
