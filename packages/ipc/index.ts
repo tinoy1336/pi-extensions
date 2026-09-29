@@ -302,8 +302,13 @@ function wire(pi: ExtensionAPI): void {
 		registration.onEvent({ type: "message", fromSessionId: envelope.from, payload });
 	}
 
-	/** An inbound message, ask or broadcast becomes a turn of its own, attributed to its sender. */
-	function inject(envelope: IpcEnvelope): void {
+	/**
+	 * An inbound message, ask or broadcast becomes a turn of its own, attributed to its
+	 * sender. `passive` queues it for the next user turn instead of starting one: an
+	 * unmatched answer takes that route, because its text belongs to the peer while no ask
+	 * of theirs is waiting on it, so it has no claim on this session's attention.
+	 */
+	function inject(envelope: IpcEnvelope, options: { passive?: boolean } = {}): void {
 		const from = senderLabel(envelope.from);
 		const ask = envelope.kind === "ask";
 		const broadcast = envelope.namespace === BROADCAST_NAMESPACE;
@@ -318,7 +323,7 @@ function wire(pi: ExtensionAPI): void {
 				display: true,
 				details: { from: envelope.from, id: envelope.id },
 			},
-			{ triggerTurn: true },
+			options.passive ? { deliverAs: "nextTurn" } : { triggerTurn: true },
 		);
 	}
 
@@ -331,7 +336,11 @@ function wire(pi: ExtensionAPI): void {
 			if (envelope.kind === "answer") {
 				const matched = ledger.settle(envelope.answerTo ?? "", envelope.text);
 				if (!matched) {
-					report("answer-unmatched", `no ask is waiting on "${envelope.answerTo ?? ""}"`);
+					report(
+						"answer-unmatched",
+						`no ask is waiting on "${envelope.answerTo ?? ""}" — delivering the text as an ordinary message`,
+					);
+					inject(envelope, { passive: true });
 				}
 				return;
 			}
@@ -491,7 +500,7 @@ function wire(pi: ExtensionAPI): void {
 			const note = answerTo
 				? answered
 					? `, answering the ask from ${senderLabel(answered.from)}`
-					: ` — but no inbound ask of this session carries the handle "${answerTo}", so its sender is still blocked (a stale handle still delivers)`
+					: ` — but no inbound ask of this session carries the handle "${answerTo}"; the text was delivered as an ordinary message, and its sender is still blocked`
 				: "";
 			return {
 				content: [{ type: "text", text: `sent to ${label}${note}` }],
@@ -608,7 +617,7 @@ function wire(pi: ExtensionAPI): void {
 			answerTo: Type.Optional(
 				Type.String({
 					description:
-						"The ask handle an inbound ask printed. Answers that ask and completes its sender's blocked call; a stale handle still delivers, and the result says so.",
+						"The handle an inbound ask printed. Only an `Ask from …` notice carries one — a `Message from …` or `Broadcast from …` notice never does, so a handle is never guessed. Naming the right handle completes the asker's blocked call; a handle that matches nothing still delivers the text as an ordinary message.",
 				}),
 			),
 		}),

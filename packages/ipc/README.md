@@ -35,7 +35,9 @@ running inside a session, and a session's id and name come from the session itse
 
 A peer is addressed by its full session id, a unique id prefix of 4 or more characters, or its
 exact name; a target that could be more than one session is refused with the candidates. An inbound
-ask prints the handle that answers it, and an ask left unanswered is named in one line at the end of
+ask prints the handle that answers it — only an ask carries one, so a message or broadcast is never
+answered with `answerTo` — and a handle that matches no waiting ask delivers its text as an ordinary
+message rather than dropping it. An ask left unanswered is named in one line at the end of
 the turn — there is no `pending` action to poll. `PI_IPC_ASK_TIMEOUT_MS` sets the ask timeout
 (default 600000 ms).
 
