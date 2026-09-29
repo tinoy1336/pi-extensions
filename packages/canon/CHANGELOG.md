@@ -1,3 +1,9 @@
+## [0.6.2](https://github.com/tinoy1336/pi-extensions/compare/canon-v0.6.1...canon-v0.6.2) (2026-09-29)
+
+### Bug Fixes
+
+* **canon:** deliver a notice into the run it belongs to ([8a499d4](https://github.com/tinoy1336/pi-extensions/commit/8a499d4d766aece0d6934a022896a07d860eb317))
+
 ## [0.6.1](https://github.com/tinoy1336/pi-extensions/compare/canon-v0.6.0...canon-v0.6.1) (2026-09-26)
 
 ### Bug Fixes
