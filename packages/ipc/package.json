@@ -1,6 +1,6 @@
 {
 	"name": "@tinoy/pi-ipc",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Talk to other pi sessions on this machine: list peers, send, ask and wait, or broadcast.",
 	"license": "MIT",
 	"repository": {
