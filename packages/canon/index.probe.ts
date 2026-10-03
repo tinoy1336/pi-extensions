@@ -18,8 +18,10 @@
  * Cases: the selection for a parent session, a foreman session, a subagent session
  * (both child markers) and an unknown model; the model-scope exclusion; the provider
  * prefix in a model id; the group order the renderer emits, which the prompt cache
- * depends on; byte stability across two renders and across two sessions; and an
- * empty store.
+ * depends on; byte stability across two renders and across two sessions; an empty
+ * store; and the /canon-dump filter surface — the values the completion offers and the
+ * prefixes it answers, what a filter it never offered gets instead of an empty dump,
+ * and the closed audience list the tools declare.
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -68,27 +70,68 @@ function check(name: string, condition: boolean, detail = ""): void {
 type Handler = (event: unknown, ctx: unknown) => unknown;
 type Render = (modelId?: string) => Promise<string>;
 
+type CommandSurface = {
+	description?: string;
+	getArgumentCompletions?: (argumentPrefix: string) => unknown;
+	handler: (args: string, ctx: unknown) => Promise<void>;
+};
+type ToolSurface = { name: string; parameters: unknown };
+
+type Recorder = {
+	api: unknown;
+	handlers: Map<string, Handler>;
+	commands: Map<string, CommandSurface>;
+	tools: Map<string, ToolSurface>;
+	sent: Array<{ content: string }>;
+};
+
+/** The recorder the extension is handed in place of the API: everything it registers,
+ *  sends or hooks is captured, so a check can drive the dump command and read the tool
+ *  schemas the model receives. */
+function recorder(): Recorder {
+	const handlers = new Map<string, Handler>();
+	const commands = new Map<string, CommandSurface>();
+	const tools = new Map<string, ToolSurface>();
+	const sent: Array<{ content: string }> = [];
+	const api = {
+		on: (name: string, handler: Handler) => handlers.set(name, handler),
+		registerTool: (tool: ToolSurface) => tools.set(tool.name, tool),
+		registerCommand: (name: string, options: CommandSurface) => commands.set(name, options),
+		sendMessage: (message: { content?: string }) => sent.push({ content: message.content ?? "" }),
+		getActiveTools: () => [],
+		setActiveTools: () => {},
+		appendEntry: () => {},
+		events: { on: () => {}, emit: () => {} },
+	};
+	return { api, handlers, commands, tools, sent };
+}
+
+/** The markers a session starts with: cleared first, so a session cannot inherit
+ *  another's audience. */
+function applyEnv(env: Record<string, string>): void {
+	for (const key of ["PI_SUBAGENT", "PI_SUBAGENT_CHILD", "PI_FOREMAN", "PI_MODEL"]) {
+		delete process.env[key];
+	}
+	for (const [key, value] of Object.entries(env)) process.env[key] = value;
+}
+
+/** A session that exposes its recorder instead of a render. */
+function surfaces(env: Record<string, string>): Recorder {
+	applyEnv(env);
+	const rec = recorder();
+	canon(rec.api as never);
+	return rec;
+}
+
 /**
  * One session: the three markers are cleared first, so a session cannot inherit
  * another's audience, then the extension is handed a recorder. The driver awaits the
  * handler, which is async, and returns the appended block without its base.
  */
 function session(env: Record<string, string>): Render {
-	for (const key of ["PI_SUBAGENT", "PI_SUBAGENT_CHILD", "PI_FOREMAN", "PI_MODEL"]) {
-		delete process.env[key];
-	}
-	for (const [key, value] of Object.entries(env)) process.env[key] = value;
+	applyEnv(env);
 
-	const handlers = new Map<string, Handler>();
-	const api = {
-		on: (name: string, handler: Handler) => handlers.set(name, handler),
-		registerTool: () => {},
-		registerCommand: () => {},
-		getActiveTools: () => [],
-		setActiveTools: () => {},
-		appendEntry: () => {},
-		events: { on: () => {}, emit: () => {} },
-	};
+	const { api, handlers } = recorder();
 	canon(api as never);
 
 	const handler = handlers.get("before_agent_start");
@@ -197,6 +240,133 @@ check(
 check(
 	"and the parent block is stable the same way",
 	(await session({})("model-a")) === parentBlock,
+);
+
+console.log("the /canon-dump filter values");
+const dump = surfaces({});
+const dumpCommand = dump.commands.get("canon-dump");
+type Item = { value: string; label: string; description?: string };
+const offered = (prefix: string): Item[] =>
+	(dumpCommand?.getArgumentCompletions?.(prefix) as Item[] | null) ?? [];
+check(
+	"the dump command registers an argument-completion callback",
+	typeof dumpCommand?.getArgumentCompletions === "function",
+);
+check(
+	"an empty prefix offers the audience words first, then the models the store holds",
+	JSON.stringify(offered("").map((i) => i.value)) ===
+		JSON.stringify(["all", "parent", "foreman", "subagent", "model-a", "global", "model-b"]),
+	JSON.stringify(offered("").map((i) => i.value)),
+);
+check(
+	"every offered value carries its own description",
+	offered("").every((i) => (i.description ?? "").length > 0),
+);
+check(
+	"and its value is its label",
+	offered("").every((i) => i.label === i.value),
+);
+check(
+	"a prefix narrows the list",
+	JSON.stringify(offered("mo").map((i) => i.value)) === JSON.stringify(["model-a", "model-b"]),
+);
+check(
+	"a prefix matching one word offers that one",
+	JSON.stringify(offered("sub").map((i) => i.value)) === JSON.stringify(["subagent"]),
+);
+check(
+	"a prefix nothing matches offers nothing",
+	dumpCommand?.getArgumentCompletions?.("zz") === null,
+);
+
+console.log("a filter the completion never offered");
+const notices: Array<{ text: string; level?: string }> = [];
+const commandCtx = {
+	ui: { notify: (text: string, level?: string) => notices.push({ text, level }) },
+};
+await dumpCommand?.handler("nope", commandCtx);
+check("no dump is sent", dump.sent.length === 0);
+check(
+	"the answer names the values that do exist",
+	notices.length === 1 &&
+		notices[0].text.includes("subagent") &&
+		notices[0].text.includes("model-a"),
+	notices[0]?.text,
+);
+check(
+	"and names the filter it refused",
+	notices.length === 1 && notices[0].text.includes('"nope"'),
+);
+check("as an error, not as a notice", notices.length === 1 && notices[0].level === "error");
+
+console.log("a filter the completion does offer");
+await dumpCommand?.handler("model-b", commandCtx);
+check(
+	"the model filter dumps that model alone",
+	dump.sent.length === 1 &&
+		dump.sent[0].content.includes("B-ALL") &&
+		!dump.sent[0].content.includes("A-ALL"),
+);
+await dumpCommand?.handler("foreman", commandCtx);
+check(
+	"the audience filter dumps that audience alone",
+	dump.sent[1].content.includes("G-FOREMAN") && !dump.sent[1].content.includes("G-PARENT"),
+);
+await dumpCommand?.handler("provider/model-b", commandCtx);
+check(
+	"a provider prefix resolves the way the model branch does",
+	dump.sent[2].content.includes("B-ALL"),
+);
+await dumpCommand?.handler("", commandCtx);
+check(
+	"no filter dumps the whole store",
+	dump.sent[3].content.includes("A-ALL") && dump.sent[3].content.includes("B-ALL"),
+);
+
+console.log("the audience list the tools declare");
+const property = (tool: string, name: string): unknown => {
+	const parameters = dump.tools.get(tool)?.parameters as
+		| { properties?: Record<string, unknown> }
+		| undefined;
+	return parameters?.properties?.[name];
+};
+/** Every `const` value a schema declares — what a union of literals compiles to. */
+function literals(schema: unknown): string[] {
+	const found: string[] = [];
+	const walk = (node: unknown): void => {
+		if (!node || typeof node !== "object") return;
+		for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+			if (key === "const" && typeof value === "string") found.push(value);
+			else walk(value);
+		}
+	};
+	walk(schema);
+	return found.sort();
+}
+const CLOSED_AUDIENCE = ["all", "foreman", "parent", "subagent"];
+check(
+	"canon_add's audience is the closed list of audience words",
+	JSON.stringify(literals(property("canon_add", "audience"))) === JSON.stringify(CLOSED_AUDIENCE),
+	JSON.stringify(literals(property("canon_add", "audience"))),
+);
+check(
+	"canon_edit's audience is the same closed list",
+	JSON.stringify(literals(property("canon_edit", "audience"))) === JSON.stringify(CLOSED_AUDIENCE),
+);
+check(
+	"canon_add's audience is required",
+	(
+		(dump.tools.get("canon_add")?.parameters as { required?: string[] } | undefined)?.required ?? []
+	).includes("audience"),
+);
+check(
+	"the closed list keeps its description",
+	JSON.stringify(property("canon_add", "audience")).includes("Audience"),
+);
+check(
+	"canon_add's model is NOT closed — the model registry owns that space, so a model is not refusable by the schema",
+	literals(property("canon_add", "model")).length === 0,
+	JSON.stringify(literals(property("canon_add", "model"))),
 );
 
 console.log("an empty store");

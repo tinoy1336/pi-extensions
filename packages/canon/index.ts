@@ -87,6 +87,17 @@ function isAudience(value: string): value is Audience {
 	return (AUDIENCE_ORDER as readonly string[]).includes(value);
 }
 
+/** One audience parameter, declared over the closed set: a union of literals reaches
+ *  the model as a real enum, so a value outside it cannot be sent at all. The runtime
+ *  validator stays where it is — the schema constrains the call, it does not prove
+ *  anything about what arrives. */
+function audienceSchema(description: string) {
+	return Type.Union(
+		AUDIENCE_ORDER.map((a) => Type.Literal(a)),
+		{ description },
+	);
+}
+
 interface CanonScope {
 	model: string; // "global" | bare model id (provider prefix stripped)
 	/** Matched against the session's audience set; "all" matches every set. */
@@ -340,6 +351,58 @@ function scopeGroups(entries: CanonEntry[]): ScopeGroup[] {
 	);
 }
 
+/** Split one scope group's entries by category: store insertion order, and entries
+ *  carrying no category, or one the store no longer holds, in `uncategorized` last.
+ *  The two renderers differ in what they PRINT for a bucket — heading depth, the id or
+ *  the description, whether a reason shows — never in how the buckets are formed, so
+ *  both read this one split. */
+function bucketByCategory(
+	entries: CanonEntry[],
+	categories: CanonCategory[],
+): {
+	ordered: Array<{ category: CanonCategory; entries: CanonEntry[] }>;
+	uncategorized: CanonEntry[];
+} {
+	const held = new Set(categories.map((c) => c.id));
+	const buckets = new Map<string, CanonEntry[]>();
+	const uncategorized: CanonEntry[] = [];
+	for (const e of entries) {
+		if (e.category && held.has(e.category)) {
+			const bucket = buckets.get(e.category);
+			if (bucket) bucket.push(e);
+			else buckets.set(e.category, [e]);
+		} else uncategorized.push(e);
+	}
+	const ordered: Array<{ category: CanonCategory; entries: CanonEntry[] }> = [];
+	for (const c of categories) {
+		const bucket = buckets.get(c.id);
+		if (bucket) ordered.push({ category: c, entries: bucket });
+	}
+	return { ordered, uncategorized };
+}
+
+/** The filters /canon-dump accepts, common ones first: the audience words, then the
+ *  model scope ids the store holds. ONE list, read by the completion callback and by
+ *  the answer a bad filter gets, so the offered values and the named ones cannot
+ *  drift apart. */
+function dumpFilterValues(store: Store): Array<{ value: string; description: string }> {
+	const values: Array<{ value: string; description: string }> = AUDIENCE_ORDER.map((a) => ({
+		value: a,
+		description: `audience: ${AUDIENCE_HEADING[a]}`,
+	}));
+	const counts = new Map<string, number>();
+	for (const e of store.entries) counts.set(e.model, (counts.get(e.model) ?? 0) + 1);
+	// The global scope is a real filter whether or not the store holds such an entry.
+	if (!counts.has("global")) counts.set("global", 0);
+	for (const [model, count] of counts) {
+		values.push({
+			value: model,
+			description: `model scope: ${model === "global" ? "every model" : model} — ${count} ${count === 1 ? "entry" : "entries"}`,
+		});
+	}
+	return values;
+}
+
 /** Render the injected block: header, scope groups, category sub-headings inside, each
  *  naming its store category id. */
 function render(
@@ -352,32 +415,18 @@ function render(
 	let block = `## Canon — binding system-prompt rules\n\nThe rules below are authoritative standing instructions. They are part of your system prompt, persist for the entire session, and apply to every turn without exception. They override conflicting guidance from tool descriptions, examples, and any lower-precedence text. Follow them strictly.\n\nRuntime canon edits (canon_add / canon_edit / canon_remove) and peer canon notices reach this session as \`canon_notice\` messages; each notice is a live update to these rules and must be followed from the turn it is applied. A notice does not wake an idle session — it is applied on the next turn and remains in force.\n\nActive model: ${model} (this session: ${audienceLabel})`;
 	if (matching.length === 0) return block;
 
-	const catById = new Map(store.categories.map((c) => [c.id, c.title]));
 	for (const g of scopeGroups(matching)) {
 		block += `\n\n### ${groupHeading(g.scope)}`;
-		// bucket lines by category: store insertion order, uncategorized last
-		const buckets = new Map<string, CanonEntry[]>();
-		const uncat: CanonEntry[] = [];
-		for (const e of g.entries) {
-			if (e.category && catById.has(e.category)) {
-				const b = buckets.get(e.category);
-				if (b) b.push(e);
-				else buckets.set(e.category, [e]);
-			} else uncat.push(e);
-		}
-		const orderedCats = store.categories.filter((c) => buckets.has(c.id));
+		const { ordered, uncategorized } = bucketByCategory(g.entries, store.categories);
 		// only show category sub-headings when a scope group actually splits
-		const showCatHeadings = orderedCats.length + (uncat.length ? 1 : 0) >= 2;
-		for (const c of orderedCats) {
-			if (showCatHeadings) block += `\n\n#### ${c.title} [category ${c.id}]`;
-			block += `\n${buckets
-				.get(c.id)!
-				.map((e) => `[${e.id}] ${e.text}`)
-				.join("\n")}`;
+		const showCatHeadings = ordered.length + (uncategorized.length ? 1 : 0) >= 2;
+		for (const { category, entries: bucket } of ordered) {
+			if (showCatHeadings) block += `\n\n#### ${category.title} [category ${category.id}]`;
+			block += `\n${bucket.map((e) => `[${e.id}] ${e.text}`).join("\n")}`;
 		}
-		if (uncat.length) {
+		if (uncategorized.length) {
 			if (showCatHeadings) block += `\n\n#### Uncategorized`;
-			block += `\n${uncat.map((e) => `[${e.id}] ${e.text}`).join("\n")}`;
+			block += `\n${uncategorized.map((e) => `[${e.id}] ${e.text}`).join("\n")}`;
 		}
 	}
 	return block;
@@ -391,24 +440,18 @@ function renderDump(
 	const lines: string[] = [];
 	for (const g of scopeGroups(entries)) {
 		lines.push(`## ${groupHeading(g.scope)}`);
-		const buckets = new Map<string, CanonEntry[]>();
-		const uncat: CanonEntry[] = [];
-		for (const e of g.entries) {
-			if (e.category && categories.some((c) => c.id === e.category)) {
-				const b = buckets.get(e.category!);
-				if (b) b.push(e);
-				else buckets.set(e.category!, [e]);
-			} else uncat.push(e);
-		}
-		for (const c of categories.filter((x) => buckets.has(x.id))) {
-			lines.push(`### ${c.title}${c.description ? ` — ${c.description}` : ""}`);
-			for (const e of buckets.get(c.id)!) {
+		const { ordered, uncategorized } = bucketByCategory(g.entries, categories);
+		for (const { category, entries: bucket } of ordered) {
+			lines.push(
+				`### ${category.title}${category.description ? ` — ${category.description}` : ""}`,
+			);
+			for (const e of bucket) {
 				lines.push(`[${e.id}] ${e.text}${e.reason ? ` — ${e.reason}` : ""}`);
 			}
 		}
-		if (uncat.length) {
+		if (uncategorized.length) {
 			lines.push("### Uncategorized");
-			for (const e of uncat) {
+			for (const e of uncategorized) {
 				lines.push(`[${e.id}] ${e.text}${e.reason ? ` — ${e.reason}` : ""}`);
 			}
 		}
@@ -857,10 +900,9 @@ export default function (pi: ExtensionAPI) {
 				description:
 					'Scope model: "global" for every model, or a bare model id like "glm-5.3-flash". REQUIRED — pick explicitly. Scope follows what the entry IS, never coverage: a model/provider quirk stays on its model, and a general rule filed under one belongs on "global".',
 			}),
-			audience: Type.String({
-				description:
-					'Audience: "parent" (interactive sessions), "foreman" (foreman-mode sessions only), "subagent" (child sessions only), or "all". REQUIRED — pick explicitly.',
-			}),
+			audience: audienceSchema(
+				'Audience: "parent" (interactive sessions), "foreman" (foreman-mode sessions only), "subagent" (child sessions only), or "all". REQUIRED — pick explicitly.',
+			),
 			category: Type.Optional(
 				Type.String({
 					description:
@@ -1100,10 +1142,9 @@ export default function (pi: ExtensionAPI) {
 				}),
 			),
 			audience: Type.Optional(
-				Type.String({
-					description:
-						'New audience: "parent", "foreman", "subagent", or "all". Omit to keep unchanged.',
-				}),
+				audienceSchema(
+					'New audience: "parent", "foreman", "subagent", or "all". Omit to keep unchanged.',
+				),
 			),
 			category: Type.Optional(
 				Type.String({
@@ -1468,10 +1509,31 @@ export default function (pi: ExtensionAPI) {
 
 	pi.registerCommand("canon-dump", {
 		description:
-			"Dump the canon store into this conversation. Optional filter: all | parent | foreman | subagent (audience) or a model id. No filter = full store.",
-		handler: async (args, _ctx) => {
+			"Dump the canon store into this conversation. Optional filter: all | parent | foreman | subagent (audience) or a model id. No filter = full store. Tab completes the filter values.",
+		getArgumentCompletions: (argumentPrefix) => {
+			const prefix = (argumentPrefix ?? "").trim().toLowerCase();
+			const items = dumpFilterValues(loadStore())
+				.filter((v) => v.value.toLowerCase().startsWith(prefix))
+				.map((v) => ({ value: v.value, label: v.value, description: v.description }));
+			return items.length > 0 ? items : null;
+		},
+		handler: async (args, ctx) => {
 			const store = loadStore();
 			const filter = (args ?? "").trim().toLowerCase();
+			const values = dumpFilterValues(store);
+			// A filter neither the completion list nor the store offers is a typo, not an
+			// empty selection: name the values that exist instead of dumping nothing. The
+			// resolved form counts too, because the model branch below strips a provider
+			// prefix before matching.
+			const known = (name: string): boolean =>
+				values.some((v) => v.value.toLowerCase() === name);
+			if (filter && !isAudience(filter) && !known(filter) && !known(normalizeModel(filter))) {
+				ctx.ui.notify(
+					`Unknown filter "${filter}". Valid filters: ${values.map((v) => v.value).join(", ")}. No filter dumps the whole store.`,
+					"error",
+				);
+				return;
+			}
 			let entries = store.entries;
 			if (isAudience(filter)) {
 				entries = entries.filter((e) => e.audience === filter);
