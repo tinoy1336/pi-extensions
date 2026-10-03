@@ -51,9 +51,9 @@
  *
  * Every block is appended to the shared hook log
  * (~/.local/share/pi-hooks/log.jsonl, {ts, source, kind, detail}) which the
- * monthly pi-tool-burn report reads. Rows carry source "command-guard"; the
- * RAW-INPUT family was added to the extension formerly named bash-guard, and
- * "bash-guard" rows read the same way in the footer's counter.
+ * monthly pi-tool-burn report reads. Rows carry source "command-guard" for both
+ * families; the footer's counter also accepts the "bash-guard" source spelling,
+ * which rows already written to the shared log still carry.
  */
 
 import { type ExtensionAPI, isToolCallEventType } from "@earendil-works/pi-coding-agent";
