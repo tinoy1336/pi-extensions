@@ -1,3 +1,9 @@
+## [0.7.0](https://github.com/tinoy1336/pi-extensions/compare/canon-v0.6.2...canon-v0.7.0) (2026-10-03)
+
+### Features
+
+* **canon:** publish the reworked command surface ([7c3587c](https://github.com/tinoy1336/pi-extensions/commit/7c3587cb7b674f2f946f30f5f95db44c09f1cdba))
+
 ## [0.6.2](https://github.com/tinoy1336/pi-extensions/compare/canon-v0.6.1...canon-v0.6.2) (2026-09-29)
 
 ### Bug Fixes
