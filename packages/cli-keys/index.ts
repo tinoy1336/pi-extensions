@@ -347,11 +347,18 @@ let cacheWatch: FSWatcher | undefined;
  * never fetches — its writer just produced the generation being read. A directory that
  * does not exist yet (nothing has fetched) leaves the watch unarmed and the next
  * hydration retries it.
+ *
+ * The watch is UNREFERENCED. It still reports every event while the process runs —
+ * which is the whole feature — but it is not a handle the event loop waits on, so a
+ * run that has nothing else to do exits: a scripted `pi -p` run printed its answer and
+ * then sat in this watcher forever, because a ref'd watch is a live handle. The
+ * siblings that watch a state file (pi-focus-state, pi-pause) unref theirs for the same
+ * reason, and the process-exit probe asserts this property rather than trusting it.
  */
 function watchCache(): void {
 	if (cacheWatch || !CACHE_PATH) return;
 	try {
-		cacheWatch = watch(dirname(CACHE_PATH), (_event, filename) => {
+		cacheWatch = watch(dirname(CACHE_PATH), { persistent: false }, (_event, filename) => {
 			if (filename && filename !== basename(CACHE_PATH)) return;
 			hydrateAt("cache_change", "never");
 		});
