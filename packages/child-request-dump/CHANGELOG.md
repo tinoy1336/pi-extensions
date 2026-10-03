@@ -1,3 +1,9 @@
+## [0.3.1](https://github.com/tinoy1336/pi-extensions/compare/child-request-dump-v0.3.0...child-request-dump-v0.3.1) (2026-10-03)
+
+### Bug Fixes
+
+* **repo:** use the shared helpers instead of the copies ([473fa74](https://github.com/tinoy1336/pi-extensions/commit/473fa74d7de1aaebc4433e8d5716cad9cc3c66e0))
+
 ## [0.3.0](https://github.com/tinoy1336/pi-extensions/compare/child-request-dump-v0.2.0...child-request-dump-v0.3.0) (2026-09-26)
 
 ### Features
