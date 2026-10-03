@@ -27,6 +27,7 @@
 		"changelog": "git-cliff -o CHANGELOG.md",
 		"check:pack": "node scripts/check-pack.mjs",
 		"check:caveats": "node scripts/check-caveats.mjs",
+		"check:probes": "bash scripts/check-probes.sh",
 		"smoke": "bash scripts/smoke.sh",
 		"smoke:local": "bash scripts/smoke.sh --local",
 		"smoke:matrix": "bash scripts/smoke-matrix.sh",

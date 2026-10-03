@@ -30,6 +30,13 @@ jobs:
       - run: npm run lint
       - run: npm run check:pack
       - run: npm run check:caveats
+      # The package probes: every check surface that lives beside a package rather than
+      # in a workspace gate — the scope filter, the gate patterns, the message repair,
+      # the freeze, the claim. Each probe sets the scratch directory it needs before
+      # importing its module, so the job needs no agent tree, no runtime directory and
+      # no display; `scripts/check-probes.sh` bounds each one and names the two rigs
+      # that have their own jobs, and the packages whose checks are machine-bound.
+      - run: npm run check:probes
 
   smoke:
     name: smoke
