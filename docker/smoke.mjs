@@ -8,7 +8,9 @@
 //   1. the package manifest resolves and every path it names exists in the tarball;
 //   2. the extension loads with no loader error;
 //   3. the registered tool set is exactly the expected set, compared as a set;
-//   4. each tool's parameter schema is intact (names, order, required keys, types);
+//   4. each tool's parameter schema is intact (names, order, required keys), and every
+//      property is a string parameter — a plain string or a value restricted to a fixed
+//      set of string literals, which is a constrained string and not a different thing;
 //   5. the store reads and writes under a scratch agent directory, and only there;
 //   6. every refusal path answers with a refusal instead of throwing, and leaves the
 //      store untouched.
@@ -31,15 +33,15 @@ const EXPECTED_TOOLS = ["canon_add", "canon_category", "canon_edit", "canon_remo
 /** Parameter contract per tool: property names in declaration order, and required set. */
 const EXPECTED_PARAMS = {
 	canon_add: {
-		properties: ["text", "model", "audience", "category", "reason"],
+		properties: ["text", "model", "audience", "category"],
 		required: ["text", "model", "audience"],
 	},
-	canon_remove: { properties: ["id", "reason"], required: ["id"] },
+	canon_remove: { properties: ["id"], required: ["id"] },
 	canon_edit: {
-		properties: ["id", "text", "model", "audience", "category", "reason"],
+		properties: ["id", "text", "model", "audience", "category"],
 		required: ["id", "text"],
 	},
-	canon_category: { properties: ["op", "title", "description", "id"], required: ["op"] },
+	canon_category: { properties: ["op", "title", "id"], required: ["op"] },
 };
 
 const packages = ["@tinoy/pi-canon", "@tinoy/pi-ext-lib"];
@@ -124,6 +126,25 @@ record("registers exactly the expected tools", () => {
 
 // ---- 4. parameter schema --------------------------------------------------------
 
+/** A schema property that declares a string. A union of string literals counts: a value
+ *  restricted to a fixed set is a string parameter with a constraint on it, and which
+ *  strings are allowed is the schema's business rather than this check's. A number, an
+ *  object, an array, or a property declaring no type at all does NOT count. */
+function isStringParameter(property) {
+	const branches = property?.anyOf ?? property?.oneOf;
+	if (branches === undefined) return property?.type === "string";
+	return (
+		Array.isArray(branches) &&
+		branches.length > 0 &&
+		branches.every(
+			(branch) =>
+				branch?.type === "string" &&
+				(typeof branch.const === "string" ||
+					(Array.isArray(branch.enum) && branch.enum.every((value) => typeof value === "string"))),
+		)
+	);
+}
+
 for (const [name, expected] of Object.entries(EXPECTED_PARAMS)) {
 	record(`parameter shape: ${name}`, () => {
 		const tool = tools.get(name);
@@ -144,7 +165,7 @@ for (const [name, expected] of Object.entries(EXPECTED_PARAMS)) {
 		);
 		assert.deepEqual(schema.required ?? [], expected.required, `${name} required list differs`);
 		for (const [key, property] of Object.entries(schema.properties)) {
-			assert.equal(property.type, "string", `${name}.${key} is not a string parameter`);
+			assert.ok(isStringParameter(property), `${name}.${key} is not a string parameter`);
 			assert.ok(property.description?.length > 0, `${name}.${key} has no description`);
 		}
 		return expected.properties.join(", ");
