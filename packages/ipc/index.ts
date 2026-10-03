@@ -32,6 +32,7 @@ import {
 	IPC_REGISTRY_READY_EVENT,
 	type IpcEnvelope,
 	type IpcPresence,
+	messageOf,
 	peersWithNamespace,
 	processStartTicks,
 	readPeers,
@@ -132,10 +133,6 @@ function wire(pi: ExtensionAPI): void {
 		if (reported.has(key)) return;
 		reported.add(key);
 		hookLog(TOOL_NAME, kind, { reason });
-	}
-
-	function messageOf(error: unknown): string {
-		return error instanceof Error ? error.message : String(error);
 	}
 
 	function sessionId(): string | null {

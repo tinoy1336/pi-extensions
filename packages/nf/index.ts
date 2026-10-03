@@ -28,15 +28,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { argText, clip, type HeaderPart, hookLog, safeToolHeader } from "@tinoy/pi-ext-lib";
+import {
+	argText,
+	clip,
+	type HeaderPart,
+	hookLog,
+	isVisionModel,
+	safeToolHeader,
+} from "@tinoy/pi-ext-lib";
 import { Type } from "typebox";
 
 const FONT = "/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regular.ttf";
 const TOOL_NAME = "nf";
-/** Vision models this release ships with: the ids verified to read images. */
-const DEFAULT_VISION_MODEL_IDS = ["deepseek-flash", "glm-5.3-flash"];
-/** Operator setting: comma- or space-separated model ids appended to the defaults. */
-const VISION_MODELS_SETTING = "PI_VISION_MODELS";
 const SEARCH_LIMIT = 40;
 const SHEET_MAX_CELLS = 48;
 const AUDIT_SKIP_DIRS = new Set(["node_modules", "@girs", "dist", ".git", "build", "target"]);
@@ -61,21 +64,6 @@ function assignedSet(): Set<string> {
 	const set = new Set<string>();
 	for (const c of Object.values(cache ?? {})) set.add(c.toLowerCase());
 	return set;
-}
-
-/** The configured vision list: the shipped defaults plus the setting. */
-function visionModelIds(): string[] {
-	const configured = process.env[VISION_MODELS_SETTING] ?? "";
-	const extra = configured.split(/[,\s]+/).filter(Boolean);
-	return [...new Set([...DEFAULT_VISION_MODEL_IDS, ...extra])];
-}
-
-function isVisionModel(model: { provider: string; id: string } | undefined): boolean {
-	if (!model) return false;
-	return visionModelIds().some(
-		(id) =>
-			model.id === id || model.id.startsWith(`${id}-`) || `${model.provider}/${model.id}` === id,
-	);
 }
 
 function escapeCode(raw: string): string {

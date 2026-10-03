@@ -45,7 +45,7 @@
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { hookLog } from "@tinoy/pi-ext-lib";
+import { answeredId, declaredIds, hookLog } from "@tinoy/pi-ext-lib";
 
 interface WireMessage {
 	role?: unknown;
@@ -56,48 +56,6 @@ interface WireMessage {
 	tool_calls?: unknown;
 	toolCalls?: unknown;
 	content?: unknown;
-}
-
-/** The tool-call ids an assistant message declares, across the shapes providers use. */
-function callsOf(m: WireMessage): Set<string> {
-	const ids = new Set<string>();
-	const push = (v: unknown): void => {
-		if (typeof v === "string") ids.add(v);
-	};
-	if (Array.isArray(m.tool_calls))
-		for (const tc of m.tool_calls) push((tc as { id?: unknown })?.id);
-	if (Array.isArray(m.toolCalls)) for (const tc of m.toolCalls) push((tc as { id?: unknown })?.id);
-	if (Array.isArray(m.content)) {
-		for (const part of m.content as Array<{
-			type?: unknown;
-			id?: unknown;
-			toolCallId?: unknown;
-			tool_use_id?: unknown;
-		}>) {
-			if (part?.type === "toolCall" || part?.type === "tool_use" || part?.type === "function") {
-				push(part.id ?? part.toolCallId ?? part.tool_use_id);
-			}
-		}
-	}
-	return ids;
-}
-
-/** The tool-call id a result answers, across the shapes providers use. */
-function resultIdOf(m: WireMessage): string | null {
-	if (typeof m.tool_call_id === "string") return m.tool_call_id;
-	if (Array.isArray(m.content)) {
-		for (const part of m.content as Array<{
-			type?: unknown;
-			toolCallId?: unknown;
-			tool_use_id?: unknown;
-		}>) {
-			if (part?.type === "toolResult" || part?.type === "tool_result") {
-				const id = part.toolCallId ?? part.tool_use_id;
-				if (typeof id === "string") return id;
-			}
-		}
-	}
-	return null;
 }
 
 export default function (pi: ExtensionAPI): void {
@@ -126,12 +84,12 @@ export default function (pi: ExtensionAPI): void {
 			let replaced = 0;
 			for (const m of messages) {
 				if (m?.role === "assistant") {
-					runIds = callsOf(m);
+					runIds = new Set(declaredIds(m));
 					kept.push(m);
 					continue;
 				}
 				if (m?.role === "tool") {
-					const id = resultIdOf(m);
+					const id = answeredId(m);
 					// No readable id: not validatable either way, so the previous tolerance
 					// stands inside an open run. This carve-out is a KNOWN FALSE NEGATIVE —
 					// a tool message that carries no id is rejected by the provider however

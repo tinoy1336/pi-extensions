@@ -17,6 +17,9 @@
 	"keywords": [
 		"pi-package"
 	],
+	"dependencies": {
+		"@tinoy/pi-ext-lib": "*"
+	},
 	"files": [
 		"index.ts",
 		"README.md",

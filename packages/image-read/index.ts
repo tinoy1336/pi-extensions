@@ -10,7 +10,7 @@
  *
  * Registered for every session and ACTIVE by default, so the gate only has to
  * NARROW: it removes the tool in sessions whose model cannot read images.
- * The vision list is the DEFAULT_VISION_MODEL_IDS set plus whatever the
+ * The vision list is the the built-in set set plus whatever the
  * `PI_VISION_MODELS` setting adds, so a session whose model is not in the
  * built-in list is one setting away from working instead of one release away.
  *
@@ -28,15 +28,11 @@ import {
 	clip,
 	type HeaderPart,
 	hookLog,
+	isVisionModel,
 	safeToolHeader,
 } from "@tinoy/pi-ext-lib";
 import { Type } from "typebox";
 
-/** Vision models this release ships with: the ids verified to read images. */
-const DEFAULT_VISION_MODEL_IDS = ["glm-5.3-flash", "deepseek-flash"];
-/** Operator setting: comma- or space-separated model ids appended to the defaults,
- *  each either a bare model id (`my-model`) or `provider/model-id`. */
-const VISION_MODELS_SETTING = "PI_VISION_MODELS";
 const TOOL_NAME = "image_read";
 const DEFAULT_MAX_PX = 1024;
 // A fixed guess, not a measurement: above this size, and only for an opaque PNG,
@@ -67,21 +63,6 @@ const MIME: Record<string, string> = {
 	".gif": "image/gif",
 	".bmp": "image/bmp",
 };
-
-/** The configured vision list: the shipped defaults plus the setting. */
-function visionModelIds(): string[] {
-	const configured = process.env[VISION_MODELS_SETTING] ?? "";
-	const extra = configured.split(/[,\s]+/).filter(Boolean);
-	return [...new Set([...DEFAULT_VISION_MODEL_IDS, ...extra])];
-}
-
-function isVisionModel(model: { provider: string; id: string } | undefined): boolean {
-	if (!model) return false;
-	return visionModelIds().some(
-		(id) =>
-			model.id === id || model.id.startsWith(`${id}-`) || `${model.provider}/${model.id}` === id,
-	);
-}
 
 /** One `magick` invocation, with an absent or failing binary reported as data. */
 async function magick(

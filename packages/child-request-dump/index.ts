@@ -33,17 +33,11 @@
  * the append is asynchronous so no request waits on the file.
  */
 import { appendFile, mkdirSync, rename, statSync } from "node:fs";
-import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { answeredId, declaredIds, stateLogPath } from "@tinoy/pi-ext-lib";
 
 const CAP_BYTES = 256 * 1024;
-
-function logPath(): string {
-	if (process.env.PI_CHILD_REQUEST_DUMP) return process.env.PI_CHILD_REQUEST_DUMP;
-	const state = process.env.XDG_STATE_HOME ?? join(homedir(), ".local", "state");
-	return join(state, "pi", "child-request-dump.jsonl");
-}
 
 /** The wire shapes differ by provider, so both spellings are read. */
 interface WireMessage {
@@ -52,51 +46,6 @@ interface WireMessage {
 	tool_calls?: unknown;
 	toolCalls?: unknown;
 	content?: unknown;
-}
-
-/** The tool-call ids an assistant message declares. */
-function declaredIds(m: WireMessage): string[] {
-	const ids: string[] = [];
-	const push = (v: unknown): void => {
-		if (typeof v === "string" && v !== "") ids.push(v);
-	};
-	if (Array.isArray(m.tool_calls)) {
-		for (const tc of m.tool_calls) push((tc as { id?: unknown })?.id);
-	}
-	if (Array.isArray(m.toolCalls)) {
-		for (const tc of m.toolCalls) push((tc as { id?: unknown })?.id);
-	}
-	if (Array.isArray(m.content)) {
-		for (const part of m.content as Array<{
-			type?: unknown;
-			id?: unknown;
-			toolCallId?: unknown;
-			tool_use_id?: unknown;
-		}>) {
-			if (part?.type === "toolCall" || part?.type === "tool_use" || part?.type === "function") {
-				push(part.id ?? part.toolCallId ?? part.tool_use_id);
-			}
-		}
-	}
-	return ids;
-}
-
-/** The tool-call id a result message answers, null when it carries none. */
-function answeredId(m: WireMessage): string | null {
-	if (typeof m.tool_call_id === "string") return m.tool_call_id;
-	if (Array.isArray(m.content)) {
-		for (const part of m.content as Array<{
-			type?: unknown;
-			toolCallId?: unknown;
-			tool_use_id?: unknown;
-		}>) {
-			if (part?.type === "toolResult" || part?.type === "tool_result") {
-				const id = part.toolCallId ?? part.tool_use_id;
-				if (typeof id === "string") return id;
-			}
-		}
-	}
-	return null;
 }
 
 /** One row entry per message that carries a call or a result. */
@@ -189,7 +138,7 @@ export default function (pi: ExtensionAPI): void {
 	// PI_SUBAGENT_CHILD, the pi-subagent wrapper exports PI_SUBAGENT.
 	if (process.env.PI_SUBAGENT_CHILD !== "1" && process.env.PI_SUBAGENT !== "1") return;
 
-	const PATH = logPath();
+	const PATH = stateLogPath("child-request-dump.jsonl", process.env.PI_CHILD_REQUEST_DUMP);
 	const ROTATED = `${PATH}.1`;
 
 	try {

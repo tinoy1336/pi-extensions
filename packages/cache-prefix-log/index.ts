@@ -48,17 +48,11 @@
 
 import { createHash } from "node:crypto";
 import { appendFile, mkdirSync, rename, statSync } from "node:fs";
-import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { stateLogPath } from "@tinoy/pi-ext-lib";
 
 const CAP_BYTES = 256 * 1024;
-
-function logPath(): string {
-	if (process.env.PI_CACHE_PREFIX_LOG) return process.env.PI_CACHE_PREFIX_LOG;
-	const state = process.env.XDG_STATE_HOME ?? join(homedir(), ".local", "state");
-	return join(state, "pi", "cache-prefix-log.jsonl");
-}
 
 function sha(s: string): string {
 	return createHash("sha256").update(s).digest("hex").slice(0, 16);
@@ -91,7 +85,7 @@ interface Prefix {
 }
 
 export default function (pi: ExtensionAPI) {
-	const PATH = logPath();
+	const PATH = stateLogPath("cache-prefix-log.jsonl", process.env.PI_CACHE_PREFIX_LOG);
 	const ROTATED = `${PATH}.1`;
 
 	/**
