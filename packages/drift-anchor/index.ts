@@ -91,6 +91,10 @@
  *  - pressure (E1, opt-in)  — ctx.getContextUsage() ≥ warnAtPct; fires at
  *                most twice per session.
  *
+ * The ids O1/P1/E1 label these hooks here and nowhere else: no persisted row,
+ * no log line and no config key carries one, so a row that names a hook names
+ * it `register`, `toolChurn` or `pressure`.
+ *
  * Fail-open everywhere: a bug here must never crash pi or corrupt a turn.
  * Every handler is wrapped in try/catch and defaults to doing nothing.
  */
@@ -263,12 +267,6 @@ function blockedRepeatLine(caps?: AnchorCaps): string {
 	return `Blocked tools repeating — switch to the redirect's tool now: read (not cat/sed -n/head/tail), ${checker}, ${search}. The block already cost a turn; the next repeat costs another.`;
 }
 
-// Rule-not-verdict hook lines: state the rule, never "you did X wrong".
-const CHURN_LINE =
-	"Tools are piling up without landing anywhere. Name in one line what the last tool bought you, then either commit it somewhere durable or report.";
-const PRESSURE_LINE =
-	"Context is filling up. Land what you have — write the durable artifact now, then hand the rest off.";
-
 // ── Drift state (module-lifetime; survives across turns of a session) ───────
 interface DriftState {
 	turn: number;
@@ -364,8 +362,6 @@ interface DriftResult {
 	markerMissing: boolean;
 	registerDrift: boolean;
 	ratio: number;
-	hasThinking: boolean;
-	hasText: boolean;
 	textHasBody: boolean;
 }
 
@@ -425,7 +421,7 @@ function detectDrift(msg: {
 	const textHasBody = textChars >= TEXT_MIN_FOR_RATIO;
 	const ratio = textChars > 0 ? thinkChars / textChars : 0;
 
-	return { markerMissing, registerDrift, ratio, hasThinking, hasText, textHasBody };
+	return { markerMissing, registerDrift, ratio, textHasBody };
 }
 
 // Block-result markers: the distinct texts our block layers emit
@@ -518,8 +514,10 @@ export default function (pi: ExtensionAPI): void {
 	// Persistence: restore the anchor on session start (compaction/reload-safe).
 	pi.on("session_start", async (_event, ctx) => {
 		try {
+			// `phrase` is required rather than optional: the scan below takes a row only
+			// when it carries one, so a restored anchor always has its phrase.
 			let restored:
-				| { phrase?: string; hooks?: AnchorHooks; version?: number; pressureFires?: number }
+				| { phrase: string; hooks?: AnchorHooks; version?: number; pressureFires?: number }
 				| undefined;
 			for (const entry of ctx.sessionManager.getEntries()) {
 				const e = entry as { type?: string; customType?: string; data?: any };
@@ -533,7 +531,7 @@ export default function (pi: ExtensionAPI): void {
 			}
 			if (restored) {
 				sessionAnchor = {
-					phrase: restored.phrase!,
+					phrase: restored.phrase,
 					hooks: restored.hooks ?? {},
 					version: restored.version ?? ANCHOR_SCHEMA_VERSION,
 					lastChurnInjectTurn: -Infinity,
@@ -566,7 +564,7 @@ export default function (pi: ExtensionAPI): void {
 	// Detection: read-only, on the finalized assistant message. Never rewrite
 	// the thinking block — message_end replacement relabels, it does not
 	// re-generate, and a doctored chain-of-thought corrupts replay.
-	pi.on("message_end", (event, ctx) => {
+	pi.on("message_end", (event) => {
 		try {
 			if (!readConfig().enabled) return;
 			const msg = event.message as {
@@ -626,7 +624,7 @@ export default function (pi: ExtensionAPI): void {
 	});
 
 	// Tool-result observers: toolChurn counts + blockedToolRepeat marker match.
-	pi.on("tool_execution_end", (event, ctx) => {
+	pi.on("tool_execution_end", (event) => {
 		try {
 			const ev = event as {
 				toolCallId?: string;
