@@ -375,7 +375,6 @@ function detectDrift(msg: {
 	const textBlocks = content.filter((c) => c.type === "text");
 
 	const hasThinking = thinkBlocks.length > 0;
-	const hasText = textBlocks.length > 0;
 
 	// Marker check (R10): case- and punctuation-normalized — a lowercase
 	// "caveman mode" without the period is a hit, not a false miss.
@@ -665,6 +664,11 @@ export default function (pi: ExtensionAPI): void {
 			if (!Array.isArray(messages) || messages.length === 0 || state.turn === 0) return;
 
 			const hooks = sessionAnchor?.hooks;
+			// The hook blocks below read and write the anchor's own counters. The
+			// guard they carry is not redundant: a hook config exists only inside the
+			// anchor, so reading one from it proves the anchor is there — which is what
+			// lets the fire closures below write to it without an assertion.
+			const anchor = sessionAnchor;
 
 			// R3: per-turn cap of 1 injected line. Candidates are computed
 			// READ-ONLY (state mutations live inside the fire() closures, so a
@@ -793,9 +797,10 @@ export default function (pi: ExtensionAPI): void {
 			// PRESSURE_MAX_PER_SESSION fires).
 			const pressureCfg = hooks?.pressure;
 			if (
+				anchor &&
 				pressureCfg &&
-				sessionAnchor!.pressureFires < PRESSURE_MAX_PER_SESSION &&
-				state.turn - sessionAnchor!.lastPressureInjectTurn >= cfg.minTurnsSinceInject &&
+				anchor.pressureFires < PRESSURE_MAX_PER_SESSION &&
+				state.turn - anchor.lastPressureInjectTurn >= cfg.minTurnsSinceInject &&
 				state.turn - state.lastInjectTurn >= cfg.minTurnsSinceInject // global one-injection gap (same as canon/blocked)
 			) {
 				try {
@@ -813,8 +818,8 @@ export default function (pi: ExtensionAPI): void {
 								"second-to-last",
 								"pressure",
 							);
-							sessionAnchor!.lastPressureInjectTurn = state.turn;
-							sessionAnchor!.pressureFires++;
+							anchor.lastPressureInjectTurn = state.turn;
+							anchor.pressureFires++;
 							stats.pressureFires++;
 						});
 					}
@@ -826,8 +831,9 @@ export default function (pi: ExtensionAPI): void {
 			// Rank 3 — toolChurn (opt-in via set_anchor).
 			const churnCfg = hooks?.toolChurn;
 			if (
+				anchor &&
 				churnCfg &&
-				state.turn - sessionAnchor!.lastChurnInjectTurn >= cfg.minTurnsSinceInject &&
+				state.turn - anchor.lastChurnInjectTurn >= cfg.minTurnsSinceInject &&
 				state.turn - state.lastInjectTurn >= cfg.minTurnsSinceInject // global one-injection gap (same as canon/blocked)
 			) {
 				const windowTurns = churnCfg.windowTurns ?? CHURN_WINDOW_TURNS;
@@ -849,7 +855,7 @@ export default function (pi: ExtensionAPI): void {
 							"second-to-last",
 							"churn",
 						);
-						sessionAnchor!.lastChurnInjectTurn = state.turn;
+						anchor.lastChurnInjectTurn = state.turn;
 						stats.churnFires++;
 					});
 				}
