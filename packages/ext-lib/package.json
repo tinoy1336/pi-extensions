@@ -21,9 +21,13 @@
 		"src/hook-log.ts",
 		"src/index.ts",
 		"src/ipc.ts",
+		"src/message.ts",
 		"src/neighbour.ts",
+		"src/state-log.ts",
 		"src/system-prompt.ts",
 		"src/tool-header.ts",
+		"src/vision-models.ts",
+		"src/wire.ts",
 		"CONTRACT.md",
 		"README.md",
 		"LICENSE"

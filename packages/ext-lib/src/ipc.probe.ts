@@ -206,9 +206,12 @@ console.log("the contract strings");
 	check("the text cap is 32 KiB", ipc.IPC_TEXT_CAP === 32768, String(ipc.IPC_TEXT_CAP));
 	const source = readFileSync(new URL("./ipc.ts", import.meta.url), "utf8");
 	const specifiers = [...source.matchAll(/from\s+"([^"]+)"/g)].map((match) => match[1]);
+	// A sibling module of THIS package is not a dependency: what the transport has to
+	// stay free of is anything outside it, so the rule is builtins plus its own files.
 	check(
-		"the transport imports node builtins only",
-		specifiers.length > 0 && specifiers.every((specifier) => specifier.startsWith("node:")),
+		"the transport imports node builtins and its own modules only",
+		specifiers.length > 0 &&
+			specifiers.every((specifier) => specifier.startsWith("node:") || specifier.startsWith("./")),
 		specifiers.join(", "),
 	);
 }

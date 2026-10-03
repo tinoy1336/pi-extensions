@@ -22,6 +22,7 @@
  * differ), and a second call site in one package reuses the first resolution.
  */
 import { hookLog } from "./hook-log.ts";
+import { messageOf } from "./message.ts";
 
 /** What a call site states so an absence is actionable rather than merely visible. */
 export interface NeighbourReport {
@@ -41,10 +42,6 @@ const reported = new Set<string>();
 
 function keyOf(source: string, neighbour: string): string {
 	return `${source}\u0000${neighbour}`;
-}
-
-function messageOf(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
 }
 
 /**

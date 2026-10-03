@@ -3,6 +3,9 @@
  *
  * This is the package's whole public API. Every module here is host-agnostic:
  * no extension's policy, no extension's store path, no extension's tool schema.
+ * The one path helper that is here (`stateLogPath`) is the convention every
+ * recorder in the workspace shares — the state directory plus a file name the
+ * caller supplies — not any package's own store.
  *
  * `hook-log.ts` and `tool-header.ts` are verbatim copies of the live extension
  * sources (a single `cp`, never edited in place here) — the second consumer of
@@ -39,7 +42,9 @@ export {
 	sweepStale,
 	writePresence,
 } from "./ipc.ts";
+export { messageOf } from "./message.ts";
 export { type NeighbourReport, optionalNeighbour } from "./neighbour.ts";
+export { stateDir, stateLogPath } from "./state-log.ts";
 export {
 	canonicalSystemPrompt,
 	PROMPT_APPEND_SEP,
@@ -55,3 +60,10 @@ export {
 	renderToolHeader,
 	safeToolHeader,
 } from "./tool-header.ts";
+export {
+	DEFAULT_VISION_MODEL_IDS,
+	isVisionModel,
+	VISION_MODELS_SETTING,
+	visionModelIds,
+} from "./vision-models.ts";
+export { answeredId, declaredIds, type WireMessage } from "./wire.ts";

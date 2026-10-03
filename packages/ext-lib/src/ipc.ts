@@ -43,6 +43,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { messageOf } from "./message.ts";
 
 /** The transport's directory under `$XDG_RUNTIME_DIR`. Runtime-scoped: it dies with the login. */
 const ROOT_NAME = "pi-ipc";
@@ -127,10 +128,6 @@ const ID_PATTERN = /^[A-Za-z0-9._-]{1,128}$/;
 
 function refusal(reason: string): IpcRefusal {
 	return { ok: false, reason };
-}
-
-function messageOf(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
 }
 
 function isNonEmpty(value: unknown): value is string {
