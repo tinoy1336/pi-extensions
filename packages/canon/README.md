@@ -20,6 +20,7 @@ pi install npm:@tinoy/pi-canon
 ## What it does
 
 - **Store** — `~/.pi/agent/canon/canon.json`: `{entries: [{id, text, model, audience, category?}], categories: [{id, title}]}`. Written atomically; a missing or corrupt store reads as empty, and a field the shape no longer defines is dropped when the store is read.
+- **Upgrading a store written by an earlier version** — an entry's retired `reason` and a category's retired `description` are dropped when the store is read, so nothing prints them, and they are absent from the file at the next write. A session that only lists, renders or receives notices never writes, so the file keeps them until something changes it.
 - **Tools** — `canon_add`, `canon_remove`, `canon_edit`, `canon_category`.
 - **Commands** — `/canon` (list, add, remove, edit, category management). With no argument it prints exactly the block this session receives; `list` prints the same thing, and a scope argument (an audience word or a model id) prints the block that scope receives instead.
 - **Injection** — the block is appended at `before_agent_start` and re-normalized on every provider request, so a run started by an injected message carries the same bytes as an interactive prompt.
@@ -33,7 +34,7 @@ pi install npm:@tinoy/pi-canon
 
 | Export | What it is |
 | --- | --- |
-| default | the pi extension factory — the hooks, the four tools and the two commands |
+| default | the pi extension factory — the hooks, the four tools and the command |
 | `setTailSection(id, text)` | contribute a tail section, replaced per id |
 | `registeredSectionIds()` | the ids currently registered |
 
