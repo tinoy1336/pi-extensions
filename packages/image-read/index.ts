@@ -106,7 +106,7 @@ function register(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: TOOL_NAME,
 		label: "Image Read",
-		description: `Read an image file with token-cost control. Downscales the long edge to max px (default ${DEFAULT_MAX_PX}) and returns the image directly — do NOT follow up with the read tool. Use crop ("WxH+X+Y") when only part of the image matters (tokens scale with pixel area). Set max=0 only for pixel-precise inspection (small text, exact colors) — full-res images cost ~5.4k tokens per 2048px. Returns original vs final dimensions, file sizes, and an estimated token count.`,
+		description: `Read an image file with token-cost control. Downscales the long edge to max px (default ${DEFAULT_MAX_PX}) and returns the image directly — do NOT follow up with the read tool. Use crop ("WxH+X+Y") when only part of the image matters (tokens scale with pixel area). Set max=0 only for pixel-precise inspection (small text, exact colours) — full-res images cost ~5.4k tokens per 2048px. Returns original vs final dimensions, file sizes, and an estimated token count.`,
 		promptSnippet:
 			"Read images with automatic downscale/crop + token estimate (vision models only)",
 		promptGuidelines: [

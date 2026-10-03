@@ -5,7 +5,7 @@
  * per-command and/or collective justifications. Approval flow, in order:
  *
  * 1. PRIMARY — the desktop approval window (promptd, owned on the session bus as
- *    `io.Astal.<instance>`): one centered window shows the command list +
+ *    `io.Astal.<instance>`): one centred window shows the command list +
  *    justifications + a masked password field. The password is
  *    validated INSIDE promptd (`sudo -S -v`, window stays open on wrong
  *    attempts, red text until edited, max 3); on success promptd writes it to

@@ -22,7 +22,7 @@
  * variables are removed before the build's own children (postinstalls, package
  * scripts) can inherit them and leak worker identity into a log.
  *
- * Behavior:
+ * Behaviour:
  *   - Full stdout+stderr streamed to a log file under the worker's root (or
  *     /tmp/pi-build-logs for a non-crew caller, with the pid in the name so two
  *     concurrent builds cannot clobber each other's log).
