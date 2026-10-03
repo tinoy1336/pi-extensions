@@ -31,11 +31,11 @@
 # touch the machine — the day one of them grows a probe, add it here and say in its
 # header what it needs.
 #
-# `image-read` IS in the list: it needs the `magick` binary, which the runner's standard
-# image ships, and it synthesises its own fixture under a scratch directory rather than
-# opening any picture that belongs to anyone. On a machine without ImageMagick it fails
-# with the tool's own install message, which is the actionable answer rather than a
-# silent skip.
+# `image-read` IS in the list, and it needs NO external tool: this runner's image carries
+# no ImageMagick, so the probe writes its own PNG from `zlib` and answers the tool's
+# `magick` calls itself — the fixture is real bytes, and the dimensions it asserts are read
+# back out of them. A probe that genuinely needs a binary cannot run here: if one ever
+# does, leave it out of this list and name it above with what it would need.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
