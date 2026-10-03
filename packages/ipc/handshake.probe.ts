@@ -110,7 +110,6 @@ async function peer(): Promise<void> {
 			const before = channels.size;
 			recorder.events.emit("intercom:extension-register", {
 				namespace,
-				ownerEligible: false,
 				onEvent: (event: BusDelivery) => busReceived.push(event),
 				onReady: (channel: ChannelLike) => channels.set(namespace, channel),
 			});

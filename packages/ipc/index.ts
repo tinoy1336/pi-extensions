@@ -71,7 +71,6 @@ interface IpcChannel {
 /** What another extension emits on the bus to be handed a channel. */
 interface NamespaceRegistration {
 	namespace: string;
-	ownerEligible?: boolean;
 	onEvent?: (event: { type: string; fromSessionId?: string; payload?: unknown }) => void;
 	onReady?: (channel: IpcChannel) => void;
 }

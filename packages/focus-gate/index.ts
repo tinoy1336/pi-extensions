@@ -111,7 +111,6 @@ interface FocusChannel {
 
 interface FocusRegistration {
 	namespace: string;
-	ownerEligible: boolean;
 	onEvent(event: { type: string; fromSessionId?: string; payload?: unknown }): void;
 	onReady(readyChannel: FocusChannel): void;
 }
@@ -519,7 +518,6 @@ export default function (pi: ExtensionAPI): void {
 
 	const registration: FocusRegistration = {
 		namespace: NAMESPACE,
-		ownerEligible: false,
 		onEvent(event) {
 			if (event.type !== "message" || typeof event.fromSessionId !== "string") return;
 			// Never echo our own toggle back into our own stream.

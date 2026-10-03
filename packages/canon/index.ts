@@ -137,7 +137,6 @@ interface CanonChannel {
 
 interface CanonRegistration {
 	namespace: string;
-	ownerEligible: boolean;
 	onEvent(event: {
 		type: string;
 		fromSessionId?: string;
@@ -769,7 +768,6 @@ export default function (pi: ExtensionAPI) {
 
 	const registration: CanonRegistration = {
 		namespace: NAMESPACE,
-		ownerEligible: false,
 		onEvent(event: {
 			type: string;
 			fromSessionId?: string;
