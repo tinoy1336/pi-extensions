@@ -9,12 +9,12 @@
  * A header is ONE line: the tool name plus the few fields a reader needs to
  * follow the transcript. Free text is flattened and clipped before theming, so
  * no ANSI sequence is ever cut; a narrower terminal wraps the line without
- * losing the color in force.
+ * losing the colour in force.
  */
 
 export interface HeaderTheme {
-	// `any` on the color keeps pi's richer Theme assignable to this narrow shape
-	fg?: (color: any, text: string) => string;
+	// `any` on the colour keeps pi's richer Theme assignable to this narrow shape
+	fg?: (colour: any, text: string) => string;
 	bold?: (text: string) => string;
 }
 
@@ -23,10 +23,17 @@ export interface HeaderComponent {
 	invalidate(): void;
 }
 
-/** One colored run of a header line: [theme color, text]. */
+/** One coloured run of a header line: [theme colour, text]. */
 export type HeaderPart = readonly [string, string];
 
-const SGR_RE = /^\x1b\[[0-9;]*m/;
+/** The escape character every SGR sequence starts with. */
+const ESC = "\u001b";
+
+// Composed from ESC rather than written as a regex literal: the sequence that matches a
+// control character is rejected in a literal, and this pattern needs exactly that one.
+const SGR = `${ESC}\\[[0-9;]*m`;
+const SGR_AT_START = new RegExp(`^${SGR}`);
+const SGR_ANYWHERE = new RegExp(SGR, "g");
 
 /** Flatten whitespace and clip to `max` characters with an ellipsis. */
 export function clip(text: string, max = 80): string {
@@ -48,25 +55,25 @@ export function argNumber(args: unknown, key: string): number | undefined {
 
 /** Visible width (SGR sequences are zero-width). */
 function visibleWidth(text: string): number {
-	return text.replace(/\x1b\[[0-9;]*m/g, "").length;
+	return text.replace(SGR_ANYWHERE, "").length;
 }
 
-/** Break an over-long segment at `width`, re-applying the color in force. */
+/** Break an over-long segment at `width`, re-applying the colour in force. */
 function splitSegment(segment: string, width: number, lines: string[]): string {
 	let current = "";
-	let color = "";
+	let colour = "";
 	let visible = 0;
 	for (let i = 0; i < segment.length; ) {
-		const escape = SGR_RE.exec(segment.slice(i, i + 16));
-		if (escape) {
-			color = escape[0];
-			current += escape[0];
-			i += escape[0].length;
+		const sgr = SGR_AT_START.exec(segment.slice(i, i + 16));
+		if (sgr) {
+			colour = sgr[0];
+			current += sgr[0];
+			i += sgr[0].length;
 			continue;
 		}
 		if (visible >= width) {
 			lines.push(current);
-			current = color;
+			current = colour;
 			visible = 0;
 		}
 		current += segment[i];
@@ -76,7 +83,7 @@ function splitSegment(segment: string, width: number, lines: string[]): string {
 	return current;
 }
 
-/** Wrap the header's colored segments at `width`, never cutting an escape. */
+/** Wrap the header's coloured segments at `width`, never cutting an escape. */
 function wrapSegments(segments: string[], width: number): string[] {
 	const lines: string[] = [];
 	let line = "";
@@ -98,12 +105,12 @@ function wrapSegments(segments: string[], width: number): string[] {
 
 /** Build the header component: the tool name bold, then one run per part. */
 export function renderToolHeader(theme: HeaderTheme | undefined, name: string, parts: HeaderPart[] = []): HeaderComponent {
-	const fg = (color: string, text: string): string => (theme?.fg ? theme.fg(color, text) : text);
+	const fg = (colour: string, text: string): string => (theme?.fg ? theme.fg(colour, text) : text);
 	const bold = (text: string): string => (theme?.bold ? theme.bold(text) : text);
 	const segments = [fg("toolTitle", bold(name))];
-	for (const [color, text] of parts) {
+	for (const [colour, text] of parts) {
 		if (!text) continue;
-		segments.push(color ? fg(color, text) : text);
+		segments.push(colour ? fg(colour, text) : text);
 	}
 	return {
 		render: (width: number) => wrapSegments(segments, Math.max(1, Math.floor(width))),

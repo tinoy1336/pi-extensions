@@ -1,4 +1,7 @@
 node_modules/
+# Scratch pi prefix from a probe run: it carries symlinks into the installed agent tree,
+# so the linter and git would both follow it out of the repository.
+.probe-prefix/
 *.tsbuildinfo
 dist/
 *.log

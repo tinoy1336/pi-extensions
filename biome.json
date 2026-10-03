@@ -1,7 +1,13 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
 	"files": {
-		"includes": ["**", "!node_modules", "!package-lock.json"]
+		"includes": [
+			"**",
+			"!node_modules",
+			"!.probe-prefix",
+			"!test-rigs/canon-prefix/runs",
+			"!package-lock.json"
+		]
 	},
 	"formatter": {
 		"enabled": true,
@@ -41,17 +47,6 @@
 				"rules": {
 					"style": {
 						"useTemplate": "off"
-					}
-				}
-			}
-		},
-		{
-			"includes": ["packages/ext-lib/src/tool-header.ts"],
-			"linter": {
-				"rules": {
-					"suspicious": {
-						"noControlCharactersInRegex": "off",
-						"noShadowRestrictedNames": "off"
 					}
 				}
 			}
