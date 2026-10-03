@@ -34,6 +34,7 @@ type Window = "peak" | "valley";
 type CostModule = {
 	remainingLabel: (at?: Date) => string;
 	windowAt: (at?: Date) => Window;
+	windowEndAt: (at?: Date) => Date;
 	windowLabel: (w: Window, at?: Date) => string;
 };
 
@@ -42,10 +43,10 @@ if (!existsSync(modulePath))
 	abort(`no module under test at ${modulePath} (COST_RIG_MODULE overrides the path).`);
 
 const mod = (await import(pathToFileURL(modulePath).href)) as Partial<CostModule>;
-for (const name of ["remainingLabel", "windowAt", "windowLabel"] as const) {
+for (const name of ["remainingLabel", "windowAt", "windowEndAt", "windowLabel"] as const) {
 	if (typeof mod[name] !== "function") abort(`${modulePath} does not export ${name}.`);
 }
-const { remainingLabel, windowAt, windowLabel } = mod as CostModule;
+const { remainingLabel, windowAt, windowEndAt, windowLabel } = mod as CostModule;
 
 process.stdout.write(`module under test: ${modulePath}\n`);
 
@@ -119,6 +120,73 @@ check(
 	windowLabel("peak", bjt(2026, 6, 8, 11, 0, 1)),
 	`${PEAK_GLYPH} 59m 59s`,
 );
+
+// ── The window rule at its boundaries ────────────────────────────────────────
+// The split decides the RATE, so an off-by-one at 09:00, 12:00, 14:00 or 18:00
+// bills one window at the other's price, and the weekend rule decides two whole
+// days of it. These are the instants the sweep passes over.
+const splits: { name: string; at: Date; want: Window }[] = [
+	{
+		name: "the last second before the morning peak",
+		at: bjt(2026, 6, 8, 8, 59, 59),
+		want: "valley",
+	},
+	{ name: "the first second of the morning peak", at: bjt(2026, 6, 8, 9, 0, 0), want: "peak" },
+	{ name: "the last second of the morning peak", at: bjt(2026, 6, 8, 11, 59, 59), want: "peak" },
+	{ name: "the first second of the noon gap", at: bjt(2026, 6, 8, 12, 0, 0), want: "valley" },
+	{
+		name: "the last second before the afternoon peak",
+		at: bjt(2026, 6, 8, 13, 59, 59),
+		want: "valley",
+	},
+	{ name: "the first second of the afternoon peak", at: bjt(2026, 6, 8, 14, 0, 0), want: "peak" },
+	{ name: "the last second of the afternoon peak", at: bjt(2026, 6, 8, 17, 59, 59), want: "peak" },
+	{ name: "the first second after it", at: bjt(2026, 6, 8, 18, 0, 0), want: "valley" },
+	{ name: "midnight of a weekday", at: bjt(2026, 6, 8, 0, 0, 0), want: "valley" },
+	{
+		name: "a Friday evening just before the weekend",
+		at: bjt(2026, 6, 5, 19, 0, 0),
+		want: "valley",
+	},
+	{ name: "a Saturday inside the peak hours", at: bjt(2026, 6, 6, 10, 0, 0), want: "valley" },
+	{ name: "a Sunday inside the peak hours", at: bjt(2026, 6, 7, 15, 0, 0), want: "valley" },
+];
+for (const c of splits) check(`windowAt — ${c.name}`, windowAt(c.at), c.want);
+
+// The reset the footer counts down to: the end of the window in force.
+const ends: { name: string; at: Date; want: Date }[] = [
+	{ name: "inside the morning peak", at: bjt(2026, 6, 8, 10, 30), want: bjt(2026, 6, 8, 12, 0) },
+	{ name: "inside the afternoon peak", at: bjt(2026, 6, 8, 15, 0), want: bjt(2026, 6, 8, 18, 0) },
+	{ name: "in the noon gap", at: bjt(2026, 6, 8, 12, 30), want: bjt(2026, 6, 8, 14, 0) },
+	{ name: "overnight", at: bjt(2026, 6, 8, 3, 0), want: bjt(2026, 6, 8, 9, 0) },
+	{
+		name: "exactly at the morning peak start",
+		at: bjt(2026, 6, 8, 9, 0),
+		want: bjt(2026, 6, 8, 12, 0),
+	},
+	{
+		name: "exactly at the morning peak end",
+		at: bjt(2026, 6, 8, 12, 0),
+		want: bjt(2026, 6, 8, 14, 0),
+	},
+	{ name: "on the Friday evening", at: bjt(2026, 6, 5, 18, 0), want: bjt(2026, 6, 8, 9, 0) },
+	{ name: "over the weekend", at: bjt(2026, 6, 7, 10, 0), want: bjt(2026, 6, 8, 9, 0) },
+];
+for (const c of ends)
+	check(`windowEndAt — ${c.name}`, windowEndAt(c.at).getTime(), c.want.getTime());
+
+// The reset as the footer renders it: the last second of one window and the first
+// second of the next, including the jump over a weekend.
+const resets: { name: string; at: Date; want: string }[] = [
+	{ name: "the last second before the morning peak", at: bjt(2026, 6, 8, 8, 59, 59), want: "1s" },
+	{ name: "the last second before the noon gap", at: bjt(2026, 6, 8, 11, 59, 59), want: "1s" },
+	{ name: "the first second of the noon gap", at: bjt(2026, 6, 8, 12, 0, 0), want: "2h" },
+	{ name: "the first second after the afternoon peak", at: bjt(2026, 6, 8, 18, 0, 0), want: "15h" },
+	{ name: "the first second of a weekday", at: bjt(2026, 6, 8, 0, 0, 0), want: "9h" },
+	{ name: "the start of the Friday-evening valley", at: bjt(2026, 6, 5, 18, 0, 0), want: "2d 15h" },
+	{ name: "a Saturday midnight", at: bjt(2026, 6, 6, 0, 0, 0), want: "2d 9h" },
+];
+for (const c of resets) check(`remainingLabel — ${c.name}`, remainingLabel(c.at), c.want);
 
 // ── Invariants over a dense sweep: shape, radix and width ───────────────────
 const SIZES: Record<string, number> = { d: 86_400, h: 3_600, m: 60, s: 1 };
