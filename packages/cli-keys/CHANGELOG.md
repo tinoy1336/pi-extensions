@@ -1,3 +1,9 @@
+## [0.3.1](https://github.com/tinoy1336/pi-extensions/compare/cli-keys-v0.3.0...cli-keys-v0.3.1) (2026-10-03)
+
+### Bug Fixes
+
+* **cli-keys:** stop the cache watch from holding a scripted run open ([f0aa0b5](https://github.com/tinoy1336/pi-extensions/commit/f0aa0b521ffcc607399f202c8b3b5fc61443783c))
+
 ## [0.3.0](https://github.com/tinoy1336/pi-extensions/compare/cli-keys-v0.2.0...cli-keys-v0.3.0) (2026-09-26)
 
 ### Features
