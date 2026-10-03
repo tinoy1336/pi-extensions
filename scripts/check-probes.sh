@@ -23,13 +23,19 @@
 #
 # MACHINE-BOUND PACKAGES, which is why no probe for them is in the list: a probe for one
 # of these would have to be skipped here as well, so each is named with what it needs
-# before anyone writes it. `image-read` needs `magick` and a synthesised image;
-# `nf`'s `sheet` needs python3 with Pillow; `desktop-notify` and `cli-keys` need a stub
-# binary on PATH for the spawn they drive; `sudo-approve` needs a live `promptd` window
-# and root; `todo-parent` needs a live parent session and the rpiv-todo reducer;
-# `probe`'s compositor branch needs a running compositor. Every package in that list is
-# reachable through a recorder for the part of it that does not touch the machine — the
-# day one of them grows a probe, add it here and say in its header what it needs.
+# before anyone writes it. `nf`'s `sheet` needs python3 with Pillow; `desktop-notify`
+# and `cli-keys` need a stub binary on PATH for the spawn they drive; `sudo-approve`
+# needs a live `promptd` window and root; `todo-parent` needs a live parent session and
+# the rpiv-todo reducer; `probe`'s compositor branch needs a running compositor. Every
+# package in that list is reachable through a recorder for the part of it that does not
+# touch the machine — the day one of them grows a probe, add it here and say in its
+# header what it needs.
+#
+# `image-read` IS in the list: it needs the `magick` binary, which the runner's standard
+# image ships, and it synthesises its own fixture under a scratch directory rather than
+# opening any picture that belongs to anyone. On a machine without ImageMagick it fails
+# with the tool's own install message, which is the actionable answer rather than a
+# silent skip.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -50,7 +56,9 @@ node -e 'const [major, minor] = process.versions.node.split(".").map(Number); pr
 # scratch directory it needs before importing its module, so none of them reads or
 # writes the machine's own agent tree, runtime directory or diagnostics log.
 PROBES=(
+	packages/build/index.probe.ts
 	packages/canon/index.probe.ts
+	packages/child-prompt-freeze/index.probe.ts
 	packages/child-request-dump/index.probe.ts
 	packages/command-guard/command-guard.probe.ts
 	packages/ext-lib/src/ipc.probe.ts
@@ -59,6 +67,8 @@ PROBES=(
 	packages/ext-lib/src/tool-header.probe.ts
 	packages/fleet/retire.probe.ts
 	packages/focus-gate/index.probe.ts
+	packages/focus-state/focus-state.probe.ts
+	packages/image-read/index.probe.ts
 	packages/io-guard/identity.probe.ts
 	packages/ipc/handshake.probe.ts
 	packages/ipc/tool-text.probe.ts
