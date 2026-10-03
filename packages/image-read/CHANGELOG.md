@@ -1,3 +1,9 @@
+## [0.3.1](https://github.com/tinoy1336/pi-extensions/compare/image-read-v0.3.0...image-read-v0.3.1) (2026-10-03)
+
+### Bug Fixes
+
+* **image-read:** build the probe fixture without an image tool ([04c8912](https://github.com/tinoy1336/pi-extensions/commit/04c8912ede179cbf93b8f75b0f9340d5085d814c))
+
 ## [0.3.0](https://github.com/tinoy1336/pi-extensions/compare/image-read-v0.2.0...image-read-v0.3.0) (2026-09-26)
 
 ### Features
