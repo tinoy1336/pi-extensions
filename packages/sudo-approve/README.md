@@ -25,6 +25,15 @@ The file pi loads at `~/.pi/agent/extensions/sudo-approve.ts` is not this packag
 
 `sudo_approve`
 
+## Checks
+
+No executable probe covers this package. Its decision surface is the approval path itself, and
+every branch of it leaves the process: the desktop window (or the yad/TUI fallback), the request
+router it reaches through `SUDO_APPROVE_ROUTE`/`TINSHELL_HOME`, and the password file `sudo` reads.
+A probe would therefore need a live approval window and root, so `scripts/check-probes.sh` names
+this package in its header rather than running it. What a probe would assert the day one exists: a
+batch with no window and no router refuses by name instead of approving through the fallback.
+
 ## Caveats
 
 No caveat rows declared: this unit's only soft dependency is machine capability, named above, and it refuses by name rather than failing to load.

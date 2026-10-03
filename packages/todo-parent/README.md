@@ -40,6 +40,16 @@ per-session state in a module-private map that no other extension can reach, so 
 `todo` write before that appends a row from the stale cached view, which wins the replay and drops
 the child's entry. Every reply carries that note.
 
+## Checks
+
+No executable probe covers this package. It is two halves that only exist in a real session pair:
+the child side needs `PI_SUBAGENT_CHILD=1` and a supervisor-channel directory to write its request
+into, and the parent side needs a live session's branch plus the installed `rpiv-todo` reducer that
+owns the mutation. `scripts/check-probes.sh` names this package in its header rather than running
+it. What a probe would assert the day one exists: a mutation applied as a replay-compatible `todo`
+row on the spawning session's branch, and a refusal naming `@juicesharp/rpiv-todo` with its install
+line when that package is absent.
+
 ## Caveats
 
 No caveat rows declared: the neighbour this extension needs is not a nicety, so it is stated under

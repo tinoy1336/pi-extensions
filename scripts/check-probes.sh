@@ -23,13 +23,19 @@
 #
 # MACHINE-BOUND PACKAGES, which is why no probe for them is in the list: a probe for one
 # of these would have to be skipped here as well, so each is named with what it needs
-# before anyone writes it. `nf`'s `sheet` needs python3 with Pillow; `desktop-notify`
-# and `cli-keys` need a stub binary on PATH for the spawn they drive; `sudo-approve`
-# needs a live `promptd` window and root; `todo-parent` needs a live parent session and
-# the rpiv-todo reducer; `probe`'s compositor branch needs a running compositor. Every
-# package in that list is reachable through a recorder for the part of it that does not
-# touch the machine — the day one of them grows a probe, add it here and say in its
-# header what it needs.
+# before anyone writes it. `sudo-approve` needs a live `promptd` window and root;
+# `todo-parent` needs a live parent session and the rpiv-todo reducer. Both are reachable
+# through a recorder for the part of them that does not touch the machine — the day one of
+# them grows a probe, add it here and say in its header what it needs.
+#
+# PARTS OF A PROBED PACKAGE THAT ARE STILL NOT REACHED HERE, each named with what it
+# needs: `nf`'s image branch renders a contact sheet with python3 and Pillow and the Nerd
+# Font file, so only its search, audit and no-vision paths are checked; `probe`'s hyprctl
+# branch needs a running compositor, so only its systemd and process branches are checked.
+#
+# A spawn is not a machine dependency: `desktop-notify` drives its `notify-send` through
+# pi's own `exec` seam and `cli-keys` spawns a scratch stub it writes itself, so neither
+# opens a window and neither needs a binary on PATH.
 #
 # `image-read` IS in the list, and it needs NO external tool: this runner's image carries
 # no ImageMagick, so the probe writes its own PNG from `zlib` and answers the tool's
@@ -57,10 +63,14 @@ node -e 'const [major, minor] = process.versions.node.split(".").map(Number); pr
 # writes the machine's own agent tree, runtime directory or diagnostics log.
 PROBES=(
 	packages/build/index.probe.ts
+	packages/cache-prefix-log/index.probe.ts
 	packages/canon/index.probe.ts
 	packages/child-prompt-freeze/index.probe.ts
 	packages/child-request-dump/index.probe.ts
+	packages/cli-keys/index.probe.ts
 	packages/command-guard/command-guard.probe.ts
+	packages/desktop-notify/index.probe.ts
+	packages/drift-anchor/index.probe.ts
 	packages/ext-lib/src/ipc.probe.ts
 	packages/ext-lib/src/neighbour.probe.ts
 	packages/ext-lib/src/system-prompt.probe.ts
@@ -72,8 +82,11 @@ PROBES=(
 	packages/io-guard/identity.probe.ts
 	packages/ipc/handshake.probe.ts
 	packages/ipc/tool-text.probe.ts
+	packages/nf/index.probe.ts
+	packages/no-subagent-fork/index.probe.ts
 	packages/orphan-repair/index.probe.ts
 	packages/pause/pause-state.probe.ts
+	packages/probe/index.probe.ts
 	packages/read-staleness/index.probe.ts
 	packages/status-metrics/index.probe.ts
 	packages/tariff/tariff.probe.ts
