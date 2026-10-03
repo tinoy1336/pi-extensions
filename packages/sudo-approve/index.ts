@@ -423,7 +423,6 @@ async function runBatch(
 		output: string;
 		truncated: boolean;
 	}> = [];
-	let totalOutput = 0;
 	let aborted = false;
 
 	for (let i = 0; i < commands.length; i++) {
@@ -466,7 +465,6 @@ async function runBatch(
 			output,
 			truncated: output.length >= MAX_OUTPUT_PER_COMMAND,
 		});
-		totalOutput += output.length;
 		audit({ decision: "result", command, exitCode: code });
 		if (signal?.aborted) {
 			aborted = true;
