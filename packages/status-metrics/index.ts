@@ -98,10 +98,7 @@ function drain(): void {
 			// (broadcast-failed, notice-failed, state-change) under the same source as
 			// their blocks, and counting those would tick the fa-ban counter on events
 			// that blocked nothing — a focus toggle would read as a blocked call.
-			if (
-				(j.source === "command-guard" || j.source === "bash-guard" || j.source === "focus-gate") &&
-				j.kind === "block"
-			)
+			if ((j.source === "command-guard" || j.source === "focus-gate") && j.kind === "block")
 				counts.blocks++;
 			else if (j.source === "drift-anchor" && j.kind !== "set-anchor") counts.nudges++;
 			else if (j.source === "read-staleness") counts.savedBytes += j.detail?.bytes ?? 0;
