@@ -643,10 +643,10 @@ export default function (pi: ExtensionAPI) {
 	// carries the UNMODIFIED base prompt and the block above never lands. The
 	// provider prefix is [system, tools, messages], so a block that moves inside
 	// the system prompt re-bills every token after it (the whole tools array plus
-	// the whole conversation) as a cache miss. Measured 2026-09-12: sys
-	// 134,308 -> 71,949 chars with the tools hash unchanged and 28,694 re-billed
-	// input tokens, reported as "Cache miss after 9m idle" (rows in
-	// ~/.local/state/pi/cache-prefix-log.jsonl).
+	// the whole conversation) as a cache miss: a move that took the prompt from
+	// 134,308 to 71,949 chars with the tools hash unchanged re-billed 28,694 input
+	// tokens, and surfaces as a "Cache miss after 9m idle" row in
+	// ~/.local/state/pi/cache-prefix-log.jsonl.
 	//
 	// before_provider_request fires for every agent provider request on every
 	// run-start path (the miss rows above were written from this hook), so the
