@@ -22,8 +22,8 @@
  *                messages array. Tail-position is cache-safe (it sits in the
  *                uncached suffix, never the cached prefix). TWO anchor
  *                sources: the drift-responsive path (immediate on drift, with
- *                a 3→6→12 backoff ladder under persistent same-signal drift —
- *                MAJOR-1, Uma 2026-09-08) and a periodic maintenance dose on
+ *                a 3→6→12 backoff ladder under persistent same-signal drift)
+ *                and a periodic maintenance dose on
  *                a quiet jittered cadence (~24±6 steps, deferred while drift
  *                anchoring is active). Canon + hook nudges share the same
  *                single-fire, priority-ranked per-step gate. Rotates phrasing
@@ -50,7 +50,7 @@
  *                block is in the system prompt every turn — restating the
  *                caveman rule, verify-before-done or todo discipline spends
  *                the slot on information the model already has.
- *                plus an optional `hooks` map (Hank v1 keys: register /
+ *                plus an optional `hooks` map (v1 keys: register /
  *                toolChurn / pressure / blockedToolRepeat; UNKNOWN KEYS ARE
  *                IGNORED SILENTLY so v2 can extend). REPEAT CALLS ARE
  *                ACCEPTED — a repeat is a REALIGNMENT: it REPLACES the
@@ -68,7 +68,7 @@
  *                restored on `session_start`, so the anchor survives
  *                compaction and reloads.
  *
- * HOOKS (ship-first per Hank's catalog + one user-requested default):
+ * HOOKS (ship-first defaults plus one user-requested default):
  *  - register (O1, DEFAULT-ON)        — the original caveman register decay.
  *  - blockedToolRepeat (DEFAULT-ON in EVERY session) — counts blocked tool
  *                results (command-guard R1/R2 and RAW-INPUT redirects, context-mode
@@ -111,10 +111,9 @@ const RATIO_HARD = 12; // above this = heavy prose (informational, not a gate)
 const TEXT_MIN_FOR_RATIO = 20; // answer must be this many chars before ratio is meaningful
 const DRIFT_WINDOW = 5; // count a turn as "drifted" if it fired within this many turns
 const MIN_TURNS_SINCE_INJECT = 3; // re-anchor anti-habituation gap (also the BASE gap of the drift path)
-// MAJOR-1 (Uma 2026-09-08): the drift path re-fired every 3 steps under
-// persistent same-signal drift — 8× the periodic cadence (24±6), unbounded by
-// the periodic retune. Her recommended fix, adopted verbatim: escalate the
-// gap after each consecutive same-signal fire (3 → 6 → 12, capped). A NEW
+// The drift path re-fired every 3 steps under persistent same-signal drift —
+// 8× the periodic cadence (24±6), unbounded by the periodic retune. Escalate
+// the gap after each consecutive same-signal fire (3 → 6 → 12, capped). A NEW
 // signal, or a fresh episode (last drift fire older than PERIODIC_EVERY),
 // stays immediately responsive at the base gap. Bounded factor vs periodic:
 // 24/12 = 2× at the ladder cap.
@@ -125,7 +124,7 @@ const CANON_EVERY = 50; // separate canon cadence, doubled alongside the periodi
 const nextPeriodicInterval = (): number =>
 	PERIODIC_EVERY + Math.floor(Math.random() * (2 * PERIODIC_JITTER + 1)) - PERIODIC_JITTER;
 
-// Hook defaults (Hank v1 catalog; set_anchor can override via the hooks map)
+// Hook defaults (v1; set_anchor can override via the hooks map)
 const CHURN_MAX_PER_WINDOW = 25;
 const CHURN_WINDOW_TURNS = 8;
 const PRESSURE_WARN_AT_PCT = 80;
@@ -264,7 +263,7 @@ function blockedRepeatLine(caps?: AnchorCaps): string {
 	return `Blocked tools repeating — switch to the redirect's tool now: read (not cat/sed -n/head/tail), ${checker}, ${search}. The block already cost a turn; the next repeat costs another.`;
 }
 
-// Rule-not-verdict hook lines (Hank's golden rule: never "you did X wrong").
+// Rule-not-verdict hook lines: state the rule, never "you did X wrong".
 const CHURN_LINE =
 	"Tools are piling up without landing anywhere. Name in one line what the last tool bought you, then either commit it somewhere durable or report.";
 const PRESSURE_LINE =
@@ -278,8 +277,8 @@ interface DriftState {
 	lastRegisterDriftTurn: number;
 	lastInjectTurn: number;
 	lastDriftInjectTurn: number; // R3: drift's own injection gate — hooks can never starve it
-	lastDriftSignal: "marker" | "windowed" | null; // MAJOR-1 backoff: which drift signal fired last
-	driftFireStreak: number; // MAJOR-1 backoff: consecutive same-signal fires
+	lastDriftSignal: "marker" | "windowed" | null; // backoff: which drift signal fired last
+	driftFireStreak: number; // backoff: consecutive same-signal fires
 	rotatedIdx: number;
 }
 
@@ -539,7 +538,7 @@ export default function (pi: ExtensionAPI): void {
 					version: restored.version ?? ANCHOR_SCHEMA_VERSION,
 					lastChurnInjectTurn: -Infinity,
 					lastPressureInjectTurn: -Infinity,
-					// NIT-7 (partial): pressureFires is the only runtime counter that
+					// pressureFires is the only runtime counter that
 					// survives a reload coherently — the turn-stamped windows gate on
 					// state.turn, which is per-process and cannot be reconstructed.
 					pressureFires: typeof restored.pressureFires === "number" ? restored.pressureFires : 0,
@@ -614,7 +613,7 @@ export default function (pi: ExtensionAPI): void {
 				state.lastRatioTurn = state.turn;
 				stats.ratioBreaches++;
 			}
-			// NIT-6 (Uma 2026-09-08): hard must never sit below an overridden warn —
+			// Hard must never sit below an overridden warn —
 			// a session ratioWarn > cfg.ratioHard would invert the semantics.
 			const ratioHard = Math.max(cfg.ratioHard, ratioWarn);
 			if (registerEnabled && res.ratio >= ratioHard && res.textHasBody) {
@@ -710,7 +709,7 @@ export default function (pi: ExtensionAPI): void {
 			const windowedDrift =
 				state.lastRatioTurn >= state.turn - driftWindow ||
 				state.lastRegisterDriftTurn >= state.turn - driftWindow;
-			// MAJOR-1: persistent-drift backoff. A fire of the SAME signal within
+			// Persistent-drift backoff. A fire of the SAME signal within
 			// the current episode escalates the gap through DRIFT_BACKOFF_LADDER
 			// (3→6→12, capped); a new signal or a fresh episode stays at the base
 			// gap. When both signals trip, marker wins the identity (it takes the
@@ -773,7 +772,7 @@ export default function (pi: ExtensionAPI): void {
 			// Rank 1 — canon cadence (R2: anchored at set/restore time, NO offset —
 			// the old offset made canon collide with periodic at T+20). Rotation
 			// fights the fixed-text × fixed-interval habituation (R4).
-			// Dedupe (2026-09-08): same-step stacking is already impossible (single
+			// Same-step stacking is already impossible (single
 			// chosen/picked fire below — anchor rank 0 beats canon rank 1), but a
 			// tool-loop user turn spans multiple LLM steps, so canon could fire on
 			// the step right AFTER an anchor injection → stacked blocks in one user
@@ -799,7 +798,7 @@ export default function (pi: ExtensionAPI): void {
 				pressureCfg &&
 				sessionAnchor!.pressureFires < PRESSURE_MAX_PER_SESSION &&
 				state.turn - sessionAnchor!.lastPressureInjectTurn >= cfg.minTurnsSinceInject &&
-				state.turn - state.lastInjectTurn >= cfg.minTurnsSinceInject // MAJOR-2: global one-injection gap (same as canon/blocked)
+				state.turn - state.lastInjectTurn >= cfg.minTurnsSinceInject // global one-injection gap (same as canon/blocked)
 			) {
 				try {
 					// pi derives the percentage of the model's context window itself; `percent`
@@ -831,11 +830,11 @@ export default function (pi: ExtensionAPI): void {
 			if (
 				churnCfg &&
 				state.turn - sessionAnchor!.lastChurnInjectTurn >= cfg.minTurnsSinceInject &&
-				state.turn - state.lastInjectTurn >= cfg.minTurnsSinceInject // MAJOR-2: global one-injection gap (same as canon/blocked)
+				state.turn - state.lastInjectTurn >= cfg.minTurnsSinceInject // global one-injection gap (same as canon/blocked)
 			) {
 				const windowTurns = churnCfg.windowTurns ?? CHURN_WINDOW_TURNS;
 				const max = churnCfg.maxPerWindow ?? CHURN_MAX_PER_WINDOW;
-				// NIT-8 (Uma 2026-09-08): tool_execution_end labels a step's tool
+				// tool_execution_end labels a step's tool
 				// calls with state.turn BEFORE message_end increments it (label =
 				// step-1), so `>` dropped one step from the window. `>=` keeps labels
 				// T-windowTurns..T-1 = exactly the last windowTurns completed steps.
@@ -865,7 +864,7 @@ export default function (pi: ExtensionAPI): void {
 			if (blockedEnabled && state.turn - state.lastInjectTurn >= cfg.minTurnsSinceInject) {
 				const windowTurns = blockedCfg?.windowTurns ?? BLOCKED_WINDOW_TURNS;
 				const threshold = blockedCfg?.threshold ?? BLOCKED_THRESHOLD;
-				// NIT-8: same label off-by-one as the churn window above.
+				// Same label off-by-one as the churn window above.
 				const recent = blockedTurns.filter((t) => t >= state.turn - windowTurns).length;
 				if (recent >= threshold) {
 					consider(4, () => {
@@ -1017,7 +1016,7 @@ export default function (pi: ExtensionAPI): void {
 					phrase: params.phrase,
 					hooks,
 					version: ANCHOR_SCHEMA_VERSION,
-					pressureFires: anchor.pressureFires, // NIT-7: persisted so the 2-fire cap survives reloads
+					pressureFires: anchor.pressureFires, // persisted so the 2-fire cap survives reloads
 				});
 			} catch {
 				/* persistence failure never fails the tool */
