@@ -19,9 +19,9 @@ pi install npm:@tinoy/pi-canon
 
 ## What it does
 
-- **Store** — `~/.pi/agent/canon/canon.json`: `{entries: [{id, text, model, audience, reason?, category?}], categories: [{id, title, description?}]}`. Written atomically; a missing or corrupt store reads as empty.
+- **Store** — `~/.pi/agent/canon/canon.json`: `{entries: [{id, text, model, audience, category?}], categories: [{id, title}]}`. Written atomically; a missing or corrupt store reads as empty, and a field the shape no longer defines is dropped when the store is read.
 - **Tools** — `canon_add`, `canon_remove`, `canon_edit`, `canon_category`.
-- **Commands** — `/canon` (list, add, remove, edit, category management) and `/canon-dump`.
+- **Commands** — `/canon` (list, add, remove, edit, category management). `list` prints exactly the block this session receives; a scope argument (an audience word or a model id) prints the block that scope receives instead.
 - **Injection** — the block is appended at `before_agent_start` and re-normalized on every provider request, so a run started by an injected message carries the same bytes as an interactive prompt.
 - **Category headings** — a category sub-heading inside a scope group prints the store id after the word `category` (`#### Behavioural Preferences [category 1cg5lr]`), which is the same id a `canon_add` refusal lists; the word keeps it from reading as an entry handle, which the block renders as `[1i15c2]`. Uncategorized entries carry no id, and a scope group holding a single category stays flat with no sub-heading.
 - **Peer notices** — entry changes are published over the `ipc` transport's bus (namespace `canon`); receivers match the entry scope against their own model and audience. A matching notice steers into a run that is already in flight, landing at the next tool boundary, and queues for the next turn when the session is idle, so it never wakes anything.

@@ -18,12 +18,14 @@
  * Cases: the selection for a parent session, a foreman session, a subagent session
  * (both child markers) and an unknown model; the model-scope exclusion; the provider
  * prefix in a model id; the group order the renderer emits, which the prompt cache
- * depends on; byte stability across two renders and across two sessions; an empty
- * store; and the /canon-dump filter surface — the values the completion offers and the
- * prefixes it answers, what a filter it never offered gets instead of an empty dump,
- * and the closed audience list the tools declare.
+ * depends on; byte stability across two renders and across two sessions; the /canon
+ * argument completions and the scopes it refuses; that the list verb prints this
+ * session's block byte for byte and nothing beside it; the closed audience list the
+ * tools declare against the model list that stays open; the shape of what a tool
+ * writes to the store, and that a reason already stored is neither printed nor
+ * written back; and an empty store.
  */
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -75,35 +77,32 @@ type CommandSurface = {
 	getArgumentCompletions?: (argumentPrefix: string) => unknown;
 	handler: (args: string, ctx: unknown) => Promise<void>;
 };
-type ToolSurface = { name: string; parameters: unknown };
+type ToolSurface = { name: string; parameters: unknown; execute?: (...args: unknown[]) => unknown };
 
 type Recorder = {
 	api: unknown;
 	handlers: Map<string, Handler>;
 	commands: Map<string, CommandSurface>;
 	tools: Map<string, ToolSurface>;
-	sent: Array<{ content: string }>;
 };
 
-/** The recorder the extension is handed in place of the API: everything it registers,
- *  sends or hooks is captured, so a check can drive the dump command and read the tool
- *  schemas the model receives. */
+/** The recorder the extension is handed in place of the API: everything it registers
+ *  or hooks is captured, so a check can drive the command and the tools the way pi
+ *  does, and read the schemas the model receives. */
 function recorder(): Recorder {
 	const handlers = new Map<string, Handler>();
 	const commands = new Map<string, CommandSurface>();
 	const tools = new Map<string, ToolSurface>();
-	const sent: Array<{ content: string }> = [];
 	const api = {
 		on: (name: string, handler: Handler) => handlers.set(name, handler),
 		registerTool: (tool: ToolSurface) => tools.set(tool.name, tool),
 		registerCommand: (name: string, options: CommandSurface) => commands.set(name, options),
-		sendMessage: (message: { content?: string }) => sent.push({ content: message.content ?? "" }),
 		getActiveTools: () => [],
 		setActiveTools: () => {},
 		appendEntry: () => {},
 		events: { on: () => {}, emit: () => {} },
 	};
-	return { api, handlers, commands, tools, sent };
+	return { api, handlers, commands, tools };
 }
 
 /** The markers a session starts with: cleared first, so a session cannot inherit
@@ -242,90 +241,104 @@ check(
 	(await session({})("model-a")) === parentBlock,
 );
 
-console.log("the /canon-dump filter values");
-const dump = surfaces({});
-const dumpCommand = dump.commands.get("canon-dump");
+console.log("the /canon argument completions");
+const rec = surfaces({ PI_MODEL: "model-a" });
+const command = rec.commands.get("canon");
 type Item = { value: string; label: string; description?: string };
 const offered = (prefix: string): Item[] =>
-	(dumpCommand?.getArgumentCompletions?.(prefix) as Item[] | null) ?? [];
+	(command?.getArgumentCompletions?.(prefix) as Item[] | null) ?? [];
 check(
-	"the dump command registers an argument-completion callback",
-	typeof dumpCommand?.getArgumentCompletions === "function",
+	"the command registers an argument-completion callback",
+	typeof command?.getArgumentCompletions === "function",
 );
 check(
-	"an empty prefix offers the audience words first, then the models the store holds",
-	JSON.stringify(offered("").map((i) => i.value)) ===
-		JSON.stringify(["all", "parent", "foreman", "subagent", "model-a", "global", "model-b"]),
-	JSON.stringify(offered("").map((i) => i.value)),
+	"an empty prefix offers the verbs",
+	JSON.stringify(offered("").map((i) => i.label)) ===
+		JSON.stringify(["list", "add", "remove", "edit", "category"]),
+	JSON.stringify(offered("").map((i) => i.label)),
 );
 check(
-	"every offered value carries its own description",
+	"every verb carries its own description",
 	offered("").every((i) => (i.description ?? "").length > 0),
 );
 check(
-	"and its value is its label",
-	offered("").every((i) => i.label === i.value),
+	"a prefix narrows the verbs",
+	JSON.stringify(offered("ca").map((i) => i.label)) === JSON.stringify(["category"]),
 );
 check(
-	"a prefix narrows the list",
-	JSON.stringify(offered("mo").map((i) => i.value)) === JSON.stringify(["model-a", "model-b"]),
+	"after the list verb the scopes are offered, audience words first",
+	JSON.stringify(offered("list ").map((i) => i.label)) ===
+		JSON.stringify(["all", "parent", "foreman", "subagent", "model-a", "global", "model-b"]),
+	JSON.stringify(offered("list ").map((i) => i.label)),
 );
 check(
-	"a prefix matching one word offers that one",
-	JSON.stringify(offered("sub").map((i) => i.value)) === JSON.stringify(["subagent"]),
+	"a scope prefix narrows to the scopes it matches",
+	JSON.stringify(offered("list m").map((i) => i.label)) === JSON.stringify(["model-a", "model-b"]),
 );
 check(
-	"a prefix nothing matches offers nothing",
-	dumpCommand?.getArgumentCompletions?.("zz") === null,
+	"and the inserted value is the whole argument",
+	offered("list m").every((i) => i.value === `list ${i.label}`),
+	JSON.stringify(offered("list m").map((i) => i.value)),
 );
+check(
+	"a verb whose argument is not a scope offers nothing",
+	command?.getArgumentCompletions?.("add x") === null,
+);
+check("a prefix nothing matches offers nothing", command?.getArgumentCompletions?.("zz") === null);
 
-console.log("a filter the completion never offered");
+console.log("the list verb prints the block, and nothing beside it");
 const notices: Array<{ text: string; level?: string }> = [];
 const commandCtx = {
 	ui: { notify: (text: string, level?: string) => notices.push({ text, level }) },
 };
-await dumpCommand?.handler("nope", commandCtx);
-check("no dump is sent", dump.sent.length === 0);
+/** The block the last run printed, or null when it printed no block — a refusal is
+ *  answered with an error notice, which is not output. */
+async function list(args: string): Promise<string | null> {
+	notices.length = 0;
+	await command?.handler(args, commandCtx);
+	const first = notices[0];
+	return first && first.level !== "error" ? (first.text ?? null) : null;
+}
+const defaultOutput = await list("list");
+check("the default output is this session's block, byte for byte", defaultOutput === parentBlock);
+check("and nothing is printed beside it", notices.length === 1);
 check(
-	"the answer names the values that do exist",
-	notices.length === 1 &&
-		notices[0].text.includes("subagent") &&
-		notices[0].text.includes("model-a"),
-	notices[0]?.text,
+	"and no scope is echoed into the output",
+	defaultOutput?.startsWith("## Canon — binding system-prompt rules") === true,
 );
+const modelBBlock = await list("list model-b");
 check(
-	"and names the filter it refused",
-	notices.length === 1 && notices[0].text.includes('"nope"'),
+	"a model scope renders that model's block",
+	modelBBlock?.includes("[b-all]") === true && modelBBlock?.includes("[a-all]") === false,
 );
-check("as an error, not as a notice", notices.length === 1 && notices[0].level === "error");
-
-console.log("a filter the completion does offer");
-await dumpCommand?.handler("model-b", commandCtx);
+const foremanScope = await list("list foreman");
 check(
-	"the model filter dumps that model alone",
-	dump.sent.length === 1 &&
-		dump.sent[0].content.includes("B-ALL") &&
-		!dump.sent[0].content.includes("A-ALL"),
+	"an audience scope renders that audience's block",
+	foremanScope?.includes("[a-fore]") === true && foremanScope?.includes("[a-parent]") === false,
 );
-await dumpCommand?.handler("foreman", commandCtx);
+const allScope = await list("list all");
 check(
-	"the audience filter dumps that audience alone",
-	dump.sent[1].content.includes("G-FOREMAN") && !dump.sent[1].content.includes("G-PARENT"),
+	"the all audience scope renders only all-session entries",
+	allScope?.includes("[g-all]") === true && allScope?.includes("[g-parent]") === false,
 );
-await dumpCommand?.handler("provider/model-b", commandCtx);
+const prefixed = await list("list provider/model-b");
 check(
 	"a provider prefix resolves the way the model branch does",
-	dump.sent[2].content.includes("B-ALL"),
+	prefixed?.includes("[b-all]") === true,
 );
-await dumpCommand?.handler("", commandCtx);
+check("an unknown scope prints nothing", (await list("list nope")) === null);
 check(
-	"no filter dumps the whole store",
-	dump.sent[3].content.includes("A-ALL") && dump.sent[3].content.includes("B-ALL"),
+	"and is answered with the valid scopes",
+	notices[0]?.text.includes("model-a") === true &&
+		notices[0]?.text.includes("subagent") === true &&
+		notices[0]?.text.includes('"nope"') === true,
+	notices[0]?.text,
 );
+check("as an error, not as a notice", notices[0]?.level === "error");
 
 console.log("the audience list the tools declare");
 const property = (tool: string, name: string): unknown => {
-	const parameters = dump.tools.get(tool)?.parameters as
+	const parameters = rec.tools.get(tool)?.parameters as
 		| { properties?: Record<string, unknown> }
 		| undefined;
 	return parameters?.properties?.[name];
@@ -356,7 +369,7 @@ check(
 check(
 	"canon_add's audience is required",
 	(
-		(dump.tools.get("canon_add")?.parameters as { required?: string[] } | undefined)?.required ?? []
+		(rec.tools.get("canon_add")?.parameters as { required?: string[] } | undefined)?.required ?? []
 	).includes("audience"),
 );
 check(
@@ -367,6 +380,93 @@ check(
 	"canon_add's model is NOT closed — the model registry owns that space, so a model is not refusable by the schema",
 	literals(property("canon_add", "model")).length === 0,
 	JSON.stringify(literals(property("canon_add", "model"))),
+);
+
+console.log("the shape a tool writes to the store");
+const toolCtx = { sessionManager: { getSessionId: () => "probe" } };
+const properties = (tool: string): Record<string, unknown> =>
+	(rec.tools.get(tool)?.parameters as { properties?: Record<string, unknown> } | undefined)
+		?.properties ?? {};
+check("canon_add declares no reason parameter", !("reason" in properties("canon_add")));
+check("canon_edit declares no reason parameter", !("reason" in properties("canon_edit")));
+check("canon_remove declares no reason parameter", !("reason" in properties("canon_remove")));
+check(
+	"canon_category declares no description parameter",
+	!("description" in properties("canon_category")),
+);
+await rec.tools
+	.get("canon_category")
+	?.execute?.("probe-category", { op: "add", title: "PROBE-CAT" }, undefined, undefined, toolCtx);
+const afterCategory = JSON.parse(readFileSync(storePath, "utf8")) as {
+	categories: Array<Record<string, unknown>>;
+};
+const category = (afterCategory.categories.at(-1) ?? {}) as Record<string, unknown>;
+check(
+	"a stored category carries its id and its title and nothing else",
+	JSON.stringify(Object.keys(category).sort()) === JSON.stringify(["id", "title"]),
+	JSON.stringify(Object.keys(category)),
+);
+await rec.tools
+	.get("canon_add")
+	?.execute?.(
+		"probe-add",
+		{ text: "PROBE-LINE", model: "global", audience: "all", category: String(category.id) },
+		undefined,
+		undefined,
+		toolCtx,
+	);
+const afterAdd = JSON.parse(readFileSync(storePath, "utf8")) as {
+	entries: Array<Record<string, unknown>>;
+};
+const entry = (afterAdd.entries.at(-1) ?? {}) as Record<string, unknown>;
+check(
+	"a stored entry carries its id, text, scope and category and nothing else",
+	JSON.stringify(Object.keys(entry).sort()) ===
+		JSON.stringify(["audience", "category", "id", "model", "text"]),
+	JSON.stringify(Object.keys(entry)),
+);
+
+console.log("a reason already in the store");
+mkdirSync(storeDir, { recursive: true });
+writeFileSync(
+	storePath,
+	JSON.stringify({
+		entries: [
+			...ENTRIES,
+			{
+				id: "r-retired",
+				text: "RETIRED-SENTINEL",
+				model: "global",
+				audience: "all",
+				reason: "REASON-SENTINEL",
+				category: "sentinel-cat",
+			},
+		],
+		categories: [
+			{ id: "sentinel-cat", title: "SENTINEL-CAT", description: "DESCRIPTION-SENTINEL" },
+		],
+	}),
+);
+const withRetired = await list("list");
+check("the entry itself is rendered", withRetired?.includes("RETIRED-SENTINEL") === true);
+check("its stored reason is never printed", withRetired?.includes("REASON-SENTINEL") === false);
+check(
+	"and no category description is printed beside it",
+	withRetired?.includes("DESCRIPTION-SENTINEL") === false,
+);
+await rec.tools
+	.get("canon_add")
+	?.execute?.(
+		"probe-add-2",
+		{ text: "PROBE-LINE-2", model: "global", audience: "all", category: "sentinel-cat" },
+		undefined,
+		undefined,
+		toolCtx,
+	);
+const afterSave = readFileSync(storePath, "utf8");
+check(
+	"the next save writes the store without either retired field",
+	!afterSave.includes("REASON-SENTINEL") && !afterSave.includes("DESCRIPTION-SENTINEL"),
 );
 
 console.log("an empty store");
