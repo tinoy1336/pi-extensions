@@ -39,6 +39,13 @@ const DEFAULT_VISION_MODEL_IDS = ["glm-5.3-flash", "deepseek-flash"];
 const VISION_MODELS_SETTING = "PI_VISION_MODELS";
 const TOOL_NAME = "image_read";
 const DEFAULT_MAX_PX = 1024;
+// A fixed guess, not a measurement: above this size, and only for an opaque PNG,
+// the read is re-encoded as JPEG at JPEG_QUALITY. The conversion is lossy and
+// permanent for that read and buys upload size alone — the token estimate follows
+// the pixel dimensions, so it does not move. The ceiling is a source whose detail
+// matters at that scale: ask for `format: "png"` on it. If a caller ever needs the
+// knob, the upgrade path is a per-call threshold and quality rather than a second
+// constant here.
 const AUTO_JPEG_MIN_BYTES = 512 * 1024;
 const JPEG_QUALITY = 85;
 
