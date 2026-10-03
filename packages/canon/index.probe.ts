@@ -302,6 +302,8 @@ async function list(args: string): Promise<string | null> {
 const defaultOutput = await list("list");
 check("the default output is this session's block, byte for byte", defaultOutput === parentBlock);
 check("and nothing is printed beside it", notices.length === 1);
+check("the bare command prints the same block", (await list("")) === parentBlock);
+check("and so does a blank argument", (await list("   ")) === parentBlock);
 check(
 	"and no scope is echoed into the output",
 	defaultOutput?.startsWith("## Canon — binding system-prompt rules") === true,

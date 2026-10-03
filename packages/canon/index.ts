@@ -1438,10 +1438,12 @@ export default function (pi: ExtensionAPI) {
 
 	pi.registerCommand("canon", {
 		description:
-			"Manage canon lines: list [scope] | add [--model M] [--audience A] <text> | remove <id> | edit <id> <text> | category list|add|edit|remove. `list` prints the block this session receives; a scope argument (an audience word or a model id) prints the block that scope receives instead. Tab completes the verbs and the scope values.",
+			"Manage canon lines. No argument prints the canon that applies to this session right now — the block this session receives. Verbs: list [scope] | add [--model M] [--audience A] <text> | remove <id> | edit <id> <new text> | category list|add|edit|remove. A scope on list (an audience word or a model id) prints that scope's block instead. Tab completes the verbs and the scope values.",
 		getArgumentCompletions: canonCompletions,
 		handler: async (args, ctx) => {
 			const tokens = (args ?? "").trim().split(/\s+/).filter(Boolean);
+			// No argument is the common case: the bare command shows the canon that applies
+			// right now, which is what the list verb prints with no scope.
 			const verb = tokens[0] ?? "list";
 			try {
 				if (verb === "list") {
