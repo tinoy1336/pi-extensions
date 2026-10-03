@@ -232,7 +232,7 @@ export function prune(): void {
 			.map((f) => ({ f, t: statSync(join(ROSTER_DIR, f)).mtimeMs }))
 			.sort((a, b) => b.t - a.t);
 		const now = Date.now();
-		for (const { f, t } of files.slice(MAX_FILES)) unlinkSync(join(ROSTER_DIR, f));
+		for (const { f } of files.slice(MAX_FILES)) unlinkSync(join(ROSTER_DIR, f));
 		for (const { f, t } of files) if (now - t > MAX_AGE_MS) unlinkSync(join(ROSTER_DIR, f));
 	} catch {
 		/* pruning is best-effort */
