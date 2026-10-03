@@ -491,9 +491,6 @@ export interface Assessment {
 	worker: string;
 	at: number;
 	decision: RetireDecision;
-	/** True when the economy alone would fire, whether or not a guard suppressed
-	 *  it — the log needs the model's own answer to be scoreable. */
-	economical: boolean;
 	backstop: Backstop | null;
 	alarms: string[];
 	reasons: string[];
@@ -570,7 +567,6 @@ export function assessRetirement(i: AssessmentInput): Assessment {
 	const common = {
 		worker: i.worker,
 		at: i.nowMs,
-		economical,
 		backstop,
 		alarms,
 		kHat,
