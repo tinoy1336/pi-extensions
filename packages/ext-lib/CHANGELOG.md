@@ -1,3 +1,9 @@
+## [0.5.0](https://github.com/tinoy1336/pi-extensions/compare/ext-lib-v0.4.0...ext-lib-v0.5.0) (2026-10-03)
+
+### Features
+
+* **ext-lib:** add the helpers four packages had copied ([90f3a14](https://github.com/tinoy1336/pi-extensions/commit/90f3a144be3e2ea03304dcaa7060c24c22fcd4fa))
+
 ## [0.4.0](https://github.com/tinoy1336/pi-extensions/compare/ext-lib-v0.3.1...ext-lib-v0.4.0) (2026-09-26)
 
 ### Features
