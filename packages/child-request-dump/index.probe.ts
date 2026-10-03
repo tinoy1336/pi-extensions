@@ -20,7 +20,7 @@
  * a result carrying no id, the promise that no content is recorded, a payload that is
  * not a message list, and a parent process that registers nothing.
  */
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -242,6 +242,120 @@ const before = rows().length;
 onRequest({ payload: { model: "probe-model" } }, {});
 await new Promise((resolve) => setTimeout(resolve, 100));
 check("nothing is recorded for it", rows().length === before, `${rows().length} rows`);
+
+console.log("the rotation cap");
+// Rows big enough to reach the cap in a bounded number of requests: 60 calls per
+// request, so each row is several KB and the loop below is short and deterministic.
+const CAP_BYTES = 256 * 1024;
+const ROTATED = `${dumpPath}.1`;
+const bigMessages = (): Message[] => {
+	const messages: Message[] = [];
+	for (let i = 0; i < 60; i += 1) {
+		messages.push(assistant(`call-${i}`));
+		messages.push(result(`call-${i}`));
+	}
+	return messages;
+};
+/** A line that is one whole record, or the reason it is not. */
+const wholeRecord = (line: string): boolean => {
+	try {
+		const row = JSON.parse(line) as { req?: unknown };
+		return typeof row === "object" && row !== null && typeof row.req === "number";
+	} catch {
+		return false;
+	}
+};
+
+for (let attempt = 0; attempt < 60 && !existsSync(ROTATED); attempt += 1) {
+	onRequest(
+		{ payload: { messages: bigMessages(), model: "probe-model" } },
+		{ sessionManager: { getSessionId: () => "probe-session" } },
+	);
+}
+for (let waited = 0; waited < 3_000 && !existsSync(ROTATED); waited += 25) {
+	await new Promise((resolve) => setTimeout(resolve, 25));
+}
+check(
+	"the file is rotated once a record would pass the cap",
+	existsSync(ROTATED),
+	`after ${rows().length} live rows`,
+);
+// A rename leaves the path absent until the next append, and rows are dropped while it
+// is in flight — drive a few more so the live file exists again, which is what lets the
+// checks below say something about the records rather than about the window.
+for (let attempt = 0; attempt < 5 && !existsSync(dumpPath); attempt += 1) {
+	onRequest(
+		{ payload: { messages: bigMessages(), model: "probe-model" } },
+		{ sessionManager: { getSessionId: () => "probe-session" } },
+	);
+	await new Promise((resolve) => setTimeout(resolve, 50));
+}
+const liveBytes = existsSync(dumpPath) ? statSync(dumpPath).size : 0;
+check(
+	"the live file is there again once the rename has landed",
+	existsSync(dumpPath),
+	`${liveBytes} bytes`,
+);
+check("and stays inside the cap", liveBytes <= CAP_BYTES, `${liveBytes} bytes`);
+check(
+	"the rotated file keeps the older records",
+	existsSync(ROTATED) && statSync(ROTATED).size > 0,
+	`${statSync(ROTATED).size} bytes`,
+);
+const liveLines = existsSync(dumpPath)
+	? readFileSync(dumpPath, "utf8").split("\n").filter(Boolean)
+	: [];
+const rotatedLines = readFileSync(ROTATED, "utf8").split("\n").filter(Boolean);
+check(
+	"every record in the live file is a whole record",
+	liveLines.every(wholeRecord),
+	`${liveLines.filter((line) => !wholeRecord(line)).length} of ${liveLines.length} broken`,
+);
+check(
+	"and every record in the rotated file is whole too",
+	rotatedLines.every(wholeRecord),
+	`${rotatedLines.filter((line) => !wholeRecord(line)).length} of ${rotatedLines.length} broken`,
+);
+const reqsIn = (lines: string[]): number[] =>
+	lines.filter(wholeRecord).map((line) => (JSON.parse(line) as { req: number }).req);
+/** The last line as a row, or undefined when it is not one (a truncated write). */
+const rowOf = (line: string | undefined): Record<string, unknown> | undefined => {
+	if (line === undefined) return undefined;
+	try {
+		return JSON.parse(line) as Record<string, unknown>;
+	} catch {
+		return undefined;
+	}
+};
+const liveReqs = reqsIn(liveLines);
+const rotatedReqs = reqsIn(rotatedLines);
+check(
+	"the newest record survived, and it is in the live file",
+	liveReqs.length > 0 && Math.max(...liveReqs) > Math.max(...rotatedReqs),
+	`live ${liveReqs.length} rows to ${Math.max(...liveReqs)}, rotated ${rotatedReqs.length} rows to ${Math.max(...rotatedReqs)}`,
+);
+check(
+	"and it is a full row with the documented keys",
+	Object.keys(rowOf(liveLines.at(-1)) ?? {}).length === documented.length,
+	Object.keys(rowOf(liveLines.at(-1)) ?? {}).join(","),
+);
+
+console.log("a process that starts with a nearly full file");
+const padLine = `${JSON.stringify({ req: -1, pad: "x".repeat(260_000) })}\n`;
+writeFileSync(dumpPath, padLine);
+rmSync(ROTATED, { force: true });
+const secondInstance = recorder();
+if (!secondInstance) throw new Error("the second instance registered no handler");
+secondInstance({ payload: { messages: bigMessages(), model: "probe-model" } }, {});
+for (let waited = 0; waited < 3_000 && !existsSync(ROTATED); waited += 25) {
+	await new Promise((resolve) => setTimeout(resolve, 25));
+}
+check("a full file is rotated on the first new record", existsSync(ROTATED));
+check(
+	"and the big record it held is intact, not truncated",
+	existsSync(ROTATED) && readFileSync(ROTATED, "utf8").includes(padLine.trim()),
+	`${existsSync(ROTATED) ? statSync(ROTATED).size : 0} bytes`,
+);
 
 console.log("a parent session");
 for (const key of ["PI_SUBAGENT_CHILD", "PI_SUBAGENT"]) delete process.env[key];
