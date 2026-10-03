@@ -80,7 +80,9 @@ export function identityFromBindings(raw: string | undefined, pid: number): Work
 	if (!parsed || typeof parsed !== "object") return null;
 	const fleetKeys = Object.keys(parsed as Record<string, unknown>).filter(isFleetNamespace);
 	if (fleetKeys.length !== 1) return null; // none, or ambiguous
-	const v = (parsed as Record<string, unknown>)[fleetKeys[0]!] as BindingPayload;
+	const namespace = fleetKeys[0];
+	if (namespace === undefined) return null;
+	const v = (parsed as Record<string, unknown>)[namespace] as BindingPayload;
 	if (!v || typeof v !== "object") return null;
 	if (typeof v.worker !== "string" || v.worker.trim() === "") return null;
 	const owns = Array.isArray(v.owns)
