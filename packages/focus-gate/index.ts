@@ -411,17 +411,19 @@ export default function (pi: ExtensionAPI): void {
 	 * message for the next prompt, which left an idle session unalerted until
 	 * the user typed.
 	 *
-	 * `deliverAs: "followUp"` is the non-commandeering half: while the session
-	 * is streaming the message joins the agent's follow-up queue. The default
-	 * deliverAs ("steer") would push it onto the STEERING queue — the queue the
-	 * user's own typed message occupies, which is the behaviour the user
-	 * objected to.
+	 * `deliverAs: "steer"` is the interrupting half: while a session is
+	 * streaming, the notice is delivered at the next turn boundary instead of
+	 * waiting behind the whole run. That is where a mode change is worth having —
+	 * the agent has to know it is gated before it picks its next action. It does
+	 * share the queue the operator's own typing occupies, and that interleaving
+	 * was chosen deliberately: a notice arriving mid-run beats a stale notice
+	 * arriving after it.
 	 */
 	function sendFocusNotice(content: string, details: Record<string, unknown>): void {
 		try {
 			const result = pi.sendMessage(
 				{ customType: "focus_notice", content, display: true, details },
-				{ triggerTurn: true, deliverAs: "followUp" },
+				{ triggerTurn: true, deliverAs: "steer" },
 			) as unknown as Promise<unknown> | undefined;
 			result?.catch?.((err: unknown) =>
 				hookLog("focus-gate", "notice-failed", {
@@ -433,6 +435,29 @@ export default function (pi: ExtensionAPI): void {
 			hookLog("focus-gate", "notice-failed", {
 				reason: err instanceof Error ? err.message : String(err),
 				...details,
+			});
+		}
+	}
+
+	/**
+	 * Forward the operator's own words to the model: whatever follows the mode
+	 * token on a `/focus` invocation, delivered the way a skill's arguments are.
+	 * `steer` is the operator's own queue, so a request typed together with a
+	 * toggle keeps its order relative to anything else they type.
+	 */
+	function forwardToModel(text: string): void {
+		try {
+			const result = pi.sendUserMessage(text, { deliverAs: "steer" }) as unknown as
+				| Promise<unknown>
+				| undefined;
+			result?.catch?.((err: unknown) =>
+				hookLog("focus-gate", "forward-failed", {
+					reason: err instanceof Error ? err.message : String(err),
+				}),
+			);
+		} catch (err) {
+			hookLog("focus-gate", "forward-failed", {
+				reason: err instanceof Error ? err.message : String(err),
 			});
 		}
 	}
@@ -642,7 +667,7 @@ export default function (pi: ExtensionAPI): void {
 	// /focus — no args toggles; on|off|status (quiet/locked are legacy aliases).
 	pi.registerCommand("focus", {
 		description:
-			"Focus mode: on gates desktop intrusion (screenshots, workspace/window/input actions); notifications stay available. Usage: /focus [on|off|status]; no args toggles.",
+			"Focus mode: on gates desktop intrusion (screenshots, workspace/window/input actions); notifications stay available. Usage: /focus [on|off|status] [text…]; no args toggles; text after the mode is sent to the model.",
 		getArgumentCompletions: (prefix) => {
 			const opts = ["on", "off", "status"];
 			const filtered = opts.filter((o) => o.startsWith(prefix));
@@ -650,7 +675,14 @@ export default function (pi: ExtensionAPI): void {
 		},
 		handler: async (args, ctx) => {
 			try {
-				const arg = (args ?? "").trim().toLowerCase();
+				// Greedy: the FIRST token is the mode, everything after it is the
+				// operator's own text, forwarded to the model the way a skill's
+				// arguments are (`/focus on watch the dock rebuild`). Splitting on the
+				// first whitespace run keeps a multi-word request intact.
+				const raw = (args ?? "").trim();
+				const split = raw.match(/^(\S+)\s*([\s\S]*)$/);
+				const arg = (split?.[1] ?? "").toLowerCase();
+				const forward = (split?.[2] ?? "").trim();
 				const current = readFocusState().mode;
 
 				let next: FocusMode;
@@ -677,10 +709,11 @@ export default function (pi: ExtensionAPI): void {
 						`focus: ${state.mode}${state.since ? ` (since ${state.since})` : ""} — ${count} queued action(s) this session in ${ledger}`,
 						"info",
 					);
+					if (forward) forwardToModel(forward);
 					return;
 				} else {
 					ctx.ui.notify(
-						`focus: unknown argument "${arg}" — use on|off|status (no args = toggle)`,
+						`focus: unknown argument "${arg}" — use on|off|status (no args = toggle); text after the mode is forwarded to the model`,
 						"warning",
 					);
 					return;
@@ -730,6 +763,10 @@ export default function (pi: ExtensionAPI): void {
 				// it already claimed the flip — so the toggle is where the event comes
 				// from locally; peers get it from their own watch.
 				pi.events.emit(FOCUS_STATE_CHANGED, { mode: next, previous: current, origin: "toggle" });
+
+				// The operator's own words last: the mode is already in force, so the turn
+				// that reads them starts gated.
+				if (forward) forwardToModel(forward);
 			} catch (e) {
 				ctx.ui.notify(
 					`focus: command failed: ${e instanceof Error ? e.message : String(e)}`,

@@ -230,6 +230,88 @@ await allowed("a screenshot passes", "bash", { command: "grim -" });
 await allowed("a compositor dispatch passes", "bash", { command: "hyprctl dispatch x" });
 await allowed("input takeover passes", "bash", { command: "inject click left" });
 
+console.log("the /focus command — the mode token plus greedy text for the model");
+interface Command {
+	handler: (args: string, ctx: unknown) => Promise<void>;
+}
+const delivered: Array<{ kind: string; content: unknown; options?: { deliverAs?: string } }> = [];
+const notifies: string[] = [];
+const ctxStub = { ui: { notify: (text: string) => notifies.push(text), setStatus: () => {} } };
+
+const commands = new Map<string, Command>();
+{
+	const api = {
+		on: () => {},
+		registerTool: () => {},
+		registerCommand: (name: string, options: Command) => commands.set(name, options),
+		getActiveTools: () => [],
+		setActiveTools: () => {},
+		appendEntry: () => {},
+		events: { on: () => {}, emit: () => {} },
+		sendMessage: (message: { content: unknown }, options?: { deliverAs?: string }) => {
+			delivered.push({ kind: "message", content: message.content, options });
+			return Promise.resolve();
+		},
+		sendUserMessage: (content: unknown, options?: { deliverAs?: string }) => {
+			delivered.push({ kind: "user", content, options });
+			return Promise.resolve();
+		},
+	};
+	focusGate(api as never);
+}
+const focus = commands.get("focus");
+if (!focus) throw new Error("the extension registered no /focus command");
+
+setMode("off");
+await focus.handler("on", ctxStub);
+check("a bare mode token still toggles", JSON.parse(readFileSync(statePath, "utf8")).mode === "on");
+check(
+	"the toggle notice is delivered as a STEER",
+	delivered.some((d) => d.kind === "message" && d.options?.deliverAs === "steer"),
+	JSON.stringify(delivered.find((d) => d.kind === "message")?.options ?? null),
+);
+check("a bare mode token forwards nothing to the model", !delivered.some((d) => d.kind === "user"));
+
+const before = delivered.length;
+await focus.handler("off", ctxStub);
+await focus.handler("on  watch   the dock rebuild ", ctxStub);
+const forwarded = delivered.slice(before).filter((d) => d.kind === "user");
+check(
+	"the text after the mode reaches the model",
+	forwarded.length === 1,
+	`${forwarded.length} delivery(s)`,
+);
+check(
+	"and arrives as one intact request, whitespace collapsed",
+	forwarded[0]?.content === "watch   the dock rebuild",
+	String(forwarded[0]?.content),
+);
+check(
+	"on the operator's own queue (steer)",
+	forwarded[0]?.options?.deliverAs === "steer",
+	JSON.stringify(forwarded[0]?.options ?? null),
+);
+
+const beforeUnknown = delivered.length;
+await focus.handler("nonsense words here", ctxStub);
+check(
+	"an unknown mode token forwards nothing",
+	!delivered.slice(beforeUnknown).some((d) => d.kind === "user"),
+);
+check(
+	"and warns instead",
+	notifies.some((n) => n.includes("unknown argument")),
+	notifies.at(-1)?.slice(0, 60),
+);
+
+const beforeStatus = delivered.length;
+await focus.handler("status after the fact", ctxStub);
+check(
+	"status also forwards its trailing text",
+	delivered.slice(beforeStatus).some((d) => d.kind === "user" && d.content === "after the fact"),
+);
+setMode("off");
+
 rmSync(runtime, { recursive: true, force: true });
 
 console.log("");
