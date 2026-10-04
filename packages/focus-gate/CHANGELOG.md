@@ -1,3 +1,9 @@
+## [0.5.0](https://github.com/tinoy1336/pi-extensions/compare/focus-gate-v0.4.0...focus-gate-v0.5.0) (2026-10-04)
+
+### Features
+
+* **focus-gate:** steer the toggle notice and forward the /focus tail ([b050ac5](https://github.com/tinoy1336/pi-extensions/commit/b050ac5ed189f60b3e5b164c95d4728464fcba7b))
+
 ## [0.4.0](https://github.com/tinoy1336/pi-extensions/compare/focus-gate-v0.3.0...focus-gate-v0.4.0) (2026-09-26)
 
 ### Features
