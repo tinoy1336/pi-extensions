@@ -660,7 +660,6 @@ export default function (pi: ExtensionAPI): void {
 			const modelId = msg.model ?? active?.id ?? "";
 			if (!isDeepseekFlash(modelId)) return;
 			const at = msg.timestamp ? new Date(msg.timestamp) : new Date();
-			const w = windowAt(at);
 			totalCny += costOf(msg.usage, at, table.cny);
 			totalUsd += costOfUsd(msg.usage, at, table.usd);
 			if (at.getTime() >= lastPricedMs) lastPricedMs = at.getTime();
