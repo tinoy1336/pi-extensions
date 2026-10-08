@@ -426,7 +426,6 @@ export default function (pi: ExtensionAPI): void {
 	let totalCny = 0;
 	let totalUsd = 0;
 	let pricedMessages = 0;
-	let lastWindow: Window | null = null;
 	let lastPricedMs = 0;
 
 	// ── subagent usage (child session files of this session) ──
@@ -516,7 +515,7 @@ export default function (pi: ExtensionAPI): void {
 	/** The footer text, or undefined when nothing has been priced yet. */
 	const renderText = (): string | undefined => {
 		if (!pricedMessages && !subMessages) return undefined;
-		const w = lastWindow ?? windowAt();
+		const w = windowAt();
 		// ONE total in both currencies: the child sessions are billed to the same
 		// account, so they are summed in rather than shown as a second figure.
 		const total = `$${(totalUsd + subUsd).toFixed(4)} ¥${(totalCny + subCny).toFixed(4)} ${windowLabel(w)}`;
@@ -605,7 +604,6 @@ export default function (pi: ExtensionAPI): void {
 			state.messages++;
 			if (at.getTime() >= lastPricedMs) {
 				lastPricedMs = at.getTime();
-				lastWindow = windowAt(at);
 			}
 		}
 		state.offset += lastNl + 1;
@@ -666,7 +664,6 @@ export default function (pi: ExtensionAPI): void {
 			totalCny += costOf(msg.usage, at, table.cny);
 			totalUsd += costOfUsd(msg.usage, at, table.usd);
 			if (at.getTime() >= lastPricedMs) lastPricedMs = at.getTime();
-			lastWindow = w;
 			pricedMessages++;
 			scanSubagents();
 			render(ctx as never);
@@ -680,7 +677,6 @@ export default function (pi: ExtensionAPI): void {
 		totalCny = 0;
 		totalUsd = 0;
 		pricedMessages = 0;
-		lastWindow = null;
 		lastPricedMs = 0;
 		subCny = 0;
 		subUsd = 0;
@@ -729,7 +725,6 @@ export default function (pi: ExtensionAPI): void {
 					pricedMessages++;
 					if (at.getTime() >= lastPricedMs) {
 						lastPricedMs = at.getTime();
-						lastWindow = windowAt(at);
 					}
 					if (m.timestamp) seededMessages.add(m.timestamp);
 				}
