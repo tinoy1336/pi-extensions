@@ -1,3 +1,9 @@
+## [0.5.1](https://github.com/tinoy1336/pi-extensions/compare/focus-gate-v0.5.0...focus-gate-v0.5.1) (2026-10-09)
+
+### Bug Fixes
+
+* **focus-gate:** stop notifying the toggling session of its own flip ([d0b211f](https://github.com/tinoy1336/pi-extensions/commit/d0b211f30772fc055c9bc7d41cf220a829787344))
+
 ## [0.5.0](https://github.com/tinoy1336/pi-extensions/compare/focus-gate-v0.4.0...focus-gate-v0.5.0) (2026-10-04)
 
 ### Features
