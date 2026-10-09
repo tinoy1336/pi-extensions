@@ -17,7 +17,9 @@
  * input takeover in both its raw and wrapper forms, app spawns, terminal emulators
  * at command position, the build-only exemption), the work the gate must leave
  * alone, the three routes a gated action can arrive through besides bash, and the
- * off mode that makes the whole gate a no-op. Plus the ledger a block leaves.
+ * off mode that makes the whole gate a no-op. Plus the ledger a block leaves, and
+ * the toggle notice both ways: none for the session that ran `/focus`, one steer
+ * for a flip another session wrote under it.
  */
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -52,6 +54,8 @@ function check(name: string, condition: boolean, detail = ""): void {
 	failures += 1;
 	console.log(`  FAIL  ${name}${detail ? ` — ${detail}` : ""}`);
 }
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 type Handler = (event: unknown, ctx: unknown) => unknown;
 type Call = (toolName: string, input: unknown) => Promise<string | undefined>;
@@ -239,9 +243,10 @@ const notifies: string[] = [];
 const ctxStub = { ui: { notify: (text: string) => notifies.push(text), setStatus: () => {} } };
 
 const commands = new Map<string, Command>();
+const sessionHandlers = new Map<string, Handler>();
 {
 	const api = {
-		on: () => {},
+		on: (name: string, handler: Handler) => sessionHandlers.set(name, handler),
 		registerTool: () => {},
 		registerCommand: (name: string, options: Command) => commands.set(name, options),
 		getActiveTools: () => [],
@@ -266,9 +271,9 @@ setMode("off");
 await focus.handler("on", ctxStub);
 check("a bare mode token still toggles", JSON.parse(readFileSync(statePath, "utf8")).mode === "on");
 check(
-	"the toggle notice is delivered as a STEER",
-	delivered.some((d) => d.kind === "message" && d.options?.deliverAs === "steer"),
-	JSON.stringify(delivered.find((d) => d.kind === "message")?.options ?? null),
+	"the toggling session is not sent its own notice",
+	!delivered.some((d) => d.kind === "message"),
+	`${delivered.filter((d) => d.kind === "message").length} notice(s)`,
 );
 check("a bare mode token forwards nothing to the model", !delivered.some((d) => d.kind === "user"));
 
@@ -309,6 +314,29 @@ await focus.handler("status after the fact", ctxStub);
 check(
 	"status also forwards its trailing text",
 	delivered.slice(beforeStatus).some((d) => d.kind === "user" && d.content === "after the fact"),
+);
+
+// A flip written by ANOTHER session: the state file moves under this process, the
+// watch re-syncs the footer, and the notice reaches this session as a steer.
+const startup = sessionHandlers.get("session_start");
+if (!startup) throw new Error("the extension registered no session_start handler");
+await startup(
+	{},
+	{
+		ui: { setStatus: () => {}, notify: () => {} },
+		sessionManager: { getSessionId: () => "probe-session" },
+	},
+);
+await sleep(120); // let the watch attach
+const beforePeer = delivered.length;
+setMode("off"); // what another session's /focus writes
+await sleep(400); // the watch's coalescing timer, then a re-read
+const peer = delivered.slice(beforePeer).filter((d) => d.kind === "message");
+check("a flip from another session still arrives", peer.length === 1, `${peer.length} notice(s)`);
+check(
+	"and arrives as a STEER",
+	peer[0]?.options?.deliverAs === "steer",
+	JSON.stringify(peer[0]?.options ?? null),
 );
 setMode("off");
 

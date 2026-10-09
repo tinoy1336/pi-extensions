@@ -27,7 +27,8 @@
  *    (`watchFocusState` in lib/focus-state.ts): the moment it moves, that
  *    session re-syncs its own footer from it and ALERTS itself with the toggle
  *    notice, which WAKES an idle session — the flip is known when it happens,
- *    not at the next prompt. The `ipc` "focus" broadcast stays as the
+ *    not at the next prompt. The session that WROTE the flip claims it instead
+ *    and stays quiet. The `ipc` "focus" broadcast stays as the
  *    cross-process notice path, and the per-turn `context` re-sync stays the
  *    fallback — the watcher does not depend on the transport being up.
  *  - GATE (hard layer): tool_call blocks the bash content deny-list while
@@ -50,14 +51,15 @@
  *    are accepted as legacy aliases for on), footer status via
  *    ctx.ui.setStatus (re-synced from the file by the watcher and on every
  *    turn, not only at session start), and a toggle notice that ALERTS every
- *    open session at the moment of the toggle: `sendMessage` with
+ *    OTHER open session at the moment of the toggle: `sendMessage` with
  *    `triggerTurn: true` (an IDLE session starts a turn on the notice) and
- *    `deliverAs: "followUp"` (a streaming session takes it on the agent's
- *    follow-up queue, never the steering queue the user's own typing
- *    occupies). Both directions alert, and both roads (the state-file watch
- *    and the `ipc` channel) announce through ONE `<mode>|<since>` key, so
- *    one toggle is one notice per session however it arrived. Cost, accepted:
- *    one turn per open session per toggle.
+ *    `deliverAs: "steer"` (a streaming session takes it at its next turn
+ *    boundary, sharing the queue the operator's own typing occupies). The
+ *    toggling session is not notified: it ran the command, its footer is
+ *    already synced, and the per-turn tail re-states the mode. Both roads (the
+ *    state-file watch and the `ipc` channel) announce through ONE
+ *    `<mode>|<since>` key, so one toggle is one notice per session however it
+ *    arrived. Cost, accepted: one turn per open session per toggle.
  *  - RELEASE: /focus off clears the footer, stops the injection, no-ops the
  *    gate, prints a release summary of THIS session's blocked attempts (entry
  *    count + grouped tool names + its own ledger path) and only THEN clears the
@@ -462,20 +464,36 @@ export default function (pi: ExtensionAPI): void {
 		}
 	}
 
-	/** `<mode>|<since>` of the last notice this session delivered. */
+	/** `<mode>|<since>` of the last notice this session delivered or claimed. */
 	let announcedKey: string | null = null;
 
+	/** The key of a flip: one toggle is one key, whichever road carries it. */
+	function modeKey(mode: FocusMode, since: string | undefined): string {
+		return `${mode}|${since ?? ""}`;
+	}
+
 	/**
-	 * The ONE announce path, whatever carried the news — the state-file watcher,
-	 * the `ipc` channel or this session's own `/focus`. The key IS the flip
-	 * (`<mode>|<since>`), so the two roads that can both observe one toggle cost
-	 * one notice, and a watch that fires twice costs none.
+	 * The ONE announce path, whatever carried the news — the state-file watcher
+	 * or the `ipc` channel. The key IS the flip (`<mode>|<since>`), so the two
+	 * roads that can both observe one toggle cost one notice, and a watch that
+	 * fires twice costs none.
 	 */
 	function announceMode(mode: FocusMode, since: string | undefined, trigger: string): void {
-		const key = `${mode}|${since ?? ""}`;
+		const key = modeKey(mode, since);
 		if (key === announcedKey) return;
 		announcedKey = key;
 		sendFocusNotice(focusNoticeText(mode, trigger), { mode, since, trigger });
+	}
+
+	/**
+	 * Mark a flip this session already knows about, without delivering a notice.
+	 * The session that ran `/focus` is the one caller: it synced its own footer
+	 * on the spot and the per-turn tail re-states the mode, so a notice there
+	 * only reports back what the session just did. Claiming the key is also what
+	 * keeps the state-file watch from handing the same flip back as a stranger's.
+	 */
+	function claimMode(mode: FocusMode, since: string | undefined): void {
+		announcedKey = modeKey(mode, since);
 	}
 
 	/**
@@ -734,11 +752,9 @@ export default function (pi: ExtensionAPI): void {
 				// actually gates them; this is what makes the toggle visible there.
 				broadcastToggle(next, written.since);
 
-				// Toggle-time notice, BOTH directions: the session that ran the command
-				// is an open session too, and the flip alerts it the same way. This
-				// session has already claimed the flip (`seenMode`), so its own watch
-				// stays quiet and the key here is what keeps the toggle to one notice.
-				announceMode(next, written.since, "toggled in this session");
+				// The notice goes to every OTHER open session; this one claims the flip
+				// and sends nothing (see `claimMode`).
+				claimMode(next, written.since);
 
 				// User confirmation (+ release summary when leaving focus). The summary is
 				// the ONLY place the blocked attempts are surfaced, it reports THIS
