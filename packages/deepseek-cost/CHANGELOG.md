@@ -1,3 +1,9 @@
+## [0.3.1](https://github.com/tinoy1336/pi-extensions/compare/deepseek-cost-v0.3.0...deepseek-cost-v0.3.1) (2026-10-09)
+
+### Bug Fixes
+
+* **deepseek-cost:** update peak/valley glyph on footer draw ([64500f0](https://github.com/tinoy1336/pi-extensions/commit/64500f0f20a39a9a2eecd155c73880bb4a5b4ce2))
+
 ## [0.3.0](https://github.com/tinoy1336/pi-extensions/compare/deepseek-cost-v0.2.2...deepseek-cost-v0.3.0) (2026-09-26)
 
 ### Features
