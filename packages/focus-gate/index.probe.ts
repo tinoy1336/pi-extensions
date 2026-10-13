@@ -271,11 +271,7 @@ setMode("off");
 await focus.handler("on", ctxStub);
 check("a bare mode token still toggles", JSON.parse(readFileSync(statePath, "utf8")).mode === "on");
 const own = delivered.filter((d) => d.kind === "message");
-check(
-	"the toggling session is told its own flip",
-	own.length === 1,
-	`${own.length} notice(s)`,
-);
+check("the toggling session is told its own flip", own.length === 1, `${own.length} notice(s)`);
 check(
 	"and told as a steer, like every other session",
 	own[0]?.options?.deliverAs === "steer",
