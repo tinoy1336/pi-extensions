@@ -1,3 +1,9 @@
+## [0.5.2](https://github.com/tinoy1336/pi-extensions/compare/focus-gate-v0.5.1...focus-gate-v0.5.2) (2026-10-13)
+
+### Bug Fixes
+
+* **focus-gate:** stop saying the operator is away when focus mode is on ([13242ad](https://github.com/tinoy1336/pi-extensions/commit/13242addcff0328609273d6d56d73203d2ceb8f3))
+
 ## [0.5.1](https://github.com/tinoy1336/pi-extensions/compare/focus-gate-v0.5.0...focus-gate-v0.5.1) (2026-10-09)
 
 ### Bug Fixes
