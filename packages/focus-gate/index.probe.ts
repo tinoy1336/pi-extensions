@@ -3,8 +3,8 @@
  *
  * Run: `node --experimental-strip-types index.probe.ts` from `packages/focus-gate`.
  *
- * The gate decides whether a session may touch the desktop while the operator is
- * away, and its matcher is not exported, so the probe drives the extension the way
+ * The gate decides whether a session may touch the desktop while focus mode is
+ * on, and its matcher is not exported, so the probe drives the extension the way
  * pi does: a recorder stands in for the API, the extension is handed it, and the
  * captured `tool_call` handler is invoked with a tool name and an input.
  *

@@ -272,7 +272,7 @@ function appendLedger(
  */
 function blockReason(state: FocusState, ledger: string, refused: string): string {
 	return (
-		`focus-gate: FOCUS MODE (${state.mode.toUpperCase()}) ACTIVE — user is away. ` +
+		`focus-gate: FOCUS MODE (${state.mode.toUpperCase()}) ACTIVE — desktop actions are gated. ` +
 		`BLOCKED: ${refused}. ` +
 		`This action is queued to ${ledger}. ` +
 		`Do NOT retry or work around it; continue your task without it and note the deferral in your report.`
