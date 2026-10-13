@@ -1,3 +1,9 @@
+## [0.3.1](https://github.com/tinoy1336/pi-extensions/compare/desktop-notify-v0.3.0...desktop-notify-v0.3.1) (2026-10-13)
+
+### Bug Fixes
+
+* **desktop-notify:** give the focus-mode reason for the suppressed ping ([6c40fdc](https://github.com/tinoy1336/pi-extensions/commit/6c40fdc599fc62c83a6a8976a3490dff33e23481))
+
 ## [0.3.0](https://github.com/tinoy1336/pi-extensions/compare/desktop-notify-v0.2.0...desktop-notify-v0.3.0) (2026-09-26)
 
 ### Features
