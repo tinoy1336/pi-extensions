@@ -18,7 +18,7 @@
  * at command position, the build-only exemption), the work the gate must leave
  * alone, the three routes a gated action can arrive through besides bash, and the
  * off mode that makes the whole gate a no-op. Plus the ledger a block leaves, and
- * the toggle notice both ways: none for the session that ran `/focus`, one steer
+ * the toggle notice both ways: one steer for the session that ran `/focus`, one
  * for a flip another session wrote under it.
  */
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -270,10 +270,16 @@ if (!focus) throw new Error("the extension registered no /focus command");
 setMode("off");
 await focus.handler("on", ctxStub);
 check("a bare mode token still toggles", JSON.parse(readFileSync(statePath, "utf8")).mode === "on");
+const own = delivered.filter((d) => d.kind === "message");
 check(
-	"the toggling session is not sent its own notice",
-	!delivered.some((d) => d.kind === "message"),
-	`${delivered.filter((d) => d.kind === "message").length} notice(s)`,
+	"the toggling session is told its own flip",
+	own.length === 1,
+	`${own.length} notice(s)`,
+);
+check(
+	"and told as a steer, like every other session",
+	own[0]?.options?.deliverAs === "steer",
+	JSON.stringify(own[0]?.options ?? null),
 );
 check("a bare mode token forwards nothing to the model", !delivered.some((d) => d.kind === "user"));
 

@@ -54,12 +54,13 @@
  *    OTHER open session at the moment of the toggle: `sendMessage` with
  *    `triggerTurn: true` (an IDLE session starts a turn on the notice) and
  *    `deliverAs: "steer"` (a streaming session takes it at its next turn
- *    boundary, sharing the queue the operator's own typing occupies). The
- *    toggling session is not notified: it ran the command, its footer is
- *    already synced, and the per-turn tail re-states the mode. Both roads (the
- *    state-file watch and the `ipc` channel) announce through ONE
- *    `<mode>|<since>` key, so one toggle is one notice per session however it
- *    arrived. Cost, accepted: one turn per open session per toggle.
+ *    boundary, sharing the queue the operator's own typing occupies). EVERY
+ *    session is alerted, the one that ran the command included: the confirmation
+ *    the operator sees is a UI notification, and a model that cannot see it would
+ *    keep working as if the mode had not moved. Both roads (the state-file watch
+ *    and the `ipc` channel) announce through ONE `<mode>|<since>` key, so one
+ *    toggle is one notice per session however it arrived. Cost, accepted: one
+ *    turn per open session per toggle.
  *  - RELEASE: /focus off clears the footer, stops the injection, no-ops the
  *    gate, prints a release summary of THIS session's blocked attempts (entry
  *    count + grouped tool names + its own ledger path) and only THEN clears the
@@ -486,22 +487,10 @@ export default function (pi: ExtensionAPI): void {
 	}
 
 	/**
-	 * Mark a flip this session already knows about, without delivering a notice.
-	 * The session that ran `/focus` is the one caller: it synced its own footer
-	 * on the spot and the per-turn tail re-states the mode, so a notice there
-	 * only reports back what the session just did. Claiming the key is also what
-	 * keeps the state-file watch from handing the same flip back as a stranger's.
-	 */
-	function claimMode(mode: FocusMode, since: string | undefined): void {
-		announcedKey = modeKey(mode, since);
-	}
-
-	/**
 	 * A state-file change observed by THIS process: re-sync the footer and tell
-	 * the model. The mode is diffed here rather than in the watcher, because the
-	 * toggling session must be able to claim the flip it just wrote (`seenMode`)
-	 * and stay quiet — it has already synced its own footer and sent its own
-	 * notice.
+	 * the model. The mode is diffed here rather than in the watcher, and the
+	 * announce key dedupes it against the same flip this session already
+	 * announced from its own command.
 	 */
 	function applyObservedMode(state: FocusState, origin: string): void {
 		if (state.mode === seenMode) return;
@@ -510,8 +499,8 @@ export default function (pi: ExtensionAPI): void {
 		if (lastUi) syncFooter(lastUi, state.mode);
 		pi.events.emit(FOCUS_STATE_CHANGED, { mode: state.mode, previous, origin });
 		hookLog("focus-gate", "state-change", { mode: state.mode, previous, origin });
-		// Both directions alert this session. The watcher fires only for a flip
-		// this session did not claim, so the trigger names the other session.
+		// Both directions alert this session, whether the flip came from this
+		// session's own command or from another session's.
 		announceMode(state.mode, state.since, "toggled in another session");
 	}
 
@@ -752,9 +741,12 @@ export default function (pi: ExtensionAPI): void {
 				// actually gates them; this is what makes the toggle visible there.
 				broadcastToggle(next, written.since);
 
-				// The notice goes to every OTHER open session; this one claims the flip
-				// and sends nothing (see `claimMode`).
-				claimMode(next, written.since);
+				// The notice goes to every session, THIS one included. The command's
+				// confirmation is a UI notification, which the model never sees, so
+				// without this the session that ran `/focus` keeps working as if the
+				// mode had not moved — the same blind spot the peer notice exists to
+				// close. One key per flip keeps this from doubling with the watch.
+				announceMode(next, written.since, "toggled in this session");
 
 				// User confirmation (+ release summary when leaving focus). The summary is
 				// the ONLY place the blocked attempts are surfaced, it reports THIS
