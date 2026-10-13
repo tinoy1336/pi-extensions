@@ -29,7 +29,8 @@
  * the ask_user_question ping and manual desktop_notify keep working, because
  * the user still wants to hear when the agent needs their eyes or has finished
  * every deliverable. Only the routine per-response ping is suppressed while
- * focus is active (the user is away; one ping per turn is noise).
+ * focus is active: the desktop is hands-off, so a ping that reports nothing the
+ * user needs to act on is noise.
  */
 
 import { StringEnum } from "@earendil-works/pi-ai";
@@ -145,8 +146,8 @@ export default function (pi: ExtensionAPI) {
 		);
 		if (process.env.PI_SUBAGENT === "1" || process.env.PI_SUBAGENT_CHILD === "1" || !ctx.hasUI)
 			return;
-		// Focus mode: the user is away, so the per-response ping is noise. Only
-		// THIS ping is suppressed — the question ping above and manual
+		// Focus mode: the desktop is hands-off, so the routine per-response ping is
+		// noise. Only THIS ping is suppressed — the question ping above and manual
 		// desktop_notify stay available (see the header note).
 		const focus = readFocusState();
 		if (focusActive(focus)) {
