@@ -1,3 +1,9 @@
+## [0.5.3](https://github.com/tinoy1336/pi-extensions/compare/focus-gate-v0.5.2...focus-gate-v0.5.3) (2026-10-13)
+
+### Bug Fixes
+
+* **focus-gate:** tell a session's own model when /focus moves the mode ([1a64261](https://github.com/tinoy1336/pi-extensions/commit/1a642616eb0e81379fb6800eaff07d2a7a3c71db))
+
 ## [0.5.2](https://github.com/tinoy1336/pi-extensions/compare/focus-gate-v0.5.1...focus-gate-v0.5.2) (2026-10-13)
 
 ### Bug Fixes
