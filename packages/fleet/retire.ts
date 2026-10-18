@@ -160,7 +160,7 @@ export interface PriceFacts {
  * is a literal anywhere in this module, and a table that cannot be read or does
  * not carry the model produces a refusal: a guessed price would move every
  * number downstream of it. The house tariff's own table is a configured file
- * (lib/tariff.ts), so a machine with no such file refuses here too rather than
+ * (`@tinoy/pi-tariff`), so a machine with no such file refuses here too rather than
  * price from the module's example rates.
  */
 export function readPrice(

@@ -24,7 +24,7 @@
  *  - PROPAGATION: the file alone carries the MODE. The two things a session
  *    SHOWS — footer indicator and toggle notice — were written by the toggling
  *    session only, so every session process also WATCHES the state file
- *    (`watchFocusState` in lib/focus-state.ts): the moment it moves, that
+ *    (`watchFocusState` in `@tinoy/pi-focus-state`): the moment it moves, that
  *    session re-syncs its own footer from it and ALERTS itself with the toggle
  *    notice, which WAKES an idle session — the flip is known when it happens,
  *    not at the next prompt. The session that WROTE the flip claims it instead
