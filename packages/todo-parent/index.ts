@@ -17,7 +17,7 @@
  *            requests and applies them via @juicesharp/rpiv-todo's PURE
  *            reducer + replay: authoritative state is reconstructed from the
  *            session branch (`replayFromBranch`), the mutation applied, and
- *            a replay-compatible `todo` toolResult is appended to the branch
+ *            an `rpiv-todo-state` custom entry is appended to the branch
  *            (durable + replay-re-derivable).
  *
  * The rpiv-todo reducer and replay are the ONE optional neighbour: they are
@@ -26,8 +26,8 @@
  * this extension. Absent, the parent-side apply answers a refusal naming the
  * package and its install line; the child's proxy tool keeps its own contract.
  *
- * WRITE TRANSPORT (durable only): this watcher appends a replay-compatible
- * `todo` toolResult row to the spawning session's BRANCH through the shared
+ * WRITE TRANSPORT (durable only): this watcher appends an `rpiv-todo-state`
+ * custom entry to the spawning session's BRANCH through the shared
  * SessionManager (one runner object per process), then emits
  * `pi.events.emit("rpiv-todo:external-refresh", { sid })`.
  *
@@ -82,10 +82,14 @@ import { Type } from "typebox";
 // module instance — so an extension importing store.js gets a SEPARATE Map from
 // the one the host `todo` tool uses. Instead the extension reconstructs
 // authoritative state from the session BRANCH (the cross-instance durable
-// contract) and persists by appending a replay-compatible `todo` toolResult
-// record, exactly the mechanism the package's own replay uses.
+// contract) and persists by appending an `rpiv-todo-state` custom entry, the
+// record the package's own `todo` tool writes and the one its replay prefers.
 
 const TOOL_NAME = "todo_parent";
+/** Mirrors rpiv-todo's `STATE_ENTRY_TYPE` as a literal so this file needs no
+ *  value import of the package. Replay reads these entries ahead of the older
+ *  `toolResult` snapshots. */
+const STATE_ENTRY_TYPE = "rpiv-todo-state";
 const REQUEST_TYPE = "todo.parent.request";
 const POLL_MS = 500;
 const REPLY_TIMEOUT_MS = 15_000;
@@ -253,10 +257,15 @@ const MUTATING_ACTIONS = new Set(["create", "update", "delete", "clear"]);
  * Apply a crew todo mutation to the parent's BRANCH — durably, with the
  * parent's model NEVER woken.
  *
- * Durable: a replay-compatible `todo` toolResult is appended via the SHARED
+ * Durable: an `rpiv-todo-state` custom entry is appended via the SHARED
  * SessionManager (one runner object per process; the same branch the rpiv-todo
- * host replays). `replayFromBranch` decodes the LAST such row, so the append is
- * the authoritative record after the parent's next replay.
+ * host replays). `replayFromBranch` prefers the LAST such entry, so the append
+ * is the authoritative record after the parent's next replay.
+ *
+ * A CUSTOM ENTRY, never a faked `toolResult`: a result row that no assistant
+ * message declares is an orphan the provider rejects, and the repair hook then
+ * drops it from every later request of that session. The entry shape carries
+ * the same snapshot replay already understands, so durability is unchanged.
  *
  * Not live: the host's store Map is module-private to the rpiv-todo extension
  * (see the header note), so the parent's live `todo` tool and overlay keep
@@ -282,19 +291,11 @@ function applyToParentSession(pi: any, rpiv: RpivTodo, sm: any, sessionId: strin
 		// (1) Durable + replay-derivable branch record via the SHARED SessionManager
 		// (one runner object per process — the same branch the rpiv-todo host replays).
 		try {
-			sm?.appendMessage?.({
-				role: "toolResult",
-				toolCallId: `todo-parent-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-				toolName: "todo",
-				content: [{ type: "text", text: "todo_parent mutation" }],
-				details: {
-					action: params.action,
-					params,
-					tasks: result.state.tasks,
-					nextId: result.state.nextId,
-				},
-				isError: false,
-				timestamp: Date.now(),
+			sm?.appendCustomEntry?.(STATE_ENTRY_TYPE, {
+				action: params.action,
+				params,
+				tasks: result.state.tasks,
+				nextId: result.state.nextId,
 			});
 		} catch {
 			/* best-effort durability; child still gets a reply */

@@ -30,14 +30,18 @@ registers no tool: it runs the watcher that applies the requests.
 ## Behaviour
 
 A `todo_parent` call writes a request file into the supervisor channel directory and polls for the
-reply, so it is synchronous and bounded by a 15 s timeout. The spawning session appends a
-replay-compatible `todo` toolResult row to its own session branch — durable and replay-derivable —
-and then emits `rpiv-todo:external-refresh`.
+reply, so it is synchronous and bounded by a 15 s timeout. The spawning session appends an
+`rpiv-todo-state` custom entry to its own session branch — the same record the package's own
+`todo` tool writes, durable and replay-derivable — and then emits `rpiv-todo:external-refresh`.
+
+A custom entry, never a faked `toolResult`: a result row that no assistant message declares is an
+orphan the provider rejects, and the transcript repair then drops it from every later request of
+that session.
 
 The mutation is on the branch, not in the parent's live store: the installed `rpiv-todo` keeps its
 per-session state in a module-private map that no other extension can reach, so the parent's live
 `todo` tool and overlay see the entry at their next session start/compact/tree. A parent-side
-`todo` write before that appends a row from the stale cached view, which wins the replay and drops
+`todo` write before that appends an entry from the stale cached view, which wins the replay and drops
 the child's entry. Every reply carries that note.
 
 ## Checks
