@@ -112,25 +112,29 @@ check(
 );
 
 console.log("the process cap");
-const raw = rawProcessLines(".");
+// The tool runs its OWN `pgrep`, so the raw list is sampled either side of that
+// call: the process table is live and a single sample taken before a run can differ
+// from the list the run capped. The drop count is checked against that bracket.
+const rawBefore = rawProcessLines(".");
 const capped = await run(".");
+const rawAfter = rawProcessLines(".");
 const body = capped.split("\n").slice(1);
 const marker = body.find((line) => line.startsWith("… (+"));
-check(
-	"the body never exceeds the cap",
-	body.filter((line) => !line.startsWith("… (+")).length <= 20,
-	`${body.length} lines`,
-);
-if (raw.length > 22) {
+const shown = body.filter((line) => !line.startsWith("… (+")).length;
+check("the body never exceeds the cap", shown <= 20, `${body.length} lines`);
+const dropped = Number(/^… \(\+(\d+) lines\)$/.exec(marker ?? "")?.[1]);
+const low = Math.min(rawBefore.length, rawAfter.length) - shown;
+const high = Math.max(rawBefore.length, rawAfter.length) - shown;
+if (Math.max(rawBefore.length, rawAfter.length) > 22) {
 	check("a long list is marked as truncated", marker !== undefined, marker ?? "(no marker)");
 	check(
 		"and the marker counts what was dropped",
-		marker === `… (+${raw.length - 20} lines)`,
-		`${marker ?? "(none)"} for ${raw.length} raw lines`,
+		Number.isFinite(dropped) && dropped >= low && dropped <= high,
+		`${marker ?? "(none)"} for ${low}..${high} dropped between samples`,
 	);
 } else {
 	console.log(
-		`  note  the machine lists only ${raw.length} processes; the truncation marker was not reachable`,
+		`  note  the machine lists only ${rawBefore.length} processes; the truncation marker was not reachable`,
 	);
 }
 
