@@ -98,8 +98,9 @@ process and loads the extensions listed there, which is how the child-side packa
 | `.githooks/commit-msg` | the commit-msg hook: `git config core.hooksPath .githooks` is set by the root `prepare` script on install |
 | `cliff.toml` | `git-cliff` changelog configuration (local preview; the shipped changelogs are per package) |
 | `release/` | semantic-release configuration, one file per package |
-| `scripts/` | the checks and release helpers CI runs: pack contents, the stranger install, the release gate and tag withdrawal |
-| `docker/` | the stranger-install smoke test: its Dockerfile and the harness that runs inside it |
+| `scripts/` | the checks and release helpers CI runs: pack contents, the caveat rows, the probe runner, the stranger install, the release gate and tag withdrawal |
+| `test-rigs/` | the harness rigs CI runs as their own jobs: `canon-prefix/` drives the system-prompt seam with a fake pi, no provider and no pi install |
+| `docker/` | the stranger-install smoke test: its Dockerfile, the harness that runs inside it and the subset matrix |
 | `.github/workflows/` | `ci.yml` (checks + smoke), `release.yml` (semantic-release on merge), `live-turn.yml` (manual model turn) |
 | `RELEASING.md` | how a release happens, the one-time npm bootstrap, forcing/skipping one, and rollback |
 | `LICENSE` | MIT |
@@ -111,13 +112,20 @@ npm install          # installs the toolchain and links the workspace packages
 npm run typecheck    # tsc --noEmit over every package
 npm run lint         # biome check
 npm run check:pack   # the exact file list of each published package
+npm run check:caveats # the README caveat rows agree with what the code declares
+npm run check:probes # every package probe beside its module (scripts/check-probes.sh)
 npm run smoke        # stranger-install smoke test in a container (docker; $CONTAINER_ENGINE to override)
 npm run smoke:local  # the same harness against the same tarball install, no container
+npm run smoke:matrix # the subset matrix: each case installs its tarballs in a clean container
 npm run release:dry  # what the next release would publish (needs an npm login)
 npm run changelog    # git-cliff preview of a changelog
 ```
 
-The same commands are what CI runs, so a green local run means a green `check` job.
+The `check` job runs the first five; `smoke` runs `smoke:local`'s harness inside the
+container image, and `smoke:matrix` builds that image and runs every case in it. The
+rigs are separate jobs: `bash test-rigs/canon-prefix/ci.sh` and `bash
+packages/deepseek-cost/rig/run.sh`.
+
 Releases are automated: see [RELEASING.md](RELEASING.md).
 
 Commits follow Conventional Commits (`feat(canon): …`), enforced where the commit
