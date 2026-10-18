@@ -1,3 +1,9 @@
+## [0.5.4](https://github.com/tinoy1336/pi-extensions/compare/focus-gate-v0.5.3...focus-gate-v0.5.4) (2026-10-18)
+
+### Bug Fixes
+
+* **focus-gate:** read an app name, not a redirect, after run.sh ([f0a8952](https://github.com/tinoy1336/pi-extensions/commit/f0a8952e8a4ddac79b24b53526ab47b9805fe555))
+
 ## [0.5.3](https://github.com/tinoy1336/pi-extensions/compare/focus-gate-v0.5.2...focus-gate-v0.5.3) (2026-10-13)
 
 ### Bug Fixes
