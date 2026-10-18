@@ -183,8 +183,11 @@ const BASH_PATTERNS: GatePattern[] = [
 	},
 	// App spawns. `AGS_BUNDLE_WARM=1` makes run.sh build-only (it never execs the
 	// app), so that form stays allowed while a launching call is gated.
+	// The argument must READ as an app name: a redirection (`run.sh > log`,
+	// `run.sh 2>&1`) is not one, and matching it gated the repository's own rigs
+	// (`bash packages/deepseek-cost/rig/run.sh > log`) as app spawns.
 	{
-		re: /\brun\.sh\s+[^\s|&;]+/i,
+		re: /\brun\.sh\s+(?![0-9]*[<>&])["'$]?[\w./${}-]+/i,
 		unless: /AGS_BUNDLE_WARM/,
 		label: "AGS: app spawn (shell run.sh)",
 	},

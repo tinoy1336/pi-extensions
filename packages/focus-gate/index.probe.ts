@@ -154,6 +154,12 @@ await blocked(
 	{ command: "common/shell/run.sh files" },
 	"AGS",
 );
+await blocked(
+	"an app launch through the shell runner, app name quoted",
+	"bash",
+	{ command: 'common/shell/run.sh "files"' },
+	"AGS",
+);
 await blocked("an app launch through ags run", "bash", { command: "ags run foo" }, "AGS");
 await blocked(
 	"an app open through the route script",
@@ -183,6 +189,14 @@ await allowed("a terminal named in a read-only position", "bash", {
 });
 await allowed("a build-only bundle form", "bash", {
 	command: "AGS_BUNDLE_WARM=1 common/shell/run.sh files",
+});
+// A redirection is not an app name: a runner script that ends in `run.sh` and takes
+// no argument (this repository's own cost rig) must not be gated by its redirects.
+await allowed("a runner script whose redirects follow it", "bash", {
+	command: "bash packages/deepseek-cost/rig/run.sh > /tmp/rig.log 2>&1",
+});
+await allowed("a runner script with only a descriptor redirect", "bash", {
+	command: "common/shell/run.sh 2>&1",
 });
 
 console.log("FOCUS MODE ON — the other routes to a desktop action");
