@@ -45,7 +45,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import type { AgentToolUpdateCallback, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { argText, clip, type HeaderPart, safeToolHeader } from "@tinoy/pi-ext-lib";
-import { type Static, Type } from "typebox";
+import { Type } from "typebox";
 
 const ASKPASS_BRIDGE = join(homedir(), ".local/bin/sudo-approve-askpass");
 const ASKPASS_CAT = join(homedir(), ".local/bin/sudo-approve-password-cat");
@@ -75,8 +75,6 @@ const sudoApproveSchema = Type.Object({
 		}),
 	),
 });
-
-export type SudoApproveInput = Static<typeof sudoApproveSchema>;
 
 interface CommandSpec {
 	command: string;

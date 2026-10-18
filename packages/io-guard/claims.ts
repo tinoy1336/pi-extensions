@@ -14,7 +14,7 @@
  * claim stops a process that is still running from writing under an ownership the
  * foreman has withdrawn.
  */
-import { mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -112,12 +112,4 @@ export function reclaimClaim(
 	writeFileSync(tmp, `${JSON.stringify(rec, null, 2)}\n`);
 	renameSync(tmp, dest);
 	return { ok: true, generation: rec.generation };
-}
-
-export function dropClaim(root: string, worker: string): void {
-	try {
-		unlinkSync(claimPath(root, worker));
-	} catch {
-		/* already gone */
-	}
 }

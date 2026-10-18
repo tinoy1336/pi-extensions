@@ -302,13 +302,6 @@ export async function emitEvent(
 	return last;
 }
 
-export function makeEmit(
-	handlers: FakePi["handlers"],
-	ctx: unknown,
-): (ev: string, event: unknown) => Promise<unknown> {
-	return (ev, event) => emitEvent(handlers, ev, event, ctx);
-}
-
 export const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 20));
 
 export function canonCtx(model = "deepseek-flash"): unknown {

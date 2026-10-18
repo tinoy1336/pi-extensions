@@ -80,28 +80,6 @@ export function classify(r: RpcReply, timeoutMs: number): { kind: TransportFault
 	return { kind: "ok", detail: "ok" };
 }
 
-/** A cheap round-trip probe: `ping` is answered by the bridge without touching a
- *  run. Used to VERIFY the transport before foreman mode removes `subagent`. */
-export async function probeTransport(
-	pi: ExtensionAPI,
-	timeoutMs = 6_000,
-): Promise<{ ok: boolean; detail: string; fault?: TransportFault }> {
-	const r = await rpc(pi, "ping", {}, timeoutMs);
-	if (!r.ok) {
-		const c = classify(r, timeoutMs);
-		return { ok: false, detail: `${c.kind}: ${c.detail}`, fault: c.kind };
-	}
-	const caps = r.data as
-		| { version?: number; capabilities?: { asyncSpawn?: boolean; steer?: boolean } }
-		| undefined;
-	if (caps?.version !== 1)
-		return { ok: false, detail: `unexpected ping payload: ${JSON.stringify(r.data).slice(0, 80)}` };
-	return {
-		ok: true,
-		detail: `protocol v${caps.version} (asyncSpawn=${caps.capabilities?.asyncSpawn === true})`,
-	};
-}
-
 export function rpc(
 	pi: ExtensionAPI,
 	method: string,
