@@ -98,3 +98,16 @@ unmuted-but-broken; a mutated run must exit non-zero.
   release cannot move its verdicts; bump them deliberately.
 - Release tags and changelogs are per package (see `RELEASING.md`); the root manifest is
   private and never published.
+
+## The container path
+
+`npm run smoke` and `npm run smoke:matrix` build `docker/Dockerfile` and need a reachable
+container daemon. A machine with only the docker client runs their `--local` modes instead
+(`scripts/smoke.sh` and `scripts/smoke-matrix.sh` exit 3 when the engine does not answer),
+which install the same tarballs with the same installer but inside the checkout, on the
+host's node and host's binaries. The matrix's manifests-only workspace is reproduced by
+staging the build context by hand and running `docker/matrix.mjs --workspace <stage>`; what
+neither substitution reaches is the image's own node 22 build, its Debian slim userspace
+with no host tools on `PATH`, and the isolation that keeps the checkout unreachable from
+the app directory. The image path itself is verified by CI, never by a machine that cannot
+build the image.
