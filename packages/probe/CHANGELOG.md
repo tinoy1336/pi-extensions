@@ -1,3 +1,9 @@
+## [0.3.1](https://github.com/tinoy1336/pi-extensions/compare/probe-v0.3.0...probe-v0.3.1) (2026-10-18)
+
+### Bug Fixes
+
+* **probe:** bracket the drop count with samples taken either side of the run ([edd2c9a](https://github.com/tinoy1336/pi-extensions/commit/edd2c9a23c7df48453b062299a69d69b4a0b8e5b))
+
 ## [0.3.0](https://github.com/tinoy1336/pi-extensions/compare/probe-v0.2.0...probe-v0.3.0) (2026-09-26)
 
 ### Features
