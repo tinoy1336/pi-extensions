@@ -221,17 +221,6 @@ export default function (pi: ExtensionAPI): void {
 	let appliedSet: string[] = [];
 
 	/**
-	 * The loader tools this package leaves alone. Each is owned by another extension
-	 * that re-adds it on the typed path, and pi renders one prompt bullet per selected
-	 * tool, so sweeping one away moves the head of the system prompt on the next run.
-	 *
-	 * Listed BY NAME, never by pattern: `_enable` is a naming convention, not a
-	 * contract, and a third-party tool that happens to match it must stay an ordinary
-	 * stray rather than inherit sweep immunity and a permanent prompt bullet.
-	 */
-	const LOADER_TOOLS: readonly string[] = ["subagents_enable", "web_enable"];
-
-	/**
 	 * THE FROZEN SET IS AN INVARIANT, NOT A STARTING STATE — enforced here, at the last
 	 * point before the payload is sent.
 	 *
@@ -290,23 +279,13 @@ export default function (pi: ExtensionAPI): void {
 			// that arrived late, nor force the exact activation snapshot back — that would
 			// re-create the missing-tool hole the payload filter exists to avoid.
 			//
-			// Loader tools are the one exception, and the exception is the point. Another
-			// extension re-adds its loader (a name on LOADER_TOOLS) on every typed run, and pi
-			// renders one prompt bullet per selected tool at the head of the system prompt.
-			// Taking the loader out of the ACTIVE set here therefore makes the next run
-			// render something the typed path would not have: the typed run carries the
-			// bullet because `before_agent_start` runs there and either pushes the loader
-			// into the run's `systemPromptOptions.selectedTools` (pi-subagents) or re-adds it
-			// to the live set that pi then copies into `selectedTools` (pi-web-access), while
-			// a wake runs neither. The
-			// transcript's `tools` section is what records that loss, and a head that moves
-			// can re-bill the conversation behind it (measured: of six deltas in one
-			// session, two re-billed the prompt whole and four only the 3–18% behind the
-			// move). Loaders stay selected; the filter, not this handler, is what keeps them
-			// uncallable. The prompt therefore advertises a tool the wire withholds, which is the
-			// deliberate trade: a stable head in exchange for a bullet the model cannot act on.
+			// Nothing outside FOREMAN_TOOLS is spared. A loader carve-out used to sit here, so
+			// that sweeping `subagents_enable` would not move the head of the system prompt;
+			// pi-subagents now decides its tool activation from the model instead, which leaves
+			// no loader at all on a model that cannot accept a tool added mid-conversation. A
+			// session that does carry one is swept like any other stray and accepts that move.
 			const allowedHere = (n: string): boolean =>
-				(mode.FOREMAN_TOOLS as readonly string[]).includes(n) || LOADER_TOOLS.includes(n);
+				(mode.FOREMAN_TOOLS as readonly string[]).includes(n);
 			const strays = active.filter((n) => !allowedHere(n));
 			if (strays.length > 0 && mode.isOn(sid(ctx))) {
 				toolSet.setActiveTools(active.filter(allowedHere));
@@ -1977,18 +1956,6 @@ export default function (pi: ExtensionAPI): void {
 			const act = mode.activate(toolSet, session);
 			setForemanSection(act.ok);
 			appliedSet = act.ok ? act.applied : [];
-			// Loaders are ADMITTED with the set, not swept out of it. The extension that
-			// owns one re-adds it on the typed path, so a session whose first run happens
-			// not to carry it renders one prompt and its next run another — the same moved
-			// head the drift handler refuses to create. Admitting them here makes the set
-			// identical from the first request on; the payload filter still keeps them off
-			// the wire.
-			if (act.ok) {
-				const loaders = (toolSet.getAllTools?.() ?? [])
-					.map((t) => t.name)
-					.filter((n) => LOADER_TOOLS.includes(n) && !act.applied.includes(n));
-				if (loaders.length > 0) toolSet.setActiveTools([...act.applied, ...loaders]);
-			}
 			if (act.ok && act.missing.length) {
 				ctx?.ui?.notify?.(
 					`foreman mode re-armed. Not registered at activation, so left out for now: ${act.missing.join(", ")}. A tool that registers later takes its place; one that never does stays absent.`,

@@ -39,7 +39,7 @@ gitignored; `RIG_RUNS_DIR=<dir>` moves it (a read-only checkout needs that).
 | `harness-hooks.ts` | canon's REAL `before_provider_request` hook wiring (typed, wake, anomaly, foreign shapes) |
 | `freeze-harness.ts` | child-prompt-freeze's REAL child path + the real logger in one chain; also the launch-marker classification cases |
 | `harness-chain.ts` | the composed seam: REAL canon hook **and** REAL prefix logger on one fake pi, in both handler orders |
-| `harness-fleet.ts` | the foreman tool-set invariant: the REAL fleet package over a fake pi whose tool set is real, driving activation, a typed run, a tool call and a wake; asserts both run shapes render the same tools section and that the payload filter still keeps non-foreman tools off the wire |
+| `harness-fleet.ts` | the foreman tool-set invariant: the REAL fleet package over a fake pi whose tool set is real — activation applies exactly `FOREMAN_TOOLS`, a stray is swept at the next tool call while a member that registers late is kept, and the payload filter sends the definition and nothing else |
 
 ## Which copy of the modules is under test
 
@@ -99,19 +99,16 @@ and the store is read-only.
 
 Negative controls: every harness should be able to FAIL. Add `RIG_MUTATE=<name>`:
 `harness.ts` `no-append`, `harness-hooks.ts` `stale-block`,
-`freeze-harness.ts` `no-restore`, `harness-chain.ts` `no-canon`, `harness-fleet.ts`
-`loader-name` (renames the stub loader to a name that still ends in `_enable` but is not
-on the allow-list, so it is swept — the coupling of a name-based exemption — a mutated run
-must be red). A mutated run must exit
+`freeze-harness.ts` `no-restore`, `harness-chain.ts` `no-canon`. A mutated run must exit
 non-zero.
 
 ```sh
 RIG_MUTATE=stale-block bash test-rigs/canon-prefix/run.sh   # exit 1 (a harness failed)
-RIG_MUTATE=loader-name bash test-rigs/canon-prefix/run.sh   # exit 1 (the fleet arm)
 ```
 
-`harness-fleet.ts` rejects a mutation name it does not define with exit `2` rather than
-running unmuted, so a foreign name there reads as a precondition failure, not a pass.
+`harness-fleet.ts` defines no mutation: its arms ARE the invariant, so the only way to run
+it is as written. It replaced the loader-exemption arm, which went with the exemption
+itself when pi-subagents started choosing its tool activation from the model.
 
 ## CI
 
