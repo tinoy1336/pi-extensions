@@ -1,3 +1,9 @@
+## [0.3.1](https://github.com/tinoy1336/pi-extensions/compare/todo-parent-v0.3.0...todo-parent-v0.3.1) (2026-10-18)
+
+### Bug Fixes
+
+* **todo-parent:** persist board state as a custom entry, not a faked tool result ([fdf6e16](https://github.com/tinoy1336/pi-extensions/commit/fdf6e166ebdf01cc43de374df4fbfa2758729634))
+
 ## [0.3.0](https://github.com/tinoy1336/pi-extensions/compare/todo-parent-v0.2.0...todo-parent-v0.3.0) (2026-09-26)
 
 ### Features
